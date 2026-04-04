@@ -1,0 +1,265 @@
+/* No external font imports — system fonts are instant */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS Custom Properties — light mode (default) ───────────────────────── */
+@layer base {
+    :root {
+        --bg: #ffffff;
+        --surface: #fafafa;
+        --surface-raised: #f5f5f5;
+        --border: #e5e5e5;
+        --text: #0a0a0a;
+        --text-muted: #737373;
+        --text-faint: #d4d4d4;
+        --accent: #0a0a0a;
+        --accent-hover: #262626;
+        --accent-glow: rgba(0, 0, 0, 0.08);
+        --accent-soft: #f5f5f5;
+        --accent-soft-border: #e0e0e0;
+        --dot-color: rgba(0, 0, 0, 0.03);
+    }
+
+    /* ── Dark mode — activated by .dark class on <html> ── */
+    .dark {
+        --bg: #0a0a0a;
+        --surface: #111111;
+        --surface-raised: #1a1a1a;
+        --border: #2a2a2a;
+        --text: #fafafa;
+        --text-muted: #737373;
+        --text-faint: #252525;
+        --accent: #fafafa;
+        --accent-hover: #e5e5e5;
+        --accent-glow: rgba(255, 255, 255, 0.08);
+        --accent-soft: #1a1a1a;
+        --accent-soft-border: #2a2a2a;
+        --dot-color: rgba(255, 255, 255, 0.025);
+    }
+
+    body {
+        background-color: var(--bg);
+        color: var(--text);
+        font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
+            Arial, ui-sans-serif, system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-image: radial-gradient(
+            circle,
+            var(--dot-color) 1px,
+            transparent 1px
+        );
+        background-size: 22px 22px;
+        transition:
+            background-color 0.25s ease,
+            color 0.25s ease;
+    }
+
+    input,
+    textarea,
+    select {
+        font-size: 16px;
+        font-family: inherit;
+    }
+
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ── Keyframes ────────────────────────────────────────────────────────────── */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@keyframes shake {
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+    18% {
+        transform: translateX(-5px);
+    }
+    36% {
+        transform: translateX(5px);
+    }
+    54% {
+        transform: translateX(-3px);
+    }
+    72% {
+        transform: translateX(3px);
+    }
+}
+
+/* ── Animation utility classes ───────────────────────────────────────────── */
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-in {
+    animation: fadeIn 0.3s ease both;
+}
+.animate-slide-down {
+    animation: slideDown 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-shake {
+    animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.delay-100 {
+    animation-delay: 100ms;
+}
+.delay-200 {
+    animation-delay: 200ms;
+}
+.delay-300 {
+    animation-delay: 300ms;
+}
+
+/* ── Respect prefers-reduced-motion ─────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ── Markdown preview prose styles ─────────────────────────────────────── */
+
+.md-preview {
+    line-height: 1.65;
+    font-size: 0.75rem;
+    color: var(--text);
+}
+.md-preview h1 {
+    font-size: 1.2em;
+    font-weight: 700;
+    margin-top: 0.75em;
+    margin-bottom: 0.4em;
+}
+.md-preview h2 {
+    font-size: 1.08em;
+    font-weight: 600;
+    margin-top: 0.6em;
+    margin-bottom: 0.35em;
+}
+.md-preview h3 {
+    font-size: 1em;
+    font-weight: 600;
+    margin-top: 0.5em;
+    margin-bottom: 0.3em;
+}
+.md-preview h1:first-child,
+.md-preview h2:first-child,
+.md-preview h3:first-child {
+    margin-top: 0;
+}
+.md-preview p {
+    margin-bottom: 0.6em;
+}
+.md-preview p:last-child {
+    margin-bottom: 0;
+}
+.md-preview strong {
+    font-weight: 700;
+}
+.md-preview em {
+    font-style: italic;
+}
+.md-preview code {
+    font-family:
+        ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, monospace;
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-size: 0.88em;
+}
+.md-preview pre {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75em 1em;
+    margin-bottom: 0.65em;
+    overflow-x: auto;
+}
+.md-preview pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 0.85em;
+}
+.md-preview ul,
+.md-preview ol {
+    padding-left: 1.4em;
+    margin-bottom: 0.65em;
+}
+.md-preview li {
+    margin-bottom: 0.2em;
+}
+.md-preview li:last-child {
+    margin-bottom: 0;
+}
+.md-preview blockquote {
+    border-left: 2px solid var(--border);
+    padding-left: 0.75em;
+    color: var(--text-muted);
+    margin: 0 0 0.65em;
+}
+.md-preview a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.md-preview hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.75em 0;
+}
+.md-preview table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.65em;
+    font-size: 0.9em;
+}
+.md-preview th,
+.md-preview td {
+    border: 1px solid var(--border);
+    padding: 0.3em 0.6em;
+    text-align: left;
+}
+.md-preview th {
+    background: var(--surface-raised);
+    font-weight: 600;
+}

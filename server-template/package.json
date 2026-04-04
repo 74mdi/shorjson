@@ -1,0 +1,16 @@
+{
+  "name": "shor-server",
+  "version": "1.0.0",
+  "description": "Local JSON database server for the Shor link shortener — zero npm dependencies",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "start:no-browser": "node server.js --no-browser",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["shor", "link-shortener", "local-server"],
+  "license": "MIT"
+}
