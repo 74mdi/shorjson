@@ -784,7 +784,7 @@ export default function NotesPage() {
       <div className="flex-1 overflow-y-auto w-full max-w-sm mx-auto pb-12">
         {/* Section header */}
         {!loading && (
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 animate-morph-in">
             <span
               className="text-[10px] font-medium uppercase tracking-wider select-none tabular-nums"
               style={{ color: "var(--text-faint)" }}
@@ -845,17 +845,26 @@ export default function NotesPage() {
 
         {/* Note cards */}
         {!loading &&
-          notes.map((note) => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              isEditing={editingId === note.id}
-              onStartEdit={handleStartEdit}
-              onSave={handleUpdate}
-              onCancel={handleCancel}
-              onDelete={handleDelete}
-            />
-          ))}
+          notes.map((note, i) => {
+            const delay =
+              i === 0 ? "" :
+              i === 1 ? "delay-50" :
+              i === 2 ? "delay-100" :
+              i === 3 ? "delay-150" :
+              i === 4 ? "delay-200" : "delay-250";
+            return (
+              <div key={note.id} className={`animate-morph-slide ${delay}`}>
+                <NoteCard
+                  note={note}
+                  isEditing={editingId === note.id}
+                  onStartEdit={handleStartEdit}
+                  onSave={handleUpdate}
+                  onCancel={handleCancel}
+                  onDelete={handleDelete}
+                />
+              </div>
+            );
+          })}
       </div>
     </main>
   );
