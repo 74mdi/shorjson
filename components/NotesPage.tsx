@@ -469,7 +469,7 @@ const NoteCard = memo(function NoteCard({
 
 /* ── NotesPage ───────────────────────────────────────────────────────────── */
 
-export default function NotesPage() {
+export default function NotesPage({ csrfToken }: { csrfToken: string }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [createTitle, setCreateTitle] = useState("");
@@ -494,7 +494,7 @@ export default function NotesPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/notes");
+      const res = await fetch("/api/notes", { cache: "no-store" });
       const data = (await res.json()) as { notes?: Note[] };
       setNotes(data.notes ?? []);
     } catch {
@@ -511,8 +511,11 @@ export default function NotesPage() {
   const handleUpdate = useCallback(async (id: string, t: string, c: string) => {
     try {
       const res = await fetch(`/api/notes/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({ title: t, content: c }),
       });
       if (res.ok) {
@@ -523,14 +526,17 @@ export default function NotesPage() {
     } catch {
       // fail silently
     }
-  }, []);
+  }, [csrfToken]);
 
   const handleDelete = useCallback(
     (id: string) => {
       setNotes((prev) => prev.filter((n) => n.id !== id));
-      fetch(`/api/notes/${id}`, { method: "DELETE" }).catch(() => load());
+      fetch(`/api/notes/${id}`, {
+        method: "DELETE",
+        headers: { "x-csrf-token": csrfToken },
+      }).catch(() => load());
     },
-    [load],
+    [csrfToken, load],
   );
 
   const handleStartEdit = useCallback((id: string) => {
@@ -580,7 +586,10 @@ export default function NotesPage() {
     try {
       const res = await fetch("/api/notes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
         body: JSON.stringify({ title: t, content: c }),
       });
       const data = (await res.json()) as Note & { error?: string };

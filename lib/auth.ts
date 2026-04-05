@@ -182,7 +182,7 @@ export async function requirePageSession(): Promise<AuthSession> {
 export async function redirectAuthenticatedUser(): Promise<void> {
   const session = await getOptionalSession();
   if (session) {
-    redirect("/dashboard/links");
+    redirect("/");
   }
 }
 

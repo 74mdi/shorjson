@@ -24,7 +24,7 @@ const PencilIcon = ({ size = 17 }: { size?: number }) => (
 /* ── Nav tabs ────────────────────────────────────────────────────────────── */
 
 const NAV_TABS = [
-  { href: "/dashboard/links", label: "Links", Icon: LinkIcon },
+  { href: "/", label: "Links", Icon: LinkIcon },
   { href: "/notes", label: "Notes",  Icon: PencilIcon },
 ];
 
@@ -34,12 +34,7 @@ const TAB_W = 72; // px — each tab, indicator matches
 
 export default function BottomBar() {
   const pathname  = usePathname();
-  if (pathname === "/notes") return null;
-  const activeIdx = NAV_TABS.findIndex((tab) =>
-    tab.href === "/dashboard/links"
-      ? pathname.startsWith("/dashboard/links")
-      : tab.href === pathname,
-  );
+  const activeIdx = NAV_TABS.findIndex((tab) => tab.href === pathname);
 
   if (activeIdx < 0) return null;
 

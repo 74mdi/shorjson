@@ -211,7 +211,9 @@ export default function LinksList({ refreshKey }: { refreshKey: number }) {
 
   const fetchLinks = useCallback(async () => {
     try {
-      const res = await fetch("/api/links");
+      const res = await fetch("/api/short-links", {
+        cache: "no-store",
+      });
       const data = await res.json();
       setLinks(data.links ?? []);
     } catch {

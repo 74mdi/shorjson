@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import ShortenerHome from "@/components/ShortenerHome";
 
 export default function HomePage() {
-  redirect("/dashboard/links");
+  return <ShortenerHome />;
 }
