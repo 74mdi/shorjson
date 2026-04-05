@@ -105,7 +105,7 @@ const Spinner = () => (
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
 
-export default function UrlShortener() {
+export default function UrlShortener({ onShorten }: { onShorten?: () => void }) {
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState("");
   const [showSlug, setShowSlug] = useState(false);
@@ -164,6 +164,7 @@ export default function UrlShortener() {
 
       setResult(data as ShortenResult);
       setStatus("success");
+      onShorten?.();
     } catch {
       setErrorMsg("Network error. Check your connection and try again.");
       setStatus("error");
