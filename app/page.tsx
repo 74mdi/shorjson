@@ -13,11 +13,6 @@ export default function Home() {
       <header className="w-full max-w-sm pt-12 pb-6 animate-morph-in">
         <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text)" }}>
           Shor
-          <span
-            className="inline-block w-1.5 h-1.5 rounded-full ml-0.5 mb-2 align-bottom"
-            style={{ background: "var(--accent)" }}
-            aria-hidden="true"
-          />
         </h1>
         <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
           Shorten any link, instantly.
