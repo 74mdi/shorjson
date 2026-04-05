@@ -1,10 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import LinksList from "./LinksList";
 import UrlShortener from "./UrlShortener";
 
-export default function ShortenerHome() {
+export default function ShortenerHome({
+  username,
+}: {
+  username: string | null;
+}) {
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
@@ -19,6 +24,33 @@ export default function ShortenerHome() {
         <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
           Shorten any link with optional slugs and passwords.
         </p>
+        {username ? (
+          <div
+            className="mt-3 flex flex-wrap items-center gap-2 text-[11px]"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <Link
+              href="/dashboard/links"
+              className="rounded-full border px-2.5 py-1 transition-colors duration-200"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
+            >
+              Edit bio links
+            </Link>
+            <Link
+              href={`/${username}`}
+              className="rounded-full border px-2.5 py-1 transition-colors duration-200"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
+            >
+              View /{username}
+            </Link>
+          </div>
+        ) : null}
       </header>
 
       <section className="mx-auto w-full max-w-sm">

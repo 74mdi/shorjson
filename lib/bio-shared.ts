@@ -6,7 +6,11 @@ export type ButtonStyle =
   | "soft"
   | "ghost"
   | "card"
-  | "brutalist";
+  | "brutalist"
+  | "glass"
+  | "frame"
+  | "elevated"
+  | "underline";
 
 const BUTTON_STYLES: ButtonStyle[] = [
   "minimal",
@@ -17,6 +21,10 @@ const BUTTON_STYLES: ButtonStyle[] = [
   "ghost",
   "card",
   "brutalist",
+  "glass",
+  "frame",
+  "elevated",
+  "underline",
 ];
 
 export function isButtonStyle(value: string): value is ButtonStyle {

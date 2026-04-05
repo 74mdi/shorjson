@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import DbPanel from "@/components/DbPanel";
 
 /* ── Icons ──────────────────────────────────────────────────────────────── */
 
@@ -18,14 +17,6 @@ const MoonIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
-const SettingsIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
@@ -57,8 +48,6 @@ export default function TopControls({
   const router = useRouter();
   const [isDark, setIsDark]     = useState(false);
   const [mounted, setMounted]   = useState(false);
-  const [open, setOpen]         = useState(false);
-  const [hasCustomDb, setHasDb] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
@@ -66,30 +55,11 @@ export default function TopControls({
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    fetch("/api/db-connections")
-      .then(r => r.json())
-      .then((d: { connections?: Array<{ isActive: boolean }> }) => {
-        setHasDb((d.connections ?? []).some(c => c.isActive));
-      })
-      .catch(() => {});
-  }, []);
-
   function toggleTheme() {
     const next = !isDark;
     setIsDark(next);
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("shor-mode", next ? "dark" : "light");
-  }
-
-  function handleClose() {
-    setOpen(false);
-    fetch("/api/db-connections")
-      .then(r => r.json())
-      .then((d: { connections?: Array<{ isActive: boolean }> }) => {
-        setHasDb((d.connections ?? []).some(c => c.isActive));
-      })
-      .catch(() => {});
   }
 
   const btnStyle: React.CSSProperties = {
@@ -182,39 +152,6 @@ export default function TopControls({
           )}
         </button>
 
-        {/* Settings */}
-        <button
-          type="button"
-          aria-label="Settings"
-          onClick={() => setOpen(true)}
-          style={btnStyle}
-          onMouseEnter={e => {
-            (e.currentTarget as HTMLElement).style.color = "var(--text)";
-            (e.currentTarget as HTMLElement).style.background = "var(--surface-raised)";
-          }}
-          onMouseLeave={e => {
-            (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
-          }}
-        >
-          <SettingsIcon />
-          {hasCustomDb && (
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                top: 6,
-                right: 6,
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: "var(--text)",
-                border: "1.5px solid var(--surface)",
-              }}
-            />
-          )}
-        </button>
-
         {auth ? (
           <button
             type="button"
@@ -235,8 +172,6 @@ export default function TopControls({
           </button>
         ) : null}
       </div>
-
-      <DbPanel open={open} onClose={handleClose} />
     </>
   );
 }

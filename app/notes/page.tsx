@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import NotesPageView from "@/components/NotesPage";
+import NotesDashboard from "@/components/NotesDashboard";
 import { requirePageSession } from "@/lib/auth";
 import { geistMono, instrumentSerif } from "@/lib/fonts";
 
@@ -13,7 +13,10 @@ export default async function NotesPage() {
 
   return (
     <div className={`${instrumentSerif.variable} ${geistMono.variable}`}>
-      <NotesPageView csrfToken={session.csrfToken} />
+      <NotesDashboard
+        csrfToken={session.csrfToken}
+        username={session.username}
+      />
     </div>
   );
 }

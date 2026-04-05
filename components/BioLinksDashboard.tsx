@@ -16,6 +16,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import DbPanel from "./DbPanel";
 import PublicBioPage from "./PublicBioPage";
 import styles from "./BioLinksDashboard.module.css";
 import {
@@ -67,6 +68,10 @@ const STYLE_OPTIONS: ButtonStyle[] = [
   "ghost",
   "card",
   "brutalist",
+  "glass",
+  "frame",
+  "elevated",
+  "underline",
 ];
 
 const COLOR_PRESETS = [
@@ -139,6 +144,19 @@ function Spinner() {
       />
     </svg>
   );
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+  }
 }
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -251,6 +269,7 @@ export default function BioLinksDashboard({
   );
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [siteOrigin, setSiteOrigin] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [profile, setProfile] = useState(initialProfile);
   const [profileErrors, setProfileErrors] = useState<Record<string, string[]>>({});
@@ -273,6 +292,7 @@ export default function BioLinksDashboard({
   });
   const [newLinkErrors, setNewLinkErrors] = useState<Record<string, string[]>>({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [copiedPublicLink, setCopiedPublicLink] = useState(false);
 
   const emojiPopoverRef = useRef<HTMLDivElement>(null);
   const profileSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -283,6 +303,7 @@ export default function BioLinksDashboard({
   const pendingLinkPatchesRef = useRef<Record<string, Partial<DashboardLink>>>({});
   const linkTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const lastSavedProfileRef = useRef(initialProfile);
+  const copiedPublicLinkTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     setSiteOrigin(window.location.origin);
@@ -355,12 +376,17 @@ export default function BioLinksDashboard({
       if (styleStatusTimerRef.current) clearTimeout(styleStatusTimerRef.current);
 
       Object.values(linkTimersRef.current).forEach((timer) => clearTimeout(timer));
+      if (copiedPublicLinkTimeoutRef.current) {
+        clearTimeout(copiedPublicLinkTimeoutRef.current);
+      }
     };
   }, []);
 
   const previewPage = useMemo<BioPage>(() => {
     return buildBioPageData(profile, links);
   }, [links, profile]);
+  const publicPath = `/${profile.username || "username"}`;
+  const publicUrl = siteOrigin ? `${siteOrigin}${publicPath}` : publicPath;
 
   function markSaved(setter: (value: SaveState) => void, timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) {
     setter("saved");
@@ -648,6 +674,17 @@ export default function BioLinksDashboard({
     });
   }
 
+  async function handleCopyPublicLink() {
+    await copyToClipboard(publicUrl);
+    setCopiedPublicLink(true);
+    if (copiedPublicLinkTimeoutRef.current) {
+      clearTimeout(copiedPublicLinkTimeoutRef.current);
+    }
+    copiedPublicLinkTimeoutRef.current = window.setTimeout(() => {
+      setCopiedPublicLink(false);
+    }, 1800);
+  }
+
   const compactPreviewLabel = compactPreviewMode === "edit" ? "Preview" : "Edit";
 
   return (
@@ -889,6 +926,61 @@ export default function BioLinksDashboard({
                   <span className={styles.fieldError}>
                     {profileErrors.avatar?.[0] ?? ""}
                   </span>
+                </div>
+
+                <div className={styles.profileCard}>
+                  <div className={styles.profileCardHeader}>
+                    <div>
+                      <div className={styles.profileCardTitle}>Public page</div>
+                      <p className={styles.profileCardText}>
+                        Share your bio page, jump to styles, or manage storage
+                        and sync from here.
+                      </p>
+                    </div>
+                    <span className={styles.profileChip}>@{profile.username}</span>
+                  </div>
+
+                  <div className={styles.publicUrlCard}>
+                    <span className={styles.publicUrlValue}>{publicUrl}</span>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() => void handleCopyPublicLink()}
+                    >
+                      {copiedPublicLink ? "Copied" : "Copy link"}
+                    </button>
+                  </div>
+
+                  <div className={styles.profileActions}>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() => window.open(publicPath, "_blank", "noopener,noreferrer")}
+                    >
+                      Open page
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() => setActiveTab("links")}
+                    >
+                      Edit links
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() => setActiveTab("style")}
+                    >
+                      Button styles
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() => setSettingsOpen(true)}
+                    >
+                      Settings
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -1221,6 +1313,8 @@ export default function BioLinksDashboard({
           {compactPreviewLabel}
         </button>
       </div>
+
+      <DbPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>
   );
 }

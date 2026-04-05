@@ -21,11 +21,20 @@ const PencilIcon = ({ size = 17 }: { size?: number }) => (
   </svg>
 );
 
+const ProfileIcon = ({ size = 17 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M18 21a6 6 0 0 0-12 0" />
+    <circle cx="12" cy="8" r="4" />
+  </svg>
+);
+
 /* ── Nav tabs ────────────────────────────────────────────────────────────── */
 
 const NAV_TABS = [
   { href: "/", label: "Links", Icon: LinkIcon },
   { href: "/notes", label: "Notes",  Icon: PencilIcon },
+  { href: "/dashboard/links", label: "Bio", Icon: ProfileIcon },
 ];
 
 const TAB_W = 72; // px — each tab, indicator matches
@@ -34,7 +43,11 @@ const TAB_W = 72; // px — each tab, indicator matches
 
 export default function BottomBar() {
   const pathname  = usePathname();
-  const activeIdx = NAV_TABS.findIndex((tab) => tab.href === pathname);
+  const activeIdx = NAV_TABS.findIndex((tab) =>
+    tab.href === "/dashboard/links"
+      ? pathname.startsWith("/dashboard/links")
+      : tab.href === pathname,
+  );
 
   if (activeIdx < 0) return null;
 
