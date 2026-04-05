@@ -609,8 +609,18 @@ export default function NotesPage() {
 
   return (
     <main className="flex h-dvh flex-col overflow-hidden px-5">
+      {/* ── Header ───────────────────────────────────────────────────────── */}
+      <header className="flex-none w-full max-w-sm mx-auto pt-12 pb-6 animate-morph-in">
+        <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text)" }}>
+          Shor
+        </h1>
+        <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+          Save and manage your notes.
+        </p>
+      </header>
+
       {/* ── Create form ──────────────────────────────────────────────────── */}
-      <div className="flex-none w-full max-w-sm mx-auto pt-6 pb-4">
+      <div className="flex-none w-full max-w-sm mx-auto pt-0 pb-4">
         <form
           onSubmit={handleSave}
           noValidate
