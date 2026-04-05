@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomBar from "@/components/BottomBar";
+import TopControls from "@/components/TopControls";
 
 export const metadata: Metadata = {
   title: "Shor",
@@ -49,6 +50,7 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       </head>
       <body className="antialiased min-h-screen">
+        <TopControls />
         <BottomBar />
         {children}
       </body>
