@@ -1,0 +1,572 @@
+.workspace {
+  --bg: #f5f0e8;
+  --surface: #faf8f4;
+  --border: #e8e2d8;
+  --border2: #d4cdc0;
+  --text: #1c1916;
+  --muted: #9c9488;
+  --accent: #d97b4a;
+  --accent2: #c4622e;
+  --radius: 8px;
+  --font-display: var(--font-instrument-serif), serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+
+.layout {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.mobileToggle {
+  display: none;
+}
+
+.backdrop {
+  display: none;
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 26px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100dvh;
+  animation: notesSidebarIn 350ms cubic-bezier(.16,1,.3,1) both;
+}
+
+.logoLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.logoDot {
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+
+.newNoteButton {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff7f1;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  padding: 10px 12px;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.newNoteButton:hover {
+  background: var(--accent2);
+}
+
+.newNoteButton:active {
+  transform: translateY(1px);
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  outline: none;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.searchInput:focus {
+  border-color: var(--border2);
+}
+
+.searchInput::placeholder {
+  color: var(--muted);
+}
+
+.sidebarRule {
+  height: 1px;
+  background: var(--border);
+}
+
+.noteList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+}
+
+.noteItem {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+  animation: notesListIn 260ms cubic-bezier(.16,1,.3,1) both;
+}
+
+.noteItem:hover {
+  background: rgba(245, 240, 232, 0.6);
+}
+
+.noteItemActive {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.noteItemTitle {
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noteItemPreview {
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.55;
+  padding-top: 4px;
+  min-height: 2.2em;
+}
+
+.noteItemTime {
+  color: var(--muted);
+  font-size: 0.68rem;
+  padding-top: 8px;
+}
+
+.emptySidebar {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 14px 12px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.7;
+}
+
+.editorShell {
+  min-width: 0;
+  padding: 22px 24px 24px;
+}
+
+.editorPanel {
+  min-height: calc(100dvh - 46px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editorPanelInner {
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+  animation: notesEditorFade 300ms ease both;
+}
+
+.editorHeader {
+  padding: 22px 28px 0;
+}
+
+.editorMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editorMeta {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.deleteButton {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 6px 11px;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.deleteButton:hover {
+  color: #c0392b;
+  border-color: rgba(192, 57, 43, 0.25);
+  background: rgba(192, 57, 43, 0.05);
+}
+
+.deleteButton:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.titleInput {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  padding: 14px 0 18px;
+  outline: none;
+}
+
+.titleInput::placeholder {
+  color: #b4aa9e;
+}
+
+.toolbar {
+  padding: 8px 28px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toolbarButton {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 9px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 130ms ease;
+}
+
+.toolbarButton:hover,
+.toolbarButtonActive {
+  border-color: var(--border2);
+  background: var(--bg);
+}
+
+.toolbarButtonActive {
+  transform: scale(0.95);
+}
+
+.editorFrame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editorBody {
+  flex: 1;
+  min-height: 360px;
+  outline: none;
+  padding: 16px 28px 28px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  overflow-y: auto;
+  color: var(--text);
+  white-space: normal;
+  word-break: break-word;
+}
+
+.editorBody[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+}
+
+.editorBody h1 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.2;
+  margin: 16px 0 8px;
+}
+
+.editorBody h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  margin: 12px 0 6px;
+}
+
+.editorBody code {
+  background: var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.78rem;
+}
+
+.editorBody a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.editorBody hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.editorBody strong,
+.editorBody b {
+  font-weight: 600;
+}
+
+.editorBody p,
+.editorBody div {
+  margin: 0 0 10px;
+}
+
+.editorBody p:last-child,
+.editorBody div:last-child {
+  margin-bottom: 0;
+}
+
+.editorFooter {
+  border-top: 1px solid var(--border);
+  padding: 12px 28px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.saveIndicator {
+  min-width: 72px;
+  text-align: right;
+}
+
+.saveIndicatorSaving {
+  animation: notesSavingPulse 900ms ease-in-out infinite;
+}
+
+.saveIndicatorSaved {
+  animation: notesSavedFade 350ms ease 1.5s forwards;
+}
+
+.saveIndicatorError {
+  color: #c0392b;
+}
+
+.emptyPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 28px 40px;
+}
+
+.emptyPanelCard {
+  max-width: 360px;
+  text-align: center;
+}
+
+.emptyPanelTitle {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.emptyPanelText {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.8;
+  padding-top: 8px;
+}
+
+.emptyPanelAction {
+  margin-top: 18px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff7f1;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  padding: 10px 14px;
+  transition: background 150ms ease;
+}
+
+.emptyPanelAction:hover {
+  background: var(--accent2);
+}
+
+.workspace :global(*::-webkit-scrollbar) {
+  width: 3px;
+  height: 3px;
+}
+
+.workspace :global(*::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+.workspace :global(*::-webkit-scrollbar-thumb) {
+  background: var(--border2);
+  border-radius: 999px;
+}
+
+.workspace,
+.sidebar,
+.noteList,
+.editorBody {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+
+@media (max-width: 639px) {
+  .layout {
+    display: block;
+  }
+
+  .mobileToggle {
+    position: fixed;
+    top: 14px;
+    left: 16px;
+    z-index: 60;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(250, 248, 244, 0.94);
+    color: var(--text);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(28, 25, 22, 0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+    display: block;
+    z-index: 49;
+  }
+
+  .backdropVisible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(240px, calc(100vw - 64px));
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 250ms cubic-bezier(.16,1,.3,1);
+    box-shadow: 18px 0 50px rgba(28, 25, 22, 0.12);
+    padding-top: 72px;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+  }
+
+  .editorShell {
+    padding: 68px 16px 24px;
+  }
+
+  .editorPanel {
+    min-height: calc(100dvh - 92px);
+  }
+
+  .editorHeader {
+    padding: 22px 18px 0;
+  }
+
+  .toolbar {
+    padding: 8px 18px;
+  }
+
+  .editorBody {
+    padding: 16px 18px 26px;
+  }
+
+  .editorFooter {
+    padding: 12px 18px 14px;
+  }
+}
+
+@keyframes notesSidebarIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes notesListIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes notesEditorFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes notesSavingPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes notesSavedFade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

@@ -15,6 +15,7 @@ import {
   LINK_PASSWORD_MAX,
   verifyLinkPassword,
 } from "@/lib/link-protection";
+import { verifySameOrigin } from "@/lib/security";
 import type { LinkEntry } from "@/lib/storage";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -138,6 +139,9 @@ function rateLimit(ip: string): {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   // 1. Rate limit
   const rl = rateLimit(getClientIp(req));
   if (!rl.ok) {

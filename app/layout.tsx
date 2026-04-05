@@ -3,10 +3,11 @@ import "./globals.css";
 import BottomBar from "@/components/BottomBar";
 import TopControls from "@/components/TopControls";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import { getOptionalSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Shor",
-  description: "A minimal link shortener and notepad.",
+  description: "A minimal private links and notes workspace.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -44,11 +45,13 @@ const darkModeScript = `
 })();
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getOptionalSession();
+
   return (
     // suppressHydrationWarning: the inline script modifies className before
     // React takes over, which would otherwise cause a hydration mismatch warning.
@@ -61,7 +64,16 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen">
         <ServiceWorkerRegister />
-        <TopControls />
+        <TopControls
+          auth={
+            session
+              ? {
+                  username: session.username,
+                  csrfToken: session.csrfToken,
+                }
+              : null
+          }
+        />
         <BottomBar />
         {children}
       </body>

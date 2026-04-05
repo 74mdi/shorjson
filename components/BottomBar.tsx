@@ -34,7 +34,10 @@ const TAB_W = 72; // px — each tab, indicator matches
 
 export default function BottomBar() {
   const pathname  = usePathname();
+  if (pathname === "/notes") return null;
   const activeIdx = NAV_TABS.findIndex(t => t.href === pathname);
+
+  if (activeIdx < 0) return null;
 
   return (
     <div

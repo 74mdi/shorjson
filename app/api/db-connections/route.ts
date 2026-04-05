@@ -7,6 +7,7 @@ import {
   readConnections, writeConnections,
   type DbConnection, type DbType,
 } from "@/lib/db-connections";
+import { verifySameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Invalid body." }, { status: 400 });
 

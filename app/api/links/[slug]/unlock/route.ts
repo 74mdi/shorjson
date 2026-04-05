@@ -7,6 +7,7 @@ import {
   isPasswordProtected,
   verifyLinkPassword,
 } from "@/lib/link-protection";
+import { verifySameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   const { slug } = await params;
   const body = await req.json().catch(() => null);
   const password = getOptionalPassword(body?.password);

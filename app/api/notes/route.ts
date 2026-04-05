@@ -1,69 +1,55 @@
-import { NextRequest, NextResponse } from "next/server";
-import { nanoid } from "nanoid";
-import { getNotes, setNote } from "@/lib/adapter-utils";
-import type { Note } from "@/lib/notes-storage";
-import { getRemoteServerUrl } from "@/lib/config";
+import { NextRequest } from "next/server";
+import { requireAuthenticatedRequest, jsonWithOptionalRefresh } from "@/lib/api-auth";
+import { listPrivateNotes, savePrivateNote } from "@/lib/account-data";
+import { createScopedResourceId } from "@/lib/account-types";
+import { noteCreateSchema } from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const remote = getRemoteServerUrl();
-  if (remote) {
-    try {
-      const res = await fetch(`${remote}/api/notes`, {
-        signal: AbortSignal.timeout(5000),
-        cache: "no-store",
-      });
-      return NextResponse.json(await res.json(), { status: res.status });
-    } catch {
-      return NextResponse.json(
-        { error: "Remote server unreachable." },
-        { status: 503 },
-      );
-    }
-  }
-  const list = await getNotes();
-  return NextResponse.json({ count: list.length, notes: list });
+export async function GET(request: NextRequest) {
+  const auth = await requireAuthenticatedRequest(request);
+  if ("response" in auth) return auth.response;
+
+  const notes = await listPrivateNotes(auth.session.userId);
+
+  return jsonWithOptionalRefresh(
+    { count: notes.length, notes },
+    undefined,
+    auth.refreshedToken,
+  );
 }
 
-export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => null);
-  if (!body)
-    return NextResponse.json({ error: "Invalid body." }, { status: 400 });
-  const title = String(body.title ?? "").trim();
-  const content = String(body.content ?? "").trim();
-  if (!title && !content)
-    return NextResponse.json(
-      { error: "Title or content is required." },
-      { status: 400 },
-    );
+export async function POST(request: NextRequest) {
+  const auth = await requireAuthenticatedRequest(request, {
+    requireCsrf: true,
+  });
+  if ("response" in auth) return auth.response;
 
-  const remote = getRemoteServerUrl();
-  if (remote) {
-    try {
-      const res = await fetch(`${remote}/api/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content }),
-        signal: AbortSignal.timeout(5000),
-      });
-      return NextResponse.json(await res.json(), { status: res.status });
-    } catch {
-      return NextResponse.json(
-        { error: "Remote server unreachable." },
-        { status: 503 },
-      );
-    }
+  const body = await request.json().catch(() => ({}));
+  const parsed = noteCreateSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return jsonWithOptionalRefresh(
+      {
+        error: "Invalid note.",
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      },
+      { status: 422 },
+      auth.refreshedToken,
+    );
   }
 
-  const now: string = new Date().toISOString();
-  const note: Note = {
-    id: nanoid(7),
-    title,
-    content,
+  const now = new Date().toISOString();
+  const note = {
+    id: createScopedResourceId(auth.session.userId),
+    userId: auth.session.userId,
+    title: parsed.data.title,
+    content: parsed.data.content,
     createdAt: now,
     updatedAt: now,
   };
-  await setNote(note.id, note);
-  return NextResponse.json(note, { status: 201 });
+
+  await savePrivateNote(note);
+
+  return jsonWithOptionalRefresh(note, { status: 201 }, auth.refreshedToken);
 }

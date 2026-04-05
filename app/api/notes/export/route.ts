@@ -1,39 +1,56 @@
-// GET /api/notes/export?format=json|md
-// Downloads all notes as a file in the requested format.
-
 import { NextRequest, NextResponse } from "next/server";
-import { readNotes } from "@/lib/notes-storage";
+import { requireAuthenticatedRequest } from "@/lib/api-auth";
+import { applySessionRefresh } from "@/lib/auth";
+import { listPrivateNotes } from "@/lib/account-data";
+import { stripNoteHtml } from "@/lib/note-html";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  const format = new URL(req.url).searchParams.get("format") ?? "json";
-  const notes  = Object.values(readNotes()).sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-  );
+export async function GET(request: NextRequest) {
+  const auth = await requireAuthenticatedRequest(request);
+  if ("response" in auth) return auth.response;
+
+  const format = new URL(request.url).searchParams.get("format") ?? "json";
+  const notes = await listPrivateNotes(auth.session.userId);
 
   if (format === "md") {
-    const stamp  = new Date().toLocaleDateString("en", { year: "numeric", month: "long", day: "numeric" });
-    const header = `# Notes\n\n*Exported ${stamp} — ${notes.length} ${notes.length === 1 ? "note" : "notes"}*\n\n---\n\n`;
-    const body   = notes.map(n => {
-      const heading = `## ${n.title || "Untitled"}`;
-      const date    = `*${new Date(n.updatedAt).toLocaleDateString("en", { year: "numeric", month: "short", day: "numeric" })}*`;
-      return [heading, date, "", n.content || "_(no content)_"].join("\n").trimEnd();
-    }).join("\n\n---\n\n");
+    const stamp = new Date().toLocaleDateString("en", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const header = `# Notes\n\n*Exported ${stamp} - ${notes.length} ${notes.length === 1 ? "note" : "notes"}*\n\n---\n\n`;
+    const body = notes
+      .map((note) =>
+        [
+          `## ${note.title || "Untitled"}`,
+          `*Updated ${new Date(note.updatedAt).toLocaleDateString("en", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}*`,
+          "",
+          stripNoteHtml(note.content) || "_(empty note)_",
+        ].join("\n"),
+      )
+      .join("\n\n---\n\n");
 
-    return new NextResponse(header + body, {
+    const response = new NextResponse(header + body, {
       headers: {
         "Content-Type": "text/markdown; charset=utf-8",
         "Content-Disposition": 'attachment; filename="notes.md"',
       },
     });
+    applySessionRefresh(response, auth.refreshedToken);
+    return response;
   }
 
-  // JSON (default)
-  return new NextResponse(JSON.stringify(notes, null, 2), {
+  const response = new NextResponse(JSON.stringify(notes, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "Content-Disposition": 'attachment; filename="notes.json"',
     },
   });
+  applySessionRefresh(response, auth.refreshedToken);
+  return response;
 }

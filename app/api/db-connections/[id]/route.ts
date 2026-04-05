@@ -4,10 +4,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readConnections, writeConnections } from "@/lib/db-connections";
 import { clearAdapterCache } from "@/lib/db-adapter";
+import { verifySameOrigin } from "@/lib/security";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PATCH(req: NextRequest, { params }: Ctx) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   const { id } = await params;
   const body   = await req.json().catch(() => ({})) as Record<string, unknown>;
   const conns  = readConnections();
@@ -28,7 +32,10 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   return NextResponse.json(conns[idx]);
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(req: NextRequest, { params }: Ctx) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   const { id } = await params;
   const conns  = readConnections();
   const conn   = conns.find((c) => c.id === id);

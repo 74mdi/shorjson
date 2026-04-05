@@ -4,6 +4,7 @@
 
 import type { LinksMap, LinkEntry } from "./storage";
 import type { Note } from "./notes-storage";
+import type { AccountUser, BioLink, PrivateNote } from "./account-types";
 import { getActiveConnection } from "./db-connections";
 
 // ── Interface ─────────────────────────────────────────────────────────────────
@@ -17,6 +18,20 @@ export interface DataAdapter {
   readNotes(): Promise<Note[]>; // sorted newest-updatedAt first
   writeNote(id: string, note: Note): Promise<void>;
   deleteNote(id: string): Promise<void>;
+
+  getAccountUserById(userId: string): Promise<AccountUser | null>;
+  getAccountUserByUsername(username: string): Promise<AccountUser | null>;
+  createAccountUser(user: AccountUser): Promise<void>;
+
+  readBioLinks(userId: string): Promise<BioLink[]>;
+  getBioLinkById(userId: string, id: string): Promise<BioLink | null>;
+  writeBioLink(link: BioLink): Promise<void>;
+  deleteBioLink(userId: string, id: string): Promise<void>;
+
+  readPrivateNotes(userId: string): Promise<PrivateNote[]>;
+  getPrivateNoteById(userId: string, id: string): Promise<PrivateNote | null>;
+  writePrivateNote(note: PrivateNote): Promise<void>;
+  deletePrivateNote(userId: string, id: string): Promise<void>;
 
   ping(): Promise<void>;
   close(): Promise<void>;
@@ -110,6 +125,45 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
   await client.connect();
   const db = client.db(); // uses the db name from the connection string
 
+  await db
+    .collection("shor_users")
+    .createIndex({ username: 1 }, { unique: true })
+    .catch(() => {});
+  await db
+    .collection("shor_user_links")
+    .createIndex({ userId: 1, order: 1, createdAt: 1 })
+    .catch(() => {});
+  await db
+    .collection("shor_user_notes")
+    .createIndex({ userId: 1, updatedAt: -1, createdAt: -1 })
+    .catch(() => {});
+
+  const usersCollection = db.collection("shor_users") as {
+    deleteOne: (query: unknown) => Promise<unknown>;
+    findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
+    insertOne: (doc: unknown) => Promise<unknown>;
+  };
+  const userLinksCollection = db.collection("shor_user_links") as {
+    deleteOne: (query: unknown) => Promise<unknown>;
+    find: (query: unknown) => { sort: (sort: unknown) => { toArray: () => Promise<Record<string, unknown>[]> } };
+    findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
+    replaceOne: (
+      query: unknown,
+      doc: unknown,
+      options: { upsert: boolean },
+    ) => Promise<unknown>;
+  };
+  const userNotesCollection = db.collection("shor_user_notes") as {
+    deleteOne: (query: unknown) => Promise<unknown>;
+    find: (query: unknown) => { sort: (sort: unknown) => { toArray: () => Promise<Record<string, unknown>[]> } };
+    findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
+    replaceOne: (
+      query: unknown,
+      doc: unknown,
+      options: { upsert: boolean },
+    ) => Promise<unknown>;
+  };
+
   return {
     async readLinks(): Promise<LinksMap> {
       const docs = await db.collection("shor_links").find().toArray();
@@ -183,6 +237,128 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         .deleteOne({ _id: id as unknown as object });
     },
 
+    async getAccountUserById(userId) {
+      const user = await usersCollection.findOne({ _id: userId });
+      if (!user) return null;
+
+      return {
+        id: String(user._id),
+        username: String(user.username),
+        passwordHash: String(user.passwordHash),
+        createdAt: String(user.createdAt),
+        updatedAt: String(user.updatedAt),
+      };
+    },
+
+    async getAccountUserByUsername(username) {
+      const user = await usersCollection.findOne({ username });
+      if (!user) return null;
+
+      return {
+        id: String(user._id),
+        username: String(user.username),
+        passwordHash: String(user.passwordHash),
+        createdAt: String(user.createdAt),
+        updatedAt: String(user.updatedAt),
+      };
+    },
+
+    async createAccountUser(user) {
+      await usersCollection.insertOne({
+        _id: user.id,
+        username: user.username,
+        passwordHash: user.passwordHash,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      });
+    },
+
+    async readBioLinks(userId) {
+      const docs = await db
+        .collection("shor_user_links")
+        .find({ userId })
+        .sort({ order: 1, createdAt: 1 })
+        .toArray();
+
+      return docs.map((doc) => ({
+        id: String(doc._id),
+        userId: String(doc.userId),
+        title: String(doc.title),
+        url: String(doc.url),
+        order: Number(doc.order) || 0,
+        createdAt: String(doc.createdAt),
+      }));
+    },
+
+    async getBioLinkById(userId, id) {
+      const doc = await userLinksCollection.findOne({ _id: id, userId });
+      if (!doc) return null;
+
+      return {
+        id: String(doc._id),
+        userId: String(doc.userId),
+        title: String(doc.title),
+        url: String(doc.url),
+        order: Number(doc.order) || 0,
+        createdAt: String(doc.createdAt),
+      };
+    },
+
+    async writeBioLink(link) {
+      await userLinksCollection.replaceOne(
+        { _id: link.id, userId: link.userId },
+        { _id: link.id, ...link },
+        { upsert: true },
+      );
+    },
+
+    async deleteBioLink(userId, id) {
+      await userLinksCollection.deleteOne({ _id: id, userId });
+    },
+
+    async readPrivateNotes(userId) {
+      const docs = await db
+        .collection("shor_user_notes")
+        .find({ userId })
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .toArray();
+
+      return docs.map((doc) => ({
+        id: String(doc._id),
+        userId: String(doc.userId),
+        title: String(doc.title ?? ""),
+        content: String(doc.content),
+        createdAt: String(doc.createdAt),
+        updatedAt: String(doc.updatedAt),
+      }));
+    },
+
+    async getPrivateNoteById(userId, id) {
+      const doc = await userNotesCollection.findOne({ _id: id, userId });
+      if (!doc) return null;
+
+      return {
+        id: String(doc._id),
+        userId: String(doc.userId),
+        title: String(doc.title ?? ""),
+        content: String(doc.content),
+        createdAt: String(doc.createdAt),
+        updatedAt: String(doc.updatedAt),
+      };
+    },
+
+    async writePrivateNote(note) {
+      await userNotesCollection.replaceOne(
+        { _id: note.id, userId: note.userId },
+        { _id: note.id, ...note },
+        { upsert: true },
+      );
+    },
+
+    async deletePrivateNote(userId, id) {
+      await userNotesCollection.deleteOne({ _id: id, userId });
+    },
+
     async ping() {
       await db.command({ ping: 1 });
     },
@@ -227,6 +403,35 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       ADD COLUMN IF NOT EXISTS password_hash TEXT;
     ALTER TABLE shor_links
       ADD COLUMN IF NOT EXISTS password_salt TEXT;
+    CREATE TABLE IF NOT EXISTS shor_users (
+      id            TEXT        PRIMARY KEY,
+      username      TEXT        NOT NULL UNIQUE,
+      password_hash TEXT        NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS shor_user_links (
+      id          TEXT        PRIMARY KEY,
+      user_id     TEXT        NOT NULL REFERENCES shor_users(id) ON DELETE CASCADE,
+      title       TEXT        NOT NULL,
+      url         TEXT        NOT NULL,
+      order_index INTEGER     NOT NULL DEFAULT 0,
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS shor_user_notes (
+      id          TEXT        PRIMARY KEY,
+      user_id     TEXT        NOT NULL REFERENCES shor_users(id) ON DELETE CASCADE,
+      title       TEXT        NOT NULL DEFAULT '',
+      content     TEXT        NOT NULL DEFAULT '',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS shor_user_links_user_order_idx
+      ON shor_user_links (user_id, order_index, created_at);
+    ALTER TABLE shor_user_notes
+      ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '';
+    CREATE INDEX IF NOT EXISTS shor_user_notes_user_updated_idx
+      ON shor_user_notes (user_id, updated_at DESC);
   `);
 
   function toIso(v: unknown): string {
@@ -308,6 +513,173 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async deleteNote(id) {
       await pool.query("DELETE FROM shor_notes WHERE id=$1", [id]);
+    },
+
+    async getAccountUserById(userId) {
+      const { rows } = await pool.query(
+        "SELECT id, username, password_hash, created_at, updated_at FROM shor_users WHERE id=$1",
+        [userId],
+      );
+      const user = rows[0];
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        username: user.username,
+        passwordHash: user.password_hash,
+        createdAt: toIso(user.created_at),
+        updatedAt: toIso(user.updated_at),
+      };
+    },
+
+    async getAccountUserByUsername(username) {
+      const { rows } = await pool.query(
+        "SELECT id, username, password_hash, created_at, updated_at FROM shor_users WHERE username=$1",
+        [username],
+      );
+      const user = rows[0];
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        username: user.username,
+        passwordHash: user.password_hash,
+        createdAt: toIso(user.created_at),
+        updatedAt: toIso(user.updated_at),
+      };
+    },
+
+    async createAccountUser(user) {
+      await pool.query(
+        `INSERT INTO shor_users (id, username, password_hash, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5)`,
+        [
+          user.id,
+          user.username,
+          user.passwordHash,
+          user.createdAt,
+          user.updatedAt,
+        ],
+      );
+    },
+
+    async readBioLinks(userId) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, title, url, order_index, created_at
+         FROM shor_user_links
+         WHERE user_id=$1
+         ORDER BY order_index ASC, created_at ASC`,
+        [userId],
+      );
+
+      return rows.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        url: row.url,
+        order: row.order_index,
+        createdAt: toIso(row.created_at),
+      }));
+    },
+
+    async getBioLinkById(userId, id) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, title, url, order_index, created_at
+         FROM shor_user_links
+         WHERE user_id=$1 AND id=$2`,
+        [userId, id],
+      );
+      const row = rows[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        userId: row.user_id,
+        title: row.title,
+        url: row.url,
+        order: row.order_index,
+        createdAt: toIso(row.created_at),
+      };
+    },
+
+    async writeBioLink(link) {
+      await pool.query(
+        `INSERT INTO shor_user_links (id, user_id, title, url, order_index, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (id) DO UPDATE
+           SET user_id=$2, title=$3, url=$4, order_index=$5, created_at=$6`,
+        [link.id, link.userId, link.title, link.url, link.order, link.createdAt],
+      );
+    },
+
+    async deleteBioLink(userId, id) {
+      await pool.query(
+        "DELETE FROM shor_user_links WHERE user_id=$1 AND id=$2",
+        [userId, id],
+      );
+    },
+
+    async readPrivateNotes(userId) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, title, content, created_at, updated_at
+         FROM shor_user_notes
+         WHERE user_id=$1
+         ORDER BY updated_at DESC`,
+        [userId],
+      );
+
+      return rows.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        title: row.title ?? "",
+        content: row.content,
+        createdAt: toIso(row.created_at),
+        updatedAt: toIso(row.updated_at),
+      }));
+    },
+
+    async getPrivateNoteById(userId, id) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, title, content, created_at, updated_at
+         FROM shor_user_notes
+         WHERE user_id=$1 AND id=$2`,
+        [userId, id],
+      );
+      const row = rows[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        userId: row.user_id,
+        title: row.title ?? "",
+        content: row.content,
+        createdAt: toIso(row.created_at),
+        updatedAt: toIso(row.updated_at),
+      };
+    },
+
+    async writePrivateNote(note) {
+      await pool.query(
+        `INSERT INTO shor_user_notes (id, user_id, title, content, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6)
+         ON CONFLICT (id) DO UPDATE
+           SET user_id=$2, title=$3, content=$4, created_at=$5, updated_at=$6`,
+        [
+          note.id,
+          note.userId,
+          note.title,
+          note.content,
+          note.createdAt,
+          note.updatedAt,
+        ],
+      );
+    },
+
+    async deletePrivateNote(userId, id) {
+      await pool.query(
+        "DELETE FROM shor_user_notes WHERE user_id=$1 AND id=$2",
+        [userId, id],
+      );
     },
 
     async ping() {

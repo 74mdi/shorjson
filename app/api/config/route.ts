@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getRemoteServerUrl, setRemoteServerUrl } from "@/lib/config";
+import { verifySameOrigin } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
@@ -22,7 +26,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ ok: true, remoteServerUrl: getRemoteServerUrl() });
 }
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const originError = verifySameOrigin(req);
+  if (originError) return originError;
+
   setRemoteServerUrl(null);
   return NextResponse.json({ ok: true });
 }
