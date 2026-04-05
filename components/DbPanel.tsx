@@ -150,7 +150,7 @@ function PrimaryBtn({
       style={{
         background: "var(--accent)",
         border: "1px solid var(--accent)",
-        color: "#fff",
+        color: "var(--bg)",
       }}
       onMouseEnter={(e) =>
         !disabled && (e.currentTarget.style.background = "var(--accent-hover)")
@@ -580,7 +580,7 @@ export default function DbPanel({
                           background:
                             newType === t ? "var(--accent)" : "var(--surface)",
                           border: `1px solid ${newType === t ? "var(--accent)" : "var(--border)"}`,
-                          color: newType === t ? "#fff" : "var(--text-muted)",
+                          color: newType === t ? "var(--bg)" : "var(--text-muted)",
                         }}
                       >
                         {DB_LABELS[t]}

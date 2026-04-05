@@ -301,7 +301,7 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
             // Morph: overflow hidden so sliding spans are clipped
             "relative overflow-hidden",
             "flex w-full items-center justify-center",
-            "rounded-xl py-3.5 text-sm font-semibold text-white",
+            "rounded-xl py-3.5 text-sm font-semibold text-[var(--bg)]",
             "bg-[var(--accent)]",
             "shadow-[0_2px_16px_var(--accent-glow)]",
             "hover:bg-[var(--accent-hover)] hover:shadow-[0_4px_24px_var(--accent-glow)]",
