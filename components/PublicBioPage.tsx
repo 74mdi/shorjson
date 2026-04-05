@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import styles from "./PublicBioPage.module.css";
 import type { BioPage } from "@/lib/bio-shared";
 
@@ -154,6 +155,70 @@ function groupLinks(page: BioPage) {
   return [...sections.entries()];
 }
 
+const PAGE_THEME_STYLES: Record<BioPage["themePreset"], Record<string, string>> = {
+  mono: {
+    "--page-bg": "#f5f5f4",
+    "--page-surface": "#ffffff",
+    "--page-border": "#e7e5e4",
+    "--page-text": "#111111",
+    "--page-muted": "#78716c",
+    "--page-faint": "#a8a29e",
+  },
+  paper: {
+    "--page-bg": "#f5f0e8",
+    "--page-surface": "#faf8f4",
+    "--page-border": "#e8e2d8",
+    "--page-text": "#1c1916",
+    "--page-muted": "#9c9488",
+    "--page-faint": "#b8ae9e",
+  },
+  midnight: {
+    "--page-bg": "#09111f",
+    "--page-surface": "#0f1726",
+    "--page-border": "#213047",
+    "--page-text": "#f8fafc",
+    "--page-muted": "#94a3b8",
+    "--page-faint": "#64748b",
+  },
+  ocean: {
+    "--page-bg": "#effcff",
+    "--page-surface": "#ffffff",
+    "--page-border": "#d7ecf1",
+    "--page-text": "#0f172a",
+    "--page-muted": "#4b5563",
+    "--page-faint": "#94a3b8",
+  },
+  sunset: {
+    "--page-bg": "#fff7ed",
+    "--page-surface": "#ffffff",
+    "--page-border": "#fed7aa",
+    "--page-text": "#7c2d12",
+    "--page-muted": "#b45309",
+    "--page-faint": "#fdba74",
+  },
+};
+
+const FONT_CLASS_NAMES: Record<BioPage["fontPreset"], string> = {
+  sans: styles.fontSans,
+  editorial: styles.fontEditorial,
+  grotesk: styles.fontGrotesk,
+  mono: styles.fontMono,
+};
+
+const MOTION_CLASS_NAMES: Record<BioPage["animationPreset"], string> = {
+  morph: styles.motionMorph,
+  fade: styles.motionFade,
+  lift: styles.motionLift,
+  drift: styles.motionDrift,
+};
+
+function getPageStyle(page: BioPage): CSSProperties {
+  return {
+    ["--accent" as string]: page.accentColor,
+    ...PAGE_THEME_STYLES[page.themePreset],
+  } as CSSProperties;
+}
+
 export default function PublicBioPage({
   page,
   preview = false,
@@ -162,11 +227,19 @@ export default function PublicBioPage({
   preview?: boolean;
 }) {
   const sections = groupLinks(page);
+  const pageStyle = getPageStyle(page);
+  const fontClassName = FONT_CLASS_NAMES[page.fontPreset];
+  const motionClassName = MOTION_CLASS_NAMES[page.animationPreset];
 
   return (
     <div
-      className={[styles.page, preview ? styles.previewMode : ""].join(" ")}
-      style={{ ["--accent" as string]: page.accentColor }}
+      className={[
+        styles.page,
+        fontClassName,
+        motionClassName,
+        preview ? styles.previewMode : "",
+      ].join(" ")}
+      style={pageStyle}
     >
       <div className={styles.pageInner}>
         <header className={styles.hero}>
@@ -175,6 +248,7 @@ export default function PublicBioPage({
               src={page.avatar}
               alt={`${page.displayName} avatar`}
               className={styles.avatar}
+              decoding="async"
             />
           ) : (
             <div className={`${styles.avatar} ${styles.avatarFallback}`}>
@@ -189,9 +263,7 @@ export default function PublicBioPage({
         <div className={styles.divider} />
 
         {sections.length === 0 ? (
-          <p className={styles.emptyText}>
-            No public links yet.
-          </p>
+          <p className={styles.emptyText}>No public links yet.</p>
         ) : (
           <div className={styles.sections}>
             {sections.map(([section, links]) => (
@@ -226,6 +298,8 @@ export default function PublicBioPage({
             ))}
           </div>
         )}
+
+        <footer className={styles.watermark}>{page.watermarkText}</footer>
       </div>
     </div>
   );

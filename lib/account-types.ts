@@ -1,8 +1,23 @@
 import { randomUUID } from "crypto";
-import type { ButtonStyle } from "./bio-shared";
+import type {
+  AnimationPreset,
+  ButtonStyle,
+  FontPreset,
+  ThemePreset,
+} from "./bio-shared";
 
-export type { ButtonStyle } from "./bio-shared";
-export { isButtonStyle } from "./bio-shared";
+export type {
+  AnimationPreset,
+  ButtonStyle,
+  FontPreset,
+  ThemePreset,
+} from "./bio-shared";
+export {
+  isAnimationPreset,
+  isButtonStyle,
+  isFontPreset,
+  isThemePreset,
+} from "./bio-shared";
 
 export interface AccountUser {
   id: string;
@@ -21,6 +36,10 @@ export interface BioProfile {
   avatar: string | null;
   buttonStyle: ButtonStyle;
   accentColor: string;
+  themePreset: ThemePreset;
+  fontPreset: FontPreset;
+  animationPreset: AnimationPreset;
+  watermarkText: string;
   createdAt: string;
   updatedAt: string;
 }

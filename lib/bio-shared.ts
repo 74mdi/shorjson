@@ -10,7 +10,29 @@ export type ButtonStyle =
   | "glass"
   | "frame"
   | "elevated"
-  | "underline";
+  | "underline"
+  | "split"
+  | "rail"
+  | "sticker";
+
+export type ThemePreset =
+  | "mono"
+  | "paper"
+  | "midnight"
+  | "ocean"
+  | "sunset";
+
+export type FontPreset =
+  | "sans"
+  | "editorial"
+  | "grotesk"
+  | "mono";
+
+export type AnimationPreset =
+  | "morph"
+  | "fade"
+  | "lift"
+  | "drift";
 
 const BUTTON_STYLES: ButtonStyle[] = [
   "minimal",
@@ -25,10 +47,47 @@ const BUTTON_STYLES: ButtonStyle[] = [
   "frame",
   "elevated",
   "underline",
+  "split",
+  "rail",
+  "sticker",
+];
+
+const THEME_PRESETS: ThemePreset[] = [
+  "mono",
+  "paper",
+  "midnight",
+  "ocean",
+  "sunset",
+];
+
+const FONT_PRESETS: FontPreset[] = [
+  "sans",
+  "editorial",
+  "grotesk",
+  "mono",
+];
+
+const ANIMATION_PRESETS: AnimationPreset[] = [
+  "morph",
+  "fade",
+  "lift",
+  "drift",
 ];
 
 export function isButtonStyle(value: string): value is ButtonStyle {
   return BUTTON_STYLES.includes(value as ButtonStyle);
+}
+
+export function isThemePreset(value: string): value is ThemePreset {
+  return THEME_PRESETS.includes(value as ThemePreset);
+}
+
+export function isFontPreset(value: string): value is FontPreset {
+  return FONT_PRESETS.includes(value as FontPreset);
+}
+
+export function isAnimationPreset(value: string): value is AnimationPreset {
+  return ANIMATION_PRESETS.includes(value as AnimationPreset);
 }
 
 export type BioPage = {
@@ -38,6 +97,10 @@ export type BioPage = {
   avatar: string | null;
   buttonStyle: ButtonStyle;
   accentColor: string;
+  themePreset: ThemePreset;
+  fontPreset: FontPreset;
+  animationPreset: AnimationPreset;
+  watermarkText: string;
   links: {
     id: string;
     title: string;
@@ -56,6 +119,10 @@ type BuildBioPageProfile = {
   avatar: string | null;
   buttonStyle: ButtonStyle;
   accentColor: string;
+  themePreset: ThemePreset;
+  fontPreset: FontPreset;
+  animationPreset: AnimationPreset;
+  watermarkText: string;
 };
 
 type BuildBioPageLink = {
@@ -79,6 +146,10 @@ export function buildBioPageData(
     avatar: profile.avatar,
     buttonStyle: profile.buttonStyle,
     accentColor: profile.accentColor,
+    themePreset: profile.themePreset,
+    fontPreset: profile.fontPreset,
+    animationPreset: profile.animationPreset,
+    watermarkText: profile.watermarkText || "made with shor",
     links: links
       .filter((link) => link.visible)
       .sort((left, right) => left.order - right.order)

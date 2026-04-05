@@ -40,6 +40,16 @@ export default function ShortenerHome({
               Edit bio links
             </Link>
             <Link
+              href="/user"
+              className="rounded-full border px-2.5 py-1 transition-colors duration-200"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
+            >
+              User page
+            </Link>
+            <Link
               href={`/${username}`}
               className="rounded-full border px-2.5 py-1 transition-colors duration-200"
               style={{

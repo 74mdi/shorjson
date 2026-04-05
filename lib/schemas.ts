@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { isButtonStyle } from "./bio-shared";
+import {
+  isAnimationPreset,
+  isButtonStyle,
+  isFontPreset,
+  isThemePreset,
+} from "./bio-shared";
 import { sanitizeNoteHtml, stripNoteHtml } from "./note-html";
 
 export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
@@ -235,4 +240,31 @@ export const bioStyleSchema = z.object({
       message: "Use a valid 6-digit hex color.",
     })
     .transform((value) => value.toLowerCase()),
+  themePreset: z
+    .string()
+    .refine((value) => isThemePreset(value), {
+      message: "Invalid theme preset.",
+    })
+    .transform((value) => value),
+  fontPreset: z
+    .string()
+    .refine((value) => isFontPreset(value), {
+      message: "Invalid font preset.",
+    })
+    .transform((value) => value),
+  animationPreset: z
+    .string()
+    .refine((value) => isAnimationPreset(value), {
+      message: "Invalid animation preset.",
+    })
+    .transform((value) => value),
+  watermarkText: z
+    .string()
+    .transform(normaliseInlineText)
+    .refine((value) => value.length > 0, {
+      message: "Watermark is required.",
+    })
+    .refine((value) => value.length <= 48, {
+      message: "Watermark must be 48 characters or less.",
+    }),
 });

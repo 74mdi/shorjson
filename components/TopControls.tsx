@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 /* ── Icons ──────────────────────────────────────────────────────────────── */
 
@@ -46,14 +46,27 @@ export default function TopControls({
   auth?: { csrfToken: string; username: string } | null;
 }) {
   const router = useRouter();
-  const [isDark, setIsDark]     = useState(false);
-  const [mounted, setMounted]   = useState(false);
+  const pathname = usePathname();
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
     setMounted(true);
   }, []);
+
+  const singleSegmentPath =
+    pathname !== "/" && /^\/[^/]+$/.test(pathname) ? pathname.slice(1) : null;
+  const shouldHide =
+    pathname.startsWith("/dashboard/links") ||
+    pathname === "/user" ||
+    (singleSegmentPath !== null &&
+      !["notes", "sign-in", "sign-up", "user"].includes(singleSegmentPath));
+
+  if (shouldHide) {
+    return null;
+  }
 
   function toggleTheme() {
     const next = !isDark;

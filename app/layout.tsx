@@ -3,6 +3,12 @@ import "./globals.css";
 import BottomBar from "@/components/BottomBar";
 import TopControls from "@/components/TopControls";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import {
+  geistMono,
+  instrumentSerif,
+  manrope,
+  spaceGrotesk,
+} from "@/lib/fonts";
 import { getOptionalSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -62,7 +68,15 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="antialiased min-h-screen">
+      <body
+        className={[
+          "antialiased min-h-screen",
+          instrumentSerif.variable,
+          geistMono.variable,
+          manrope.variable,
+          spaceGrotesk.variable,
+        ].join(" ")}
+      >
         <ServiceWorkerRegister />
         <TopControls
           auth={

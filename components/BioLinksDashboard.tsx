@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   closestCenter,
   DndContext,
@@ -16,7 +17,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import DbPanel from "./DbPanel";
 import PublicBioPage from "./PublicBioPage";
 import styles from "./BioLinksDashboard.module.css";
 import {
@@ -27,8 +27,11 @@ import {
 } from "@/lib/schemas";
 import {
   buildBioPageData,
+  type AnimationPreset,
   type BioPage,
   type ButtonStyle,
+  type FontPreset,
+  type ThemePreset,
 } from "@/lib/bio-shared";
 
 type EditorTab = "profile" | "links" | "style";
@@ -40,10 +43,14 @@ type DashboardProfile = {
   bio: string;
   buttonStyle: ButtonStyle;
   displayName: string;
+  fontPreset: FontPreset;
   id: string;
+  animationPreset: AnimationPreset;
+  themePreset: ThemePreset;
   updatedAt: string;
   userId: string;
   username: string;
+  watermarkText: string;
 };
 
 type DashboardLink = {
@@ -72,6 +79,9 @@ const STYLE_OPTIONS: ButtonStyle[] = [
   "frame",
   "elevated",
   "underline",
+  "split",
+  "rail",
+  "sticker",
 ];
 
 const COLOR_PRESETS = [
@@ -85,6 +95,66 @@ const COLOR_PRESETS = [
   "#ec4899",
   "#1c1916",
   "#6b7280",
+];
+
+const THEME_OPTIONS: Array<{
+  accentColor: string;
+  description: string;
+  id: ThemePreset;
+  label: string;
+}> = [
+  {
+    id: "mono",
+    label: "Mono",
+    accentColor: "#0a0a0a",
+    description: "Sharp monochrome with quiet contrast.",
+  },
+  {
+    id: "paper",
+    label: "Paper",
+    accentColor: "#9a6b42",
+    description: "Soft editorial neutrals with a warmer accent.",
+  },
+  {
+    id: "midnight",
+    label: "Midnight",
+    accentColor: "#93c5fd",
+    description: "Dark glassy canvas with cool edges.",
+  },
+  {
+    id: "ocean",
+    label: "Ocean",
+    accentColor: "#06b6d4",
+    description: "Muted blue-green palette with airy contrast.",
+  },
+  {
+    id: "sunset",
+    label: "Sunset",
+    accentColor: "#f97316",
+    description: "Warm blush palette for brighter pages.",
+  },
+];
+
+const FONT_OPTIONS: Array<{
+  id: FontPreset;
+  label: string;
+  preview: string;
+}> = [
+  { id: "sans", label: "Sans", preview: "Quiet and neutral" },
+  { id: "editorial", label: "Editorial", preview: "Serif-led and refined" },
+  { id: "grotesk", label: "Grotesk", preview: "Modern and airy" },
+  { id: "mono", label: "Mono", preview: "Code-like and crisp" },
+];
+
+const ANIMATION_OPTIONS: Array<{
+  id: AnimationPreset;
+  label: string;
+  preview: string;
+}> = [
+  { id: "morph", label: "Morph", preview: "Soft scale and fade" },
+  { id: "fade", label: "Fade", preview: "Minimal opacity only" },
+  { id: "lift", label: "Lift", preview: "Small upward reveal" },
+  { id: "drift", label: "Drift", preview: "Slower floating motion" },
 ];
 
 const COMMON_EMOJIS = [
@@ -269,7 +339,6 @@ export default function BioLinksDashboard({
   );
   const [isCompactViewport, setIsCompactViewport] = useState(false);
   const [siteOrigin, setSiteOrigin] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [profile, setProfile] = useState(initialProfile);
   const [profileErrors, setProfileErrors] = useState<Record<string, string[]>>({});
@@ -382,9 +451,11 @@ export default function BioLinksDashboard({
     };
   }, []);
 
+  const deferredProfile = useDeferredValue(profile);
+  const deferredLinks = useDeferredValue(links);
   const previewPage = useMemo<BioPage>(() => {
-    return buildBioPageData(profile, links);
-  }, [links, profile]);
+    return buildBioPageData(deferredProfile, deferredLinks);
+  }, [deferredLinks, deferredProfile]);
   const publicPath = `/${profile.username || "username"}`;
   const publicUrl = siteOrigin ? `${siteOrigin}${publicPath}` : publicPath;
 
@@ -461,10 +532,18 @@ export default function BioLinksDashboard({
     await savePromise;
   }
 
-  function queueStyleSave(nextStyle: {
-    accentColor: string;
-    buttonStyle: ButtonStyle;
-  }) {
+  function buildStylePayload(nextProfile = profile) {
+    return {
+      accentColor: nextProfile.accentColor,
+      animationPreset: nextProfile.animationPreset,
+      buttonStyle: nextProfile.buttonStyle,
+      fontPreset: nextProfile.fontPreset,
+      themePreset: nextProfile.themePreset,
+      watermarkText: nextProfile.watermarkText.trim() || "made with shor",
+    };
+  }
+
+  function queueStyleSave(nextStyle = buildStylePayload()) {
     if (styleSaveTimerRef.current) {
       clearTimeout(styleSaveTimerRef.current);
     }
@@ -973,13 +1052,9 @@ export default function BioLinksDashboard({
                     >
                       Button styles
                     </button>
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={() => setSettingsOpen(true)}
-                    >
-                      Settings
-                    </button>
+                    <Link href="/user" className={styles.secondaryButton}>
+                      User page
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -1173,16 +1248,13 @@ export default function BioLinksDashboard({
                       className={`${styles.styleCard} ${
                         profile.buttonStyle === style ? styles.styleCardActive : ""
                       }`}
-                      onClick={() => {
-                        const nextProfile = {
-                          ...profile,
-                          buttonStyle: style,
-                        };
-                        setProfile(nextProfile);
-                          queueStyleSave({
-                            accentColor: nextProfile.accentColor,
-                            buttonStyle: nextProfile.buttonStyle,
-                          });
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            buttonStyle: style,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
                         }}
                       onKeyDown={(event) => {
                         if (event.key !== "Enter" && event.key !== " ") {
@@ -1195,10 +1267,7 @@ export default function BioLinksDashboard({
                           buttonStyle: style,
                         };
                         setProfile(nextProfile);
-                        queueStyleSave({
-                          accentColor: nextProfile.accentColor,
-                          buttonStyle: nextProfile.buttonStyle,
-                        });
+                        queueStyleSave(buildStylePayload(nextProfile));
                       }}
                     >
                       <button
@@ -1211,6 +1280,33 @@ export default function BioLinksDashboard({
                       <div className={styles.styleCardName}>{style}</div>
                     </div>
                   ))}
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Ready themes</span>
+                  <div className={styles.optionGrid}>
+                    {THEME_OPTIONS.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.themePreset === theme.id ? styles.optionCardActive : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            themePreset: theme.id,
+                            accentColor: theme.accentColor,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{theme.label}</div>
+                        <div className={styles.optionCardText}>{theme.description}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className={styles.fieldGroup}>
@@ -1230,10 +1326,7 @@ export default function BioLinksDashboard({
                             accentColor: color,
                           };
                           setProfile(nextProfile);
-                          queueStyleSave({
-                            accentColor: nextProfile.accentColor,
-                            buttonStyle: nextProfile.buttonStyle,
-                          });
+                          queueStyleSave(buildStylePayload(nextProfile));
                         }}
                       />
                     ))}
@@ -1253,11 +1346,86 @@ export default function BioLinksDashboard({
                       }));
                     }}
                     onBlur={() =>
-                      queueStyleSave({
-                        accentColor: profile.accentColor,
-                        buttonStyle: profile.buttonStyle,
-                      })
+                      queueStyleSave(buildStylePayload(profile))
                     }
+                  />
+                </label>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Fonts</span>
+                  <div className={styles.optionGrid}>
+                    {FONT_OPTIONS.map((font) => (
+                      <button
+                        key={font.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.fontPreset === font.id ? styles.optionCardActive : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            fontPreset: font.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{font.label}</div>
+                        <div className={styles.optionCardText}>{font.preview}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Animations</span>
+                  <div className={styles.optionGrid}>
+                    {ANIMATION_OPTIONS.map((animation) => (
+                      <button
+                        key={animation.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.animationPreset === animation.id
+                            ? styles.optionCardActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            animationPreset: animation.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{animation.label}</div>
+                        <div className={styles.optionCardText}>{animation.preview}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <label className={styles.fieldGroup}>
+                  <span className={styles.label}>Watermark</span>
+                  <input
+                    className={styles.input}
+                    value={profile.watermarkText}
+                    maxLength={48}
+                    onChange={(event) => {
+                      setProfile((current) => ({
+                        ...current,
+                        watermarkText: event.target.value,
+                      }));
+                    }}
+                    onBlur={() => {
+                      const nextWatermark = profile.watermarkText.trim() || "made with shor";
+                      const nextProfile = {
+                        ...profile,
+                        watermarkText: nextWatermark,
+                      };
+                      setProfile(nextProfile);
+                      queueStyleSave(buildStylePayload(nextProfile));
+                    }}
                   />
                 </label>
               </div>
@@ -1314,7 +1482,6 @@ export default function BioLinksDashboard({
         </button>
       </div>
 
-      <DbPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </main>
   );
 }

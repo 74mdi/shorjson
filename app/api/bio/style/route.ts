@@ -37,6 +37,10 @@ export async function PATCH(request: NextRequest) {
     ...existingProfile,
     buttonStyle: parsed.data.buttonStyle,
     accentColor: parsed.data.accentColor,
+    themePreset: parsed.data.themePreset,
+    fontPreset: parsed.data.fontPreset,
+    animationPreset: parsed.data.animationPreset,
+    watermarkText: parsed.data.watermarkText,
     updatedAt: new Date().toISOString(),
   };
 

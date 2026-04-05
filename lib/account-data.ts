@@ -15,7 +15,12 @@ import type {
   BioProfile,
   PrivateNote,
 } from "./account-types";
-import { isButtonStyle } from "./account-types";
+import {
+  isAnimationPreset,
+  isButtonStyle,
+  isFontPreset,
+  isThemePreset,
+} from "./account-types";
 
 function normalisePrivateNote(note: PrivateNote | Record<string, unknown>): PrivateNote {
   return {
@@ -57,6 +62,25 @@ function normaliseBioProfile(
       typeof profile.accentColor === "string" && profile.accentColor
         ? profile.accentColor
         : "#d97b4a",
+    themePreset:
+      typeof profile.themePreset === "string" &&
+      isThemePreset(profile.themePreset)
+        ? profile.themePreset
+        : "mono",
+    fontPreset:
+      typeof profile.fontPreset === "string" &&
+      isFontPreset(profile.fontPreset)
+        ? profile.fontPreset
+        : "sans",
+    animationPreset:
+      typeof profile.animationPreset === "string" &&
+      isAnimationPreset(profile.animationPreset)
+        ? profile.animationPreset
+        : "morph",
+    watermarkText:
+      typeof profile.watermarkText === "string" && profile.watermarkText.trim()
+        ? profile.watermarkText.trim()
+        : "made with shor",
     createdAt: String(profile.createdAt ?? new Date().toISOString()),
     updatedAt: String(profile.updatedAt ?? profile.createdAt ?? new Date().toISOString()),
   };
@@ -218,6 +242,10 @@ export async function ensureBioProfileForUser(
     avatar: null,
     buttonStyle: "minimal",
     accentColor: "#d97b4a",
+    themePreset: "mono",
+    fontPreset: "sans",
+    animationPreset: "morph",
+    watermarkText: "made with shor",
     createdAt: now,
     updatedAt: now,
   } satisfies BioProfile;
