@@ -3,7 +3,7 @@ import UserSettingsPage from "@/components/UserSettingsPage";
 import { requirePageSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "User - Shor",
+  title: "Profile - Shor",
   description: "Account tools, shortcuts, and settings.",
 };
 

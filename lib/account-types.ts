@@ -40,6 +40,7 @@ export interface BioProfile {
   fontPreset: FontPreset;
   animationPreset: AnimationPreset;
   watermarkText: string;
+  showThemeToggle: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +52,7 @@ export interface BioLink {
   title: string;
   url: string;
   icon: string;
+  iconColor: string;
   section: string;
   visible: boolean;
   order: number;

@@ -8,6 +8,7 @@ interface LinkEntry {
   createdAt: string;
   clicks: number;
   hasPassword?: boolean;
+  clickLimit?: number | null;
 }
 
 function formatRelative(iso: string): string {
@@ -162,6 +163,7 @@ function LinkRow({ link, index }: { link: LinkEntry; index: number }) {
           style={{ color: "var(--text-faint)" }}
         >
           {formatRelative(link.createdAt)}
+          {typeof link.clickLimit === "number" ? ` · limit ${link.clickLimit}` : ""}
         </p>
       </div>
 

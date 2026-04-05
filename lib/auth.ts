@@ -72,6 +72,14 @@ async function createSessionToken(input: {
     .sign(getAuthKey());
 }
 
+export async function createSessionRefreshToken(input: {
+  userId: string;
+  username: string;
+  csrfToken: string;
+}): Promise<string> {
+  return createSessionToken(input);
+}
+
 export async function hashAccountPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
 }

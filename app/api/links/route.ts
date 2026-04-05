@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     title: parsed.data.title,
     url: parsed.data.url,
     icon: parsed.data.icon,
+    iconColor: parsed.data.iconColor,
     section: parsed.data.section || "main",
     visible: parsed.data.visible,
     order: nextOrder,

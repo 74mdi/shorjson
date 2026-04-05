@@ -34,18 +34,22 @@ const ProfileIcon = ({ size = 17 }: { size?: number }) => (
 const NAV_TABS = [
   { href: "/", label: "Links", Icon: LinkIcon },
   { href: "/notes", label: "Notes",  Icon: PencilIcon },
-  { href: "/user", label: "User", Icon: ProfileIcon },
+  { href: "/user", label: "Profile", Icon: ProfileIcon },
 ];
 
 const TAB_W = 72; // px — each tab, indicator matches
 
 /* ── BottomBar ───────────────────────────────────────────────────────────── */
 
-export default function BottomBar() {
+export default function BottomBar({
+  authenticated,
+}: {
+  authenticated: boolean;
+}) {
   const pathname  = usePathname();
   const activeIdx = NAV_TABS.findIndex((tab) => tab.href === pathname);
 
-  if (activeIdx < 0) return null;
+  if (!authenticated || activeIdx < 0) return null;
 
   return (
     <div
@@ -58,7 +62,6 @@ export default function BottomBar() {
           background: "var(--surface)",
           border: "1px solid var(--border)",
           borderRadius: 24,
-          boxShadow: "0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
           padding: "5px",
         }}
       >

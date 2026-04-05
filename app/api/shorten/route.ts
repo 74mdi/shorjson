@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getLinks, setLink } from "@/lib/adapter-utils";
+import { applySessionRefresh, getRequestSession } from "@/lib/auth";
 import { getRemoteServerUrl } from "@/lib/config";
 import {
   getOptionalPassword,
@@ -151,6 +152,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { session, refreshedToken } = await getRequestSession(req);
+  if (!session) {
+    return NextResponse.json(
+      { error: "Sign in to create short links." },
+      { status: 401 },
+    );
+  }
+  const activeSession = session;
+
   // 2. Parse body
   const body = await req.json().catch(() => null);
   if (!body || typeof body.url !== "string" || !body.url.trim()) {
@@ -166,6 +176,12 @@ export async function POST(req: NextRequest) {
       ? body.slug.trim().toLowerCase()
       : undefined;
   const password = getOptionalPassword(body.password);
+  const clickLimit =
+    typeof body.clickLimit === "number" &&
+    Number.isInteger(body.clickLimit) &&
+    body.clickLimit > 0
+      ? body.clickLimit
+      : undefined;
 
   // 3. Validations
   if (originalUrl.length > MAX_URL)
@@ -188,6 +204,15 @@ export async function POST(req: NextRequest) {
   const safety = isSafeUrl(originalUrl);
   if (!safety.safe)
     return NextResponse.json({ error: safety.reason }, { status: 422 });
+  if (
+    body.clickLimit !== undefined &&
+    (typeof clickLimit !== "number" || clickLimit > 1_000_000)
+  ) {
+    return NextResponse.json(
+      { error: "Use a click limit between 1 and 1000000." },
+      { status: 422 },
+    );
+  }
   if (customSlug) {
     const sc = isValidSlug(customSlug);
     if (!sc.valid)
@@ -202,6 +227,15 @@ export async function POST(req: NextRequest) {
         {
           error:
             "Password-protected links are only available when Shor is storing links locally or in a configured database.",
+        },
+        { status: 400 },
+      );
+    }
+    if (clickLimit !== undefined) {
+      return NextResponse.json(
+        {
+          error:
+            "Click limits are only available when Shor is storing links locally or in a configured database.",
         },
         { status: 400 },
       );
@@ -224,10 +258,12 @@ export async function POST(req: NextRequest) {
         );
       }
       const { shortId } = data as { shortId: string };
-      return NextResponse.json(
+      const response = NextResponse.json(
         { shortId, shortUrl: `${getBaseUrl(req)}/${shortId}`, hasPassword: false },
         { status: upstream.status === 201 ? 201 : 200 },
       );
+      applySessionRefresh(response, refreshedToken);
+      return response;
     } catch {
       return NextResponse.json(
         { error: "Could not reach remote server. Is it running?" },
@@ -250,6 +286,8 @@ export async function POST(req: NextRequest) {
       originalUrl,
       createdAt: now,
       clicks: 0,
+      userId: activeSession.userId,
+      ...(typeof clickLimit === "number" ? { clickLimit } : {}),
       ...(password ? await hashLinkPassword(password) : {}),
     };
   }
@@ -259,7 +297,8 @@ export async function POST(req: NextRequest) {
     // Slug taken by a different URL → conflict
     if (
       existingEntry !== undefined &&
-      existingEntry.originalUrl !== originalUrl
+      (existingEntry.originalUrl !== originalUrl ||
+        existingEntry.userId !== activeSession.userId)
     ) {
       return NextResponse.json(
         { error: "That slug is already in use." },
@@ -278,53 +317,77 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      return NextResponse.json({
+      if ((existingEntry.clickLimit ?? null) !== (clickLimit ?? null)) {
+        return NextResponse.json(
+          {
+            error:
+              "That slug already exists with a different click limit configuration.",
+          },
+          { status: 409 },
+        );
+      }
+
+      const response = NextResponse.json({
         shortId: customSlug,
         shortUrl: `${getBaseUrl(req)}/${customSlug}`,
         createdAt: existingEntry.createdAt,
         clicks: existingEntry.clicks,
+        clickLimit: existingEntry.clickLimit ?? null,
         hasPassword: isPasswordProtected(existingEntry),
       });
+      applySessionRefresh(response, refreshedToken);
+      return response;
     }
     await setLink(customSlug, await buildEntry());
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         shortId: customSlug,
         shortUrl: `${getBaseUrl(req)}/${customSlug}`,
         createdAt: now,
         clicks: 0,
+        clickLimit: clickLimit ?? null,
         hasPassword: Boolean(password),
       },
       { status: 201 },
     );
+    applySessionRefresh(response, refreshedToken);
+    return response;
   }
 
   // Deduplication: same URL + same protection config → return existing metadata
   for (const [existingId, existingMeta] of Object.entries(links)) {
+    if (existingMeta.userId !== activeSession.userId) continue;
     if (existingMeta.originalUrl !== originalUrl) continue;
     if (!(await matchesProtection(existingMeta))) continue;
+    if ((existingMeta.clickLimit ?? null) !== (clickLimit ?? null)) continue;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       shortId: existingId,
       shortUrl: `${getBaseUrl(req)}/${existingId}`,
       createdAt: existingMeta.createdAt,
       clicks: existingMeta.clicks,
+      clickLimit: existingMeta.clickLimit ?? null,
       hasPassword: isPasswordProtected(existingMeta),
     });
+    applySessionRefresh(response, refreshedToken);
+    return response;
   }
 
   let shortId = nanoid(7);
   let attempts = 0;
   while (links[shortId] && attempts++ < 5) shortId = nanoid(7);
   await setLink(shortId, await buildEntry());
-  return NextResponse.json(
+  const response = NextResponse.json(
     {
       shortId,
       shortUrl: `${getBaseUrl(req)}/${shortId}`,
       createdAt: now,
       clicks: 0,
+      clickLimit: clickLimit ?? null,
       hasPassword: Boolean(password),
     },
     { status: 201 },
   );
+  applySessionRefresh(response, refreshedToken);
+  return response;
 }

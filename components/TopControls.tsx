@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { getPublicBioPath } from "@/lib/bio-shared";
 
 /* ── Icons ──────────────────────────────────────────────────────────────── */
 
@@ -20,36 +22,16 @@ const MoonIcon = () => (
   </svg>
 );
 
-const ExitIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-    <path d="m16 17 5-5-5-5" />
-    <path d="M21 12H9" />
-  </svg>
-);
-
 /* ── TopControls ─────────────────────────────────────────────────────────── */
 
 export default function TopControls({
   auth,
 }: {
-  auth?: { csrfToken: string; username: string } | null;
+  auth?: { username: string } | null;
 }) {
-  const router = useRouter();
   const pathname = usePathname();
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
@@ -59,6 +41,7 @@ export default function TopControls({
   const singleSegmentPath =
     pathname !== "/" && /^\/[^/]+$/.test(pathname) ? pathname.slice(1) : null;
   const shouldHide =
+    !auth ||
     pathname.startsWith("/dashboard/links") ||
     pathname === "/user" ||
     (singleSegmentPath !== null &&
@@ -90,23 +73,6 @@ export default function TopControls({
     position: "relative",
   };
 
-  async function handleSignOut() {
-    if (!auth || signingOut) return;
-
-    setSigningOut(true);
-
-    try {
-      await fetch("/api/auth/sign-out", {
-        method: "POST",
-        headers: { "x-csrf-token": auth.csrfToken },
-      });
-      router.replace("/sign-in");
-      router.refresh();
-    } finally {
-      setSigningOut(false);
-    }
-  }
-
   return (
     <>
       <div
@@ -114,16 +80,17 @@ export default function TopControls({
         style={{ padding: "14px 16px" }}
       >
         {auth ? (
-          <div
+          <Link
+            href="/user"
             className="hidden rounded-full border px-3 py-1.5 text-xs font-medium sm:block"
             style={{
               borderColor: "var(--border)",
               background: "var(--surface)",
-              color: "var(--text-muted)",
+              color: "var(--text)",
             }}
           >
             @{auth.username}
-          </div>
+          </Link>
         ) : null}
 
         {/* Theme toggle */}
@@ -165,25 +132,21 @@ export default function TopControls({
           )}
         </button>
 
-        {auth ? (
-          <button
-            type="button"
-            aria-label="Sign out"
-            onClick={() => void handleSignOut()}
-            style={btnStyle}
-            disabled={signingOut}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.color = "var(--text)";
-              (e.currentTarget as HTMLElement).style.background = "var(--surface-raised)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
-              (e.currentTarget as HTMLElement).style.background = "var(--surface)";
-            }}
-          >
-            <ExitIcon />
-          </button>
-        ) : null}
+        <Link
+          href={getPublicBioPath(auth.username)}
+          aria-label="Open public bio page"
+          style={btnStyle}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.color = "var(--text)";
+            (e.currentTarget as HTMLElement).style.background = "var(--surface-raised)";
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+            (e.currentTarget as HTMLElement).style.background = "var(--surface)";
+          }}
+        >
+          @
+        </Link>
       </div>
     </>
   );

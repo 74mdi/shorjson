@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { CSSProperties } from "react";
 import styles from "./PublicBioPage.module.css";
 import type { BioPage } from "@/lib/bio-shared";
@@ -56,6 +59,34 @@ function GithubIcon() {
   );
 }
 
+function FacebookIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M13.5 22v-8h2.7l.4-3h-3.1V9.2c0-.9.3-1.5 1.6-1.5H17V5c-.3 0-1.3-.1-2.5-.1-2.5 0-4.1 1.5-4.1 4.3V11H8v3h2.4v8z" />
+    </svg>
+  );
+}
+
+function DiscordIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M20.3 4.4A17.4 17.4 0 0 0 16 3l-.2.4a12 12 0 0 1 3.6 1.7A13.8 13.8 0 0 0 12 3a13.7 13.7 0 0 0-7.4 2.1 12 12 0 0 1 3.7-1.7L8 3a17.4 17.4 0 0 0-4.3 1.4C1 8.3.2 12 1 15.7A17.7 17.7 0 0 0 6.3 18l1.1-1.8c-.6-.2-1.2-.6-1.7-1 2.1 1 4.1 1.5 6.3 1.5s4.2-.5 6.3-1.5c-.5.4-1.1.8-1.7 1l1.1 1.8A17.7 17.7 0 0 0 23 15.7c1-3.7.2-7.4-2.7-11.3ZM9.4 14.1c-.9 0-1.7-.9-1.7-2s.7-2 1.7-2c.9 0 1.7.9 1.7 2s-.8 2-1.7 2Zm5.2 0c-.9 0-1.7-.9-1.7-2s.7-2 1.7-2c.9 0 1.7.9 1.7 2s-.8 2-1.7 2Z" />
+    </svg>
+  );
+}
+
 function InstagramIcon() {
   return (
     <svg
@@ -110,6 +141,62 @@ function MusicIcon() {
   );
 }
 
+function SpotifyIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm4.6 14.4a.8.8 0 0 1-1.1.3 9.9 9.9 0 0 0-8.3-.8.8.8 0 1 1-.5-1.5 11.5 11.5 0 0 1 9.7.9.8.8 0 0 1 .2 1.1Zm1.5-3a1 1 0 0 1-1.3.4 12.5 12.5 0 0 0-10.4-.9 1 1 0 1 1-.7-1.9 14.5 14.5 0 0 1 12 .9 1 1 0 0 1 .4 1.4Zm.1-3.1A15 15 0 0 0 5.4 9.2 1.1 1.1 0 1 1 4.8 7a17.2 17.2 0 0 1 14.7 1.3 1.1 1.1 0 1 1-1.1 2Z" />
+    </svg>
+  );
+}
+
+function TelegramIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="m21.9 4.6-3 14.2c-.2 1-.8 1.2-1.6.8l-4.5-3.4-2.1 2.1c-.2.2-.4.4-.9.4l.3-4.7 8.6-7.8c.4-.3-.1-.5-.5-.2L7.5 12.7l-4.6-1.4c-1-.3-1-1 .2-1.5L20.7 3c.8-.3 1.5.2 1.2 1.6Z" />
+    </svg>
+  );
+}
+
+function ThreadsIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M16.3 11.4c-.2-.1-.4-.2-.7-.3-.1-1.4-.5-2.5-1.3-3.3-.9-.9-2.1-1.4-3.7-1.4-3.1 0-5.3 2.1-5.3 5.1 0 3.5 2.5 6.1 6.2 6.1 3 0 5.1-1.7 5.1-4.2 0-1.1-.4-1.7-1.3-2Zm-4.7 5c-2.4 0-4.1-1.7-4.1-4 0-2.2 1.5-3.7 3.6-3.7 1.7 0 2.8.8 3 2.3-.8-.1-1.6-.2-2.6-.1-2.4.1-3.8 1.1-3.8 2.8 0 1.4 1.1 2.5 2.8 2.5 1.2 0 2.3-.5 3.1-1.6-.4 1.1-1.4 1.8-2.9 1.8Zm1.7-3.5c-.5.9-1.4 1.4-2.3 1.4-.8 0-1.3-.4-1.3-1 0-.8.6-1.3 2.2-1.4.5 0 1 0 1.6.1 0 .3-.1.6-.2.9Z" />
+    </svg>
+  );
+}
+
+function TwitchIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M3 3h18v11l-4 4h-4l-2 2H8v-2H3V3Zm2 2v11h4v2l2-2h4l3-3V5H5Zm5 2h2v5h-2V7Zm5 0h2v5h-2V7Z" />
+    </svg>
+  );
+}
+
 function YoutubeIcon() {
   return (
     <svg
@@ -124,13 +211,49 @@ function YoutubeIcon() {
   );
 }
 
+function XIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M18.9 2H22l-6.77 7.74L23 22h-6.1l-4.77-6.79L6.2 22H3.08l7.24-8.27L1 2h6.25l4.31 6.14z" />
+    </svg>
+  );
+}
+
+function TiktokIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M14 3c.27 2.17 1.67 4.24 4 5.2V11a8 8 0 0 1-4-1.12V15.4a5.4 5.4 0 1 1-5.4-5.4c.3 0 .6.02.9.08v2.73a2.8 2.8 0 1 0 1.9 2.67V3z" />
+    </svg>
+  );
+}
+
 const iconMap: Record<string, () => JSX.Element> = {
+  discord: DiscordIcon,
+  facebook: FacebookIcon,
   github: GithubIcon,
   globe: GlobeIcon,
   instagram: InstagramIcon,
   linkedin: LinkedinIcon,
   mail: MailIcon,
   music: MusicIcon,
+  spotify: SpotifyIcon,
+  telegram: TelegramIcon,
+  tiktok: TiktokIcon,
+  threads: ThreadsIcon,
+  twitch: TwitchIcon,
+  x: XIcon,
   youtube: YoutubeIcon,
 };
 
@@ -226,6 +349,7 @@ export default function PublicBioPage({
   page: BioPage;
   preview?: boolean;
 }) {
+  const [manualDark, setManualDark] = useState(false);
   const sections = groupLinks(page);
   const pageStyle = getPageStyle(page);
   const fontClassName = FONT_CLASS_NAMES[page.fontPreset];
@@ -237,12 +361,22 @@ export default function PublicBioPage({
         styles.page,
         fontClassName,
         motionClassName,
+        manualDark ? styles.manualDark : "",
         preview ? styles.previewMode : "",
       ].join(" ")}
       style={pageStyle}
     >
       <div className={styles.pageInner}>
         <header className={styles.hero}>
+          {page.showThemeToggle ? (
+            <button
+              type="button"
+              className={styles.themeToggle}
+              onClick={() => setManualDark((value) => !value)}
+            >
+              {manualDark ? "Light" : "Dark"}
+            </button>
+          ) : null}
           {page.avatar ? (
             <img
               src={page.avatar}
@@ -285,7 +419,12 @@ export default function PublicBioPage({
                         rel="noopener noreferrer"
                         className={`btn-base btn-${page.buttonStyle} ${styles.linkAnchor}`}
                       >
-                        <span className={styles.iconWrap}>{renderIcon(link.icon)}</span>
+                        <span
+                          className={styles.iconWrap}
+                          style={{ color: link.iconColor || "currentColor" }}
+                        >
+                          {renderIcon(link.icon)}
+                        </span>
                         <span>{link.title}</span>
                         <span className={styles.arrow} aria-hidden="true">
                           →

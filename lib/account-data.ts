@@ -81,6 +81,10 @@ function normaliseBioProfile(
       typeof profile.watermarkText === "string" && profile.watermarkText.trim()
         ? profile.watermarkText.trim()
         : "made with shor",
+    showThemeToggle:
+      typeof profile.showThemeToggle === "boolean"
+        ? profile.showThemeToggle
+        : false,
     createdAt: String(profile.createdAt ?? new Date().toISOString()),
     updatedAt: String(profile.updatedAt ?? profile.createdAt ?? new Date().toISOString()),
   };
@@ -105,6 +109,10 @@ function normaliseBioLink(
     url: typeof link.url === "string" ? link.url : "",
     icon:
       typeof link.icon === "string" && link.icon.trim() ? link.icon : "🔗",
+    iconColor:
+      typeof link.iconColor === "string" && link.iconColor.trim()
+        ? link.iconColor
+        : "#1c1916",
     section:
       typeof link.section === "string" && link.section.trim()
         ? link.section
@@ -165,6 +173,18 @@ export async function createUser(user: AccountUser): Promise<void> {
   const adapter = await getActiveAdapter().catch(() => null);
   if (adapter) {
     await adapter.createAccountUser(user);
+    return;
+  }
+
+  const users = readUsersFile();
+  users[user.id] = user;
+  writeUsersFile(users);
+}
+
+export async function updateUser(user: AccountUser): Promise<void> {
+  const adapter = await getActiveAdapter().catch(() => null);
+  if (adapter) {
+    await adapter.updateAccountUser(user);
     return;
   }
 
@@ -246,6 +266,7 @@ export async function ensureBioProfileForUser(
     fontPreset: "sans",
     animationPreset: "morph",
     watermarkText: "made with shor",
+    showThemeToggle: false,
     createdAt: now,
     updatedAt: now,
   } satisfies BioProfile;
@@ -260,6 +281,11 @@ export async function isBioUsernameAvailable(
 ): Promise<boolean> {
   const normalizedUsername = username.trim().toLowerCase();
   if (!normalizedUsername) return false;
+
+  const existingUser = await getUserByUsername(normalizedUsername);
+  if (existingUser && (!currentUserId || existingUser.id !== currentUserId)) {
+    return false;
+  }
 
   const existingProfile = await getBioProfileByUsername(normalizedUsername);
   if (!existingProfile) return true;

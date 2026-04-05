@@ -2,9 +2,12 @@ import { NextRequest } from "next/server";
 import { requireAuthenticatedRequest, jsonWithOptionalRefresh } from "@/lib/api-auth";
 import {
   ensureBioProfileForUser,
+  getUserById,
   isBioUsernameAvailable,
   saveBioProfile,
+  updateUser,
 } from "@/lib/account-data";
+import { createSessionRefreshToken, setSessionCookie } from "@/lib/auth";
 import { bioProfileSchema } from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +43,15 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
+  const existingUser = await getUserById(auth.session.userId);
+  if (!existingUser) {
+    return jsonWithOptionalRefresh(
+      { error: "User not found." },
+      { status: 404 },
+      auth.refreshedToken,
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = bioProfileSchema.safeParse(body);
   if (!parsed.success) {
@@ -68,6 +80,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
+  const updatedAt = new Date().toISOString();
   const updatedProfile = {
     ...existingProfile,
     displayName: parsed.data.displayName,
@@ -77,14 +90,33 @@ export async function PATCH(request: NextRequest) {
       parsed.data.avatar !== undefined
         ? parsed.data.avatar
         : existingProfile.avatar,
-    updatedAt: new Date().toISOString(),
+    updatedAt,
   };
+
+  if (existingUser.username !== parsed.data.username) {
+    await updateUser({
+      ...existingUser,
+      username: parsed.data.username,
+      updatedAt,
+    });
+  }
 
   await saveBioProfile(updatedProfile);
 
-  return jsonWithOptionalRefresh(
+  const response = jsonWithOptionalRefresh(
     updatedProfile,
     undefined,
     auth.refreshedToken,
   );
+
+  if (auth.session.username !== parsed.data.username) {
+    const token = await createSessionRefreshToken({
+      userId: auth.session.userId,
+      username: parsed.data.username,
+      csrfToken: auth.session.csrfToken,
+    });
+    setSessionCookie(response, token);
+  }
+
+  return response;
 }

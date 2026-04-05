@@ -202,6 +202,7 @@
     border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
     border-radius: 14px;
     color: var(--text);
+    backdrop-filter: blur(14px);
 }
 
 .btn-glass:hover {
@@ -287,6 +288,92 @@
 
 .btn-sticker:hover {
     border-color: color-mix(in srgb, var(--accent) 44%, var(--border2));
+    transform: translateY(-1px);
+}
+
+.btn-blur {
+    background: color-mix(in srgb, var(--surface) 76%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+    border-radius: 18px;
+    color: var(--text);
+    backdrop-filter: blur(18px);
+}
+
+.btn-blur:hover {
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--border2));
+    transform: translateY(-1px);
+}
+
+.btn-shadow {
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+    border-radius: 14px;
+    color: var(--text);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.btn-shadow:hover {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border2));
+    transform: translateY(-2px);
+}
+
+.btn-capsule {
+    background: transparent;
+    border: 1.5px solid color-mix(in srgb, var(--accent) 70%, var(--border));
+    border-radius: 999px;
+    color: var(--accent);
+}
+
+.btn-capsule:hover {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    transform: translateY(-1px);
+}
+
+.btn-tint {
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--accent) 82%, var(--text));
+}
+
+.btn-tint:hover {
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+    transform: translateY(-1px);
+}
+
+.btn-grid {
+    background:
+        linear-gradient(
+            to right,
+            color-mix(in srgb, var(--accent) 10%, transparent) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            color-mix(in srgb, var(--accent) 10%, transparent) 1px,
+            transparent 1px
+        ),
+        var(--surface);
+    background-size: 12px 12px, 12px 12px, auto;
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+    border-radius: 14px;
+    color: var(--text);
+}
+
+.btn-grid:hover {
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--border2));
+    transform: translateY(-1px);
+}
+
+.btn-cutout {
+    background: var(--surface);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+    border-radius: 4px 16px 4px 16px;
+    color: var(--text);
+}
+
+.btn-cutout:hover {
+    border-color: var(--accent);
     transform: translateY(-1px);
 }
 

@@ -13,7 +13,13 @@ export type ButtonStyle =
   | "underline"
   | "split"
   | "rail"
-  | "sticker";
+  | "sticker"
+  | "blur"
+  | "shadow"
+  | "capsule"
+  | "tint"
+  | "grid"
+  | "cutout";
 
 export type ThemePreset =
   | "mono"
@@ -50,6 +56,12 @@ const BUTTON_STYLES: ButtonStyle[] = [
   "split",
   "rail",
   "sticker",
+  "blur",
+  "shadow",
+  "capsule",
+  "tint",
+  "grid",
+  "cutout",
 ];
 
 const THEME_PRESETS: ThemePreset[] = [
@@ -101,11 +113,13 @@ export type BioPage = {
   fontPreset: FontPreset;
   animationPreset: AnimationPreset;
   watermarkText: string;
+  showThemeToggle: boolean;
   links: {
     id: string;
     title: string;
     url: string;
     icon: string;
+    iconColor: string;
     section: string;
     visible: boolean;
     order: number;
@@ -123,6 +137,7 @@ type BuildBioPageProfile = {
   fontPreset: FontPreset;
   animationPreset: AnimationPreset;
   watermarkText: string;
+  showThemeToggle: boolean;
 };
 
 type BuildBioPageLink = {
@@ -130,10 +145,16 @@ type BuildBioPageLink = {
   title: string;
   url: string;
   icon: string;
+  iconColor: string;
   section: string;
   visible: boolean;
   order: number;
 };
+
+export function getPublicBioPath(username: string): string {
+  const normalized = username.trim().toLowerCase() || "username";
+  return `/@${normalized}`;
+}
 
 export function buildBioPageData(
   profile: BuildBioPageProfile,
@@ -150,6 +171,7 @@ export function buildBioPageData(
     fontPreset: profile.fontPreset,
     animationPreset: profile.animationPreset,
     watermarkText: profile.watermarkText || "made with shor",
+    showThemeToggle: profile.showThemeToggle,
     links: links
       .filter((link) => link.visible)
       .sort((left, right) => left.order - right.order)
@@ -158,6 +180,7 @@ export function buildBioPageData(
         title: link.title,
         url: link.url,
         icon: link.icon,
+        iconColor: link.iconColor,
         section: link.section || "main",
         visible: link.visible,
         order: link.order,

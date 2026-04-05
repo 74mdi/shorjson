@@ -42,10 +42,34 @@
 }
 
 .hero {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.themeToggle {
+  position: absolute;
+  top: -8px;
+  right: 0;
+  border: 1px solid var(--page-border);
+  border-radius: 999px;
+  background: var(--page-surface);
+  color: var(--page-muted);
+  padding: 7px 10px;
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+.themeToggle:hover {
+  color: var(--page-text);
+  transform: translateY(-1px);
 }
 
 .avatar {
@@ -178,6 +202,15 @@
   text-align: center;
 }
 
+.manualDark {
+  --page-bg: #070b12;
+  --page-surface: #101826;
+  --page-border: #243244;
+  --page-text: #f8fafc;
+  --page-muted: #94a3b8;
+  --page-faint: #64748b;
+}
+
 .fontSans {
   --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --bio-heading-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
@@ -224,6 +257,18 @@
   --bio-text-animation: bioDriftIn 520ms cubic-bezier(.16,1,.3,1) both;
   --bio-link-animation: bioDriftIn 440ms cubic-bezier(.16,1,.3,1) both;
   --bio-hover-lift: -2px;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 48px 16px 76px;
+  }
+
+  .themeToggle {
+    position: static;
+    margin-bottom: 16px;
+    align-self: flex-end;
+  }
 }
 
 @keyframes bioAvatarIn {

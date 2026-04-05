@@ -27,6 +27,7 @@ import {
 } from "@/lib/schemas";
 import {
   buildBioPageData,
+  getPublicBioPath,
   type AnimationPreset,
   type BioPage,
   type ButtonStyle,
@@ -51,12 +52,14 @@ type DashboardProfile = {
   userId: string;
   username: string;
   watermarkText: string;
+  showThemeToggle: boolean;
 };
 
 type DashboardLink = {
   id: string;
   createdAt: string;
   icon: string;
+  iconColor: string;
   order: number;
   profileId: string;
   section: string;
@@ -82,6 +85,12 @@ const STYLE_OPTIONS: ButtonStyle[] = [
   "split",
   "rail",
   "sticker",
+  "blur",
+  "shadow",
+  "capsule",
+  "tint",
+  "grid",
+  "cutout",
 ];
 
 const COLOR_PRESETS = [
@@ -189,6 +198,46 @@ const COMMON_EMOJIS = [
   "🎁",
   "🌻",
 ];
+
+const ICON_CHOICES = [
+  { label: "Link", value: "🔗" },
+  { label: "Facebook", value: "facebook" },
+  { label: "Discord", value: "discord" },
+  { label: "GitHub", value: "github" },
+  { label: "Instagram", value: "instagram" },
+  { label: "LinkedIn", value: "linkedin" },
+  { label: "Mail", value: "mail" },
+  { label: "Website", value: "globe" },
+  { label: "Music", value: "music" },
+  { label: "Spotify", value: "spotify" },
+  { label: "Telegram", value: "telegram" },
+  { label: "Threads", value: "threads" },
+  { label: "Twitch", value: "twitch" },
+  { label: "X", value: "x" },
+  { label: "TikTok", value: "tiktok" },
+  { label: "YouTube", value: "youtube" },
+];
+
+const ICON_COLOR_PRESETS = [
+  "#1c1916",
+  "#ffffff",
+  "#d97b4a",
+  "#1877f2",
+  "#3b82f6",
+  "#10b981",
+  "#1db954",
+  "#8b5cf6",
+  "#5865f2",
+  "#f43f5e",
+  "#e4405f",
+  "#06b6d4",
+  "#f59e0b",
+  "#ff0000",
+];
+
+function getSafeHexColor(value: string, fallback: string): string {
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : fallback;
+}
 
 function Spinner() {
   return (
@@ -355,6 +404,7 @@ export default function BioLinksDashboard({
 
   const [newLink, setNewLink] = useState({
     icon: "🔗",
+    iconColor: "#1c1916",
     section: "main",
     title: "",
     url: "",
@@ -456,7 +506,7 @@ export default function BioLinksDashboard({
   const previewPage = useMemo<BioPage>(() => {
     return buildBioPageData(deferredProfile, deferredLinks);
   }, [deferredLinks, deferredProfile]);
-  const publicPath = `/${profile.username || "username"}`;
+  const publicPath = getPublicBioPath(profile.username || "username");
   const publicUrl = siteOrigin ? `${siteOrigin}${publicPath}` : publicPath;
 
   function markSaved(setter: (value: SaveState) => void, timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) {
@@ -540,6 +590,7 @@ export default function BioLinksDashboard({
       fontPreset: nextProfile.fontPreset,
       themePreset: nextProfile.themePreset,
       watermarkText: nextProfile.watermarkText.trim() || "made with shor",
+      showThemeToggle: nextProfile.showThemeToggle,
     };
   }
 
@@ -636,6 +687,7 @@ export default function BioLinksDashboard({
     event.preventDefault();
     const parsed = bioLinkCreateSchema.safeParse({
       icon: newLink.icon,
+      iconColor: newLink.iconColor,
       section: newLink.section,
       title: newLink.title,
       url: newLink.url,
@@ -679,6 +731,7 @@ export default function BioLinksDashboard({
       );
       setNewLink({
         icon: "🔗",
+        iconColor: "#1c1916",
         section: "main",
         title: "",
         url: "",
@@ -890,8 +943,8 @@ export default function BioLinksDashboard({
                     <div className={styles.fieldMeta}>
                       <span className={styles.fieldHint}>
                         {siteOrigin
-                          ? `${siteOrigin}/${profile.username || "username"}`
-                          : `/${profile.username || "username"}`}
+                          ? `${siteOrigin}${getPublicBioPath(profile.username || "username")}`
+                          : getPublicBioPath(profile.username || "username")}
                       </span>
                       <span className={styles.fieldHint}>
                         {checkingUsername
@@ -1095,6 +1148,29 @@ export default function BioLinksDashboard({
                       ) : null}
                     </div>
 
+                    <select
+                      className={styles.selectInput}
+                      value={
+                        ICON_CHOICES.some((option) => option.value === newLink.icon)
+                          ? newLink.icon
+                          : "custom"
+                      }
+                      onChange={(event) => {
+                        if (event.target.value === "custom") return;
+                        setNewLink((current) => ({
+                          ...current,
+                          icon: event.target.value,
+                        }));
+                      }}
+                    >
+                      {ICON_CHOICES.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                      <option value="custom">Custom emoji</option>
+                    </select>
+
                     <input
                       className={styles.input}
                       placeholder="Title"
@@ -1123,11 +1199,44 @@ export default function BioLinksDashboard({
                       + Add
                     </button>
                   </div>
+                  <div className={styles.colorPickerRow}>
+                    <div className={styles.linkColorsRow}>
+                      {ICON_COLOR_PRESETS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`${styles.colorDot} ${
+                            newLink.iconColor === color ? styles.colorDotActive : ""
+                          }`}
+                          style={{ background: color }}
+                          onClick={() =>
+                            setNewLink((current) => ({
+                              ...current,
+                              iconColor: color,
+                            }))
+                          }
+                        />
+                      ))}
+                    </div>
+                    <input
+                      type="color"
+                      aria-label="Choose icon color"
+                      className={styles.nativeColorInput}
+                      value={getSafeHexColor(newLink.iconColor, "#1c1916")}
+                      onChange={(event) =>
+                        setNewLink((current) => ({
+                          ...current,
+                          iconColor: event.target.value.toLowerCase(),
+                        }))
+                      }
+                    />
+                  </div>
                   <div className={styles.fieldMeta} style={{ paddingTop: "8px" }}>
                     <span className={styles.fieldError}>
                       {newLinkErrors.title?.[0] ||
                         newLinkErrors.url?.[0] ||
                         newLinkErrors.icon?.[0] ||
+                        newLinkErrors.iconColor?.[0] ||
                         ""}
                     </span>
                     <span className={styles.fieldHint}>{links.length} links</span>
@@ -1150,16 +1259,39 @@ export default function BioLinksDashboard({
                           className={link.visible ? "" : styles.linkItemHidden}
                         >
                           <SortableLinkItem id={link.id}>
-                            <input
-                              className={styles.inlineInput}
-                              value={link.icon}
-                              maxLength={20}
-                              onChange={(event) =>
-                                updateLinkLocally(link.id, {
-                                  icon: event.target.value || "🔗",
-                                })
-                              }
-                            />
+                            <div className={styles.iconEditor}>
+                              <input
+                                className={styles.inlineInput}
+                                value={link.icon}
+                                maxLength={20}
+                                onChange={(event) =>
+                                  updateLinkLocally(link.id, {
+                                    icon: event.target.value || "🔗",
+                                  })
+                                }
+                              />
+                              <select
+                                className={styles.selectInput}
+                                value={
+                                  ICON_CHOICES.some((option) => option.value === link.icon)
+                                    ? link.icon
+                                    : "custom"
+                                }
+                                onChange={(event) => {
+                                  if (event.target.value === "custom") return;
+                                  updateLinkLocally(link.id, {
+                                    icon: event.target.value,
+                                  });
+                                }}
+                              >
+                                {ICON_CHOICES.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                                <option value="custom">Custom emoji</option>
+                              </select>
+                            </div>
 
                             <div className={styles.linkFields}>
                               <div className={styles.linkTopRow}>
@@ -1196,6 +1328,36 @@ export default function BioLinksDashboard({
                                 <div className={styles.urlPreview}>
                                   {link.visible ? "Visible" : "Hidden"}
                                 </div>
+                              </div>
+                              <div className={styles.colorPickerRow}>
+                                <div className={styles.linkColorsRow}>
+                                  {ICON_COLOR_PRESETS.map((color) => (
+                                    <button
+                                      key={color}
+                                      type="button"
+                                      className={`${styles.colorDot} ${
+                                        link.iconColor === color ? styles.colorDotActive : ""
+                                      }`}
+                                      style={{ background: color }}
+                                      onClick={() =>
+                                        updateLinkLocally(link.id, {
+                                          iconColor: color,
+                                        })
+                                      }
+                                    />
+                                  ))}
+                                </div>
+                                <input
+                                  type="color"
+                                  aria-label="Choose link icon color"
+                                  className={styles.nativeColorInput}
+                                  value={getSafeHexColor(link.iconColor, "#1c1916")}
+                                  onChange={(event) =>
+                                    updateLinkLocally(link.id, {
+                                      iconColor: event.target.value.toLowerCase(),
+                                    })
+                                  }
+                                />
                               </div>
                             </div>
 
@@ -1311,25 +1473,41 @@ export default function BioLinksDashboard({
 
                 <div className={styles.fieldGroup}>
                   <span className={styles.label}>Accent color</span>
-                  <div className={styles.swatches}>
-                    {COLOR_PRESETS.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`${styles.swatch} ${
-                          profile.accentColor === color ? styles.swatchActive : ""
-                        }`}
-                        style={{ background: color }}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            accentColor: color,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      />
-                    ))}
+                  <div className={styles.colorPickerRow}>
+                    <div className={styles.swatches}>
+                      {COLOR_PRESETS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`${styles.swatch} ${
+                            profile.accentColor === color ? styles.swatchActive : ""
+                          }`}
+                          style={{ background: color }}
+                          onClick={() => {
+                            const nextProfile = {
+                              ...profile,
+                              accentColor: color,
+                            };
+                            setProfile(nextProfile);
+                            queueStyleSave(buildStylePayload(nextProfile));
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <input
+                      type="color"
+                      aria-label="Choose accent color"
+                      className={styles.nativeColorInput}
+                      value={getSafeHexColor(profile.accentColor, "#d97b4a")}
+                      onChange={(event) => {
+                        const nextProfile = {
+                          ...profile,
+                          accentColor: event.target.value.toLowerCase(),
+                        };
+                        setProfile(nextProfile);
+                        queueStyleSave(buildStylePayload(nextProfile));
+                      }}
+                    />
                   </div>
                 </div>
 
@@ -1428,6 +1606,26 @@ export default function BioLinksDashboard({
                     }}
                   />
                 </label>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Public theme toggle</span>
+                  <button
+                    type="button"
+                    className={`${styles.secondaryButton} ${
+                      profile.showThemeToggle ? styles.toggleButtonActive : ""
+                    }`}
+                    onClick={() => {
+                      const nextProfile = {
+                        ...profile,
+                        showThemeToggle: !profile.showThemeToggle,
+                      };
+                      setProfile(nextProfile);
+                      queueStyleSave(buildStylePayload(nextProfile));
+                    }}
+                  >
+                    {profile.showThemeToggle ? "Theme toggle visible" : "Theme toggle hidden"}
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>
@@ -1448,7 +1646,7 @@ export default function BioLinksDashboard({
               <p>
                 This is the public page that will render at
                 {" "}
-                {siteOrigin ? `${siteOrigin}/${profile.username}` : `/${profile.username}`}.
+                {siteOrigin ? `${siteOrigin}${publicPath}` : publicPath}.
               </p>
             </div>
             <PublicBioPage page={previewPage} preview />

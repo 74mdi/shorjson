@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getPublicBioPath } from "@/lib/bio-shared";
 
 const DbPanel = dynamic(() => import("./DbPanel"), {
   ssr: false,
@@ -33,6 +34,7 @@ export default function UserSettingsPage({
   const [mounted, setMounted] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const publicBioPath = getPublicBioPath(username);
 
   useEffect(() => {
     setMounted(true);
@@ -80,7 +82,7 @@ export default function UserSettingsPage({
             className="pt-4 text-3xl font-semibold tracking-tight"
             style={{ color: "var(--text)" }}
           >
-            User
+            Profile
           </h1>
           <p className="pt-2 text-sm leading-7" style={{ color: "var(--text-muted)" }}>
             Shortcuts, page controls, and app settings live here now.
@@ -111,7 +113,7 @@ export default function UserSettingsPage({
                   color: "var(--text-muted)",
                 }}
               >
-                /{username}
+                {publicBioPath}
               </div>
             </div>
 
@@ -132,7 +134,7 @@ export default function UserSettingsPage({
               </Link>
 
               <Link
-                href={`/${username}`}
+                href={publicBioPath}
                 className="rounded-2xl border px-4 py-4 transition-all duration-200"
                 style={{
                   borderColor: "var(--border)",

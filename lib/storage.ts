@@ -27,6 +27,10 @@ export interface LinkEntry {
   passwordHash?: string;
   /** Per-link salt paired with passwordHash. */
   passwordSalt?: string;
+  /** Owning authenticated user for dashboard visibility/export. */
+  userId?: string;
+  /** Optional redirect limit for the short link. */
+  clickLimit?: number | null;
 }
 
 /** The full on-disk map: shortId → LinkEntry */
@@ -48,8 +52,30 @@ function normalise(value: unknown): LinkEntry {
     };
   }
 
-  // Already a LinkEntry (trust the shape; bad data simply passes through)
-  return value as LinkEntry;
+  const entry = value as Partial<LinkEntry>;
+
+  return {
+    originalUrl: typeof entry.originalUrl === "string" ? entry.originalUrl : "",
+    createdAt:
+      typeof entry.createdAt === "string"
+        ? entry.createdAt
+        : new Date().toISOString(),
+    clicks: typeof entry.clicks === "number" ? entry.clicks : 0,
+    ...(typeof entry.passwordHash === "string"
+      ? { passwordHash: entry.passwordHash }
+      : {}),
+    ...(typeof entry.passwordSalt === "string"
+      ? { passwordSalt: entry.passwordSalt }
+      : {}),
+    ...(typeof entry.userId === "string" && entry.userId
+      ? { userId: entry.userId }
+      : {}),
+    ...(typeof entry.clickLimit === "number"
+      ? { clickLimit: entry.clickLimit }
+      : entry.clickLimit === null
+        ? { clickLimit: null }
+        : {}),
+  };
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────

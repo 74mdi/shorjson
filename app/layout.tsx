@@ -83,13 +83,12 @@ export default async function RootLayout({
             session
               ? {
                   username: session.username,
-                  csrfToken: session.csrfToken,
                 }
               : null
           }
         />
-        <BottomBar />
-        {children}
+        <BottomBar authenticated={Boolean(session)} />
+        <div className="min-h-screen animate-page-fade">{children}</div>
       </body>
     </html>
   );

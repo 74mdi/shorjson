@@ -41,6 +41,7 @@ export async function PATCH(request: NextRequest) {
     fontPreset: parsed.data.fontPreset,
     animationPreset: parsed.data.animationPreset,
     watermarkText: parsed.data.watermarkText,
+    showThemeToggle: parsed.data.showThemeToggle,
     updatedAt: new Date().toISOString(),
   };
 

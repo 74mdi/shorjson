@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signInSchema, signUpSchema } from "@/lib/schemas";
 
 type Mode = "sign-in" | "sign-up";
@@ -42,8 +42,41 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(true);
 
   const isSignUp = mode === "sign-up";
+
+  useEffect(() => {
+    if (!isSignUp) return;
+
+    const candidate = username.trim().toLowerCase();
+    if (!candidate) {
+      setCheckingUsername(false);
+      setUsernameAvailable(true);
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setCheckingUsername(true);
+      try {
+        const response = await fetch(
+          `/api/check-username?u=${encodeURIComponent(candidate)}`,
+          { cache: "no-store" },
+        );
+        const data = (await response.json().catch(() => ({}))) as {
+          available?: boolean;
+        };
+        setUsernameAvailable(Boolean(data.available));
+      } catch {
+        setUsernameAvailable(false);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 220);
+
+    return () => window.clearTimeout(timeout);
+  }, [isSignUp, username]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +89,14 @@ export default function AuthForm({ mode }: { mode: Mode }) {
 
     if (!parsed.success) {
       setFieldErrors(parsed.error.flatten().fieldErrors);
+      setSubmitting(false);
+      return;
+    }
+
+    if (isSignUp && !checkingUsername && !usernameAvailable) {
+      setFieldErrors({
+        username: ["That username is already taken."],
+      });
       setSubmitting(false);
       return;
     }
@@ -129,7 +170,14 @@ export default function AuthForm({ mode }: { mode: Mode }) {
               style={{ borderColor: "var(--border)" }}
             />
             <p className="min-h-[16px] text-[11px]" style={{ color: "#dc2626" }}>
-              {fieldErrors.username?.[0] ?? (isSignUp ? "3-20 chars. Lowercase letters, numbers, underscores." : "")}
+              {fieldErrors.username?.[0] ??
+                (isSignUp
+                  ? checkingUsername
+                    ? "Checking availability..."
+                    : username && !usernameAvailable
+                      ? "That username is already taken."
+                      : "3-20 chars. Lowercase letters, numbers, underscores."
+                  : "")}
             </p>
           </div>
 

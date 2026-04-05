@@ -91,6 +91,13 @@ export const bioLinkCreateSchema = z.object({
       message: "Icon is too long.",
     })
     .default("🔗"),
+  iconColor: z
+    .string()
+    .refine(isHexColor, {
+      message: "Use a valid 6-digit hex color.",
+    })
+    .transform((value) => value.toLowerCase())
+    .default("#1c1916"),
   section: z
     .string()
     .transform(normaliseInlineText)
@@ -129,6 +136,13 @@ export const bioLinkUpdateSchema = z
       .refine((value) => value.length <= 40, {
         message: "Icon is too long.",
       })
+      .optional(),
+    iconColor: z
+      .string()
+      .refine(isHexColor, {
+        message: "Use a valid 6-digit hex color.",
+      })
+      .transform((value) => value.toLowerCase())
       .optional(),
     section: z
       .string()
@@ -267,4 +281,5 @@ export const bioStyleSchema = z.object({
     .refine((value) => value.length <= 48, {
       message: "Watermark must be 48 characters or less.",
     }),
+  showThemeToggle: z.boolean(),
 });

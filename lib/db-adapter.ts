@@ -27,6 +27,7 @@ export interface DataAdapter {
   getAccountUserById(userId: string): Promise<AccountUser | null>;
   getAccountUserByUsername(username: string): Promise<AccountUser | null>;
   createAccountUser(user: AccountUser): Promise<void>;
+  updateAccountUser(user: AccountUser): Promise<void>;
 
   getBioProfileByUserId(userId: string): Promise<BioProfile | null>;
   getBioProfileByUsername(username: string): Promise<BioProfile | null>;
@@ -147,6 +148,10 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
     .createIndex({ username: 1 }, { unique: true })
     .catch(() => {});
   await db
+    .collection("shor_links")
+    .createIndex({ userId: 1, createdAt: -1 })
+    .catch(() => {});
+  await db
     .collection("shor_user_links")
     .createIndex({ userId: 1, order: 1, createdAt: 1 })
     .catch(() => {});
@@ -159,6 +164,11 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
     deleteOne: (query: unknown) => Promise<unknown>;
     findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
     insertOne: (doc: unknown) => Promise<unknown>;
+    replaceOne: (
+      query: unknown,
+      doc: unknown,
+      options: { upsert: boolean },
+    ) => Promise<unknown>;
   };
   const bioProfilesCollection = db.collection("shor_bio_profiles") as {
     findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
@@ -198,6 +208,12 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
           originalUrl: doc.originalUrl as string,
           createdAt: doc.createdAt as string,
           clicks: (doc.clicks as number) ?? 0,
+          ...(typeof doc.userId === "string" ? { userId: doc.userId as string } : {}),
+          ...(typeof doc.clickLimit === "number"
+            ? { clickLimit: doc.clickLimit as number }
+            : doc.clickLimit === null
+              ? { clickLimit: null }
+              : {}),
           ...(typeof doc.passwordHash === "string"
             ? { passwordHash: doc.passwordHash as string }
             : {}),
@@ -298,6 +314,20 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
       });
     },
 
+    async updateAccountUser(user) {
+      await usersCollection.replaceOne(
+        { _id: user.id },
+        {
+          _id: user.id,
+          username: user.username,
+          passwordHash: user.passwordHash,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+        { upsert: false },
+      );
+    },
+
     async getBioProfileByUserId(userId) {
       const profile = await bioProfilesCollection.findOne({ userId });
       if (!profile) return null;
@@ -316,6 +346,7 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         fontPreset: String(profile.fontPreset ?? "sans") as BioProfile["fontPreset"],
         animationPreset: String(profile.animationPreset ?? "morph") as BioProfile["animationPreset"],
         watermarkText: String(profile.watermarkText ?? "made with shor"),
+        showThemeToggle: Boolean(profile.showThemeToggle ?? false),
         createdAt: String(profile.createdAt),
         updatedAt: String(profile.updatedAt),
       };
@@ -341,6 +372,7 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         fontPreset: String(profile.fontPreset ?? "sans") as BioProfile["fontPreset"],
         animationPreset: String(profile.animationPreset ?? "morph") as BioProfile["animationPreset"],
         watermarkText: String(profile.watermarkText ?? "made with shor"),
+        showThemeToggle: Boolean(profile.showThemeToggle ?? false),
         createdAt: String(profile.createdAt),
         updatedAt: String(profile.updatedAt),
       };
@@ -368,6 +400,7 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         title: String(doc.title),
         url: String(doc.url),
         icon: String(doc.icon ?? "🔗"),
+        iconColor: String(doc.iconColor ?? "#1c1916"),
         section: String(doc.section ?? "main"),
         visible: Boolean(doc.visible ?? true),
         order: Number(doc.order) || 0,
@@ -386,6 +419,7 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         title: String(doc.title),
         url: String(doc.url),
         icon: String(doc.icon ?? "🔗"),
+        iconColor: String(doc.iconColor ?? "#1c1916"),
         section: String(doc.section ?? "main"),
         visible: Boolean(doc.visible ?? true),
         order: Number(doc.order) || 0,
@@ -478,6 +512,8 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       original_url TEXT       NOT NULL,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       clicks      INTEGER     NOT NULL DEFAULT 0,
+      user_id     TEXT,
+      click_limit INTEGER,
       password_hash TEXT,
       password_salt TEXT
     );
@@ -488,6 +524,10 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE shor_links
+      ADD COLUMN IF NOT EXISTS user_id TEXT;
+    ALTER TABLE shor_links
+      ADD COLUMN IF NOT EXISTS click_limit INTEGER;
     ALTER TABLE shor_links
       ADD COLUMN IF NOT EXISTS password_hash TEXT;
     ALTER TABLE shor_links
@@ -512,6 +552,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       font_preset  TEXT        NOT NULL DEFAULT 'sans',
       animation_preset TEXT    NOT NULL DEFAULT 'morph',
       watermark_text TEXT      NOT NULL DEFAULT 'made with shor',
+      show_theme_toggle BOOLEAN NOT NULL DEFAULT false,
       created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -522,6 +563,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       title       TEXT        NOT NULL,
       url         TEXT        NOT NULL,
       icon        TEXT        NOT NULL DEFAULT '🔗',
+      icon_color  TEXT        NOT NULL DEFAULT '#1c1916',
       section_label TEXT      NOT NULL DEFAULT 'main',
       visible     BOOLEAN     NOT NULL DEFAULT true,
       order_index INTEGER     NOT NULL DEFAULT 0,
@@ -549,6 +591,8 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       ADD COLUMN IF NOT EXISTS section_label TEXT NOT NULL DEFAULT 'main';
     ALTER TABLE shor_user_links
       ADD COLUMN IF NOT EXISTS visible BOOLEAN NOT NULL DEFAULT true;
+    ALTER TABLE shor_user_links
+      ADD COLUMN IF NOT EXISTS icon_color TEXT NOT NULL DEFAULT '#1c1916';
     ALTER TABLE shor_bio_profiles
       ADD COLUMN IF NOT EXISTS theme_preset TEXT NOT NULL DEFAULT 'mono';
     ALTER TABLE shor_bio_profiles
@@ -557,6 +601,10 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       ADD COLUMN IF NOT EXISTS animation_preset TEXT NOT NULL DEFAULT 'morph';
     ALTER TABLE shor_bio_profiles
       ADD COLUMN IF NOT EXISTS watermark_text TEXT NOT NULL DEFAULT 'made with shor';
+    ALTER TABLE shor_bio_profiles
+      ADD COLUMN IF NOT EXISTS show_theme_toggle BOOLEAN NOT NULL DEFAULT false;
+    CREATE INDEX IF NOT EXISTS shor_links_user_created_idx
+      ON shor_links (user_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS shor_user_notes_user_updated_idx
       ON shor_user_notes (user_id, updated_at DESC);
   `);
@@ -568,7 +616,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
   return {
     async readLinks(): Promise<LinksMap> {
       const { rows } = await pool.query(
-        "SELECT id, original_url, created_at, clicks, password_hash, password_salt FROM shor_links",
+        "SELECT id, original_url, created_at, clicks, user_id, click_limit, password_hash, password_salt FROM shor_links",
       );
       const map: LinksMap = {};
       for (const r of rows) {
@@ -576,6 +624,12 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
           originalUrl: r.original_url,
           createdAt: toIso(r.created_at),
           clicks: r.clicks,
+          ...(typeof r.user_id === "string" ? { userId: r.user_id } : {}),
+          ...(typeof r.click_limit === "number"
+            ? { clickLimit: r.click_limit }
+            : r.click_limit === null
+              ? { clickLimit: null }
+              : {}),
           ...(typeof r.password_hash === "string"
             ? { passwordHash: r.password_hash }
             : {}),
@@ -589,15 +643,17 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async writeLink(id, entry) {
       await pool.query(
-        `INSERT INTO shor_links (id, original_url, created_at, clicks, password_hash, password_salt)
-         VALUES ($1,$2,$3,$4,$5,$6)
+        `INSERT INTO shor_links (id, original_url, created_at, clicks, user_id, click_limit, password_hash, password_salt)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
          ON CONFLICT (id) DO UPDATE
-           SET original_url=$2, created_at=$3, clicks=$4, password_hash=$5, password_salt=$6`,
+           SET original_url=$2, created_at=$3, clicks=$4, user_id=$5, click_limit=$6, password_hash=$7, password_salt=$8`,
         [
           id,
           entry.originalUrl,
           entry.createdAt,
           entry.clicks,
+          entry.userId ?? null,
+          entry.clickLimit ?? null,
           entry.passwordHash ?? null,
           entry.passwordSalt ?? null,
         ],
@@ -690,9 +746,24 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       );
     },
 
+    async updateAccountUser(user) {
+      await pool.query(
+        `UPDATE shor_users
+         SET username=$2, password_hash=$3, created_at=$4, updated_at=$5
+         WHERE id=$1`,
+        [
+          user.id,
+          user.username,
+          user.passwordHash,
+          user.createdAt,
+          user.updatedAt,
+        ],
+      );
+    },
+
     async getBioProfileByUserId(userId) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, username, display_name, bio, avatar, button_style, accent_color, theme_preset, font_preset, animation_preset, watermark_text, created_at, updated_at
+        `SELECT id, user_id, username, display_name, bio, avatar, button_style, accent_color, theme_preset, font_preset, animation_preset, watermark_text, show_theme_toggle, created_at, updated_at
          FROM shor_bio_profiles
          WHERE user_id=$1`,
         [userId],
@@ -713,6 +784,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         fontPreset: row.font_preset,
         animationPreset: row.animation_preset,
         watermarkText: row.watermark_text,
+        showThemeToggle: row.show_theme_toggle ?? false,
         createdAt: toIso(row.created_at),
         updatedAt: toIso(row.updated_at),
       };
@@ -720,7 +792,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async getBioProfileByUsername(username) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, username, display_name, bio, avatar, button_style, accent_color, theme_preset, font_preset, animation_preset, watermark_text, created_at, updated_at
+        `SELECT id, user_id, username, display_name, bio, avatar, button_style, accent_color, theme_preset, font_preset, animation_preset, watermark_text, show_theme_toggle, created_at, updated_at
          FROM shor_bio_profiles
          WHERE username=$1`,
         [username.toLowerCase()],
@@ -741,6 +813,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         fontPreset: row.font_preset,
         animationPreset: row.animation_preset,
         watermarkText: row.watermark_text,
+        showThemeToggle: row.show_theme_toggle ?? false,
         createdAt: toIso(row.created_at),
         updatedAt: toIso(row.updated_at),
       };
@@ -749,11 +822,11 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
     async writeBioProfile(profile) {
       await pool.query(
         `INSERT INTO shor_bio_profiles (
-           id, user_id, username, display_name, bio, avatar, button_style, accent_color, theme_preset, font_preset, animation_preset, watermark_text, created_at, updated_at
+           id, user_id, username, display_name, bio, avatar, button_style, accent_color, theme_preset, font_preset, animation_preset, watermark_text, show_theme_toggle, created_at, updated_at
          )
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
          ON CONFLICT (id) DO UPDATE
-           SET user_id=$2, username=$3, display_name=$4, bio=$5, avatar=$6, button_style=$7, accent_color=$8, theme_preset=$9, font_preset=$10, animation_preset=$11, watermark_text=$12, created_at=$13, updated_at=$14`,
+           SET user_id=$2, username=$3, display_name=$4, bio=$5, avatar=$6, button_style=$7, accent_color=$8, theme_preset=$9, font_preset=$10, animation_preset=$11, watermark_text=$12, show_theme_toggle=$13, created_at=$14, updated_at=$15`,
         [
           profile.id,
           profile.userId,
@@ -767,6 +840,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
           profile.fontPreset,
           profile.animationPreset,
           profile.watermarkText,
+          profile.showThemeToggle,
           profile.createdAt,
           profile.updatedAt,
         ],
@@ -775,7 +849,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async readBioLinks(userId) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, profile_id, title, url, icon, section_label, visible, order_index, created_at
+        `SELECT id, user_id, profile_id, title, url, icon, icon_color, section_label, visible, order_index, created_at
          FROM shor_user_links
          WHERE user_id=$1
          ORDER BY order_index ASC, created_at ASC`,
@@ -789,6 +863,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         title: row.title,
         url: row.url,
         icon: row.icon ?? "🔗",
+        iconColor: row.icon_color ?? "#1c1916",
         section: row.section_label ?? "main",
         visible: row.visible ?? true,
         order: row.order_index,
@@ -798,7 +873,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async getBioLinkById(userId, id) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, profile_id, title, url, icon, section_label, visible, order_index, created_at
+        `SELECT id, user_id, profile_id, title, url, icon, icon_color, section_label, visible, order_index, created_at
          FROM shor_user_links
          WHERE user_id=$1 AND id=$2`,
         [userId, id],
@@ -813,6 +888,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         title: row.title,
         url: row.url,
         icon: row.icon ?? "🔗",
+        iconColor: row.icon_color ?? "#1c1916",
         section: row.section_label ?? "main",
         visible: row.visible ?? true,
         order: row.order_index,
@@ -823,11 +899,11 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
     async writeBioLink(link) {
       await pool.query(
         `INSERT INTO shor_user_links (
-           id, user_id, profile_id, title, url, icon, section_label, visible, order_index, created_at
+           id, user_id, profile_id, title, url, icon, icon_color, section_label, visible, order_index, created_at
          )
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
          ON CONFLICT (id) DO UPDATE
-           SET user_id=$2, profile_id=$3, title=$4, url=$5, icon=$6, section_label=$7, visible=$8, order_index=$9, created_at=$10`,
+           SET user_id=$2, profile_id=$3, title=$4, url=$5, icon=$6, icon_color=$7, section_label=$8, visible=$9, order_index=$10, created_at=$11`,
         [
           link.id,
           link.userId,
@@ -835,6 +911,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
           link.title,
           link.url,
           link.icon,
+          link.iconColor,
           link.section,
           link.visible,
           link.order,

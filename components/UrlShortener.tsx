@@ -40,6 +40,7 @@ interface ShortenResult {
   shortUrl: string;
   createdAt?: string;
   clicks?: number;
+  clickLimit?: number | null;
   hasPassword?: boolean;
 }
 
@@ -130,6 +131,8 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
   const [showSlug, setShowSlug] = useState(false);
   const [password, setPassword] = useState("");
   const [showPasswordField, setShowPasswordField] = useState(false);
+  const [clickLimit, setClickLimit] = useState("");
+  const [showClickLimitField, setShowClickLimitField] = useState(false);
   const [revealPassword, setRevealPassword] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ShortenResult | null>(null);
@@ -177,6 +180,10 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
           url: trimmed,
           slug: slug.trim() || undefined,
           password: showPasswordField ? password : undefined,
+          clickLimit:
+            showClickLimitField && clickLimit.trim()
+              ? Number(clickLimit.trim())
+              : undefined,
         }),
       });
       const data = await res.json();
@@ -280,6 +287,13 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
             >
               {showPasswordField ? "− password" : "+ password"}
             </button>
+            <button
+              type="button"
+              onClick={() => setShowClickLimitField((value) => !value)}
+              className="text-xs transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--accent)]"
+            >
+              {showClickLimitField ? "− click limit" : "+ click limit"}
+            </button>
           </div>
 
           {/* CSS grid 0fr → 1fr reveal */}
@@ -316,6 +330,48 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                     disabled={isLoading}
                     autoComplete="off"
                     spellCheck={false}
+                    className={[
+                      "flex-1 bg-transparent px-2 py-3 text-sm outline-none",
+                      "text-[var(--text)] placeholder:text-[var(--text-faint)]",
+                      isLoading ? "opacity-50 cursor-not-allowed" : "",
+                    ].join(" ")}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: showClickLimitField ? "1fr" : "0fr",
+              transition:
+                "grid-template-rows 0.28s cubic-bezier(0.22,1,0.36,1)",
+            }}
+          >
+            <div style={{ overflow: "hidden" }}>
+              <div className="pt-2">
+                <div
+                  className={[
+                    "flex items-center rounded-xl border transition-all duration-200 overflow-hidden",
+                    "bg-[var(--surface)] border-[var(--border)]",
+                    "focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_3px_var(--accent-glow)]",
+                  ].join(" ")}
+                >
+                  <span className="pl-3.5 text-sm text-[var(--text-muted)] select-none flex-shrink-0">
+                    #
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={1000000}
+                    value={clickLimit}
+                    onChange={(e) =>
+                      setClickLimit(e.target.value.replace(/[^\d]/g, ""))
+                    }
+                    placeholder="Maximum clicks"
+                    disabled={isLoading}
                     className={[
                       "flex-1 bg-transparent px-2 py-3 text-sm outline-none",
                       "text-[var(--text)] placeholder:text-[var(--text-faint)]",
@@ -544,6 +600,7 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                 {/* Metadata — creation date + click count */}
                 {(result.createdAt !== undefined ||
                   result.clicks !== undefined ||
+                  result.clickLimit !== undefined ||
                   result.hasPassword) && (
                   <p
                     className="mt-2 text-[11px] select-none tabular-nums"
@@ -552,7 +609,8 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                     {result.hasPassword && <span>password protected</span>}
                     {result.hasPassword &&
                       (result.createdAt !== undefined ||
-                        result.clicks !== undefined) && <span> · </span>}
+                        result.clicks !== undefined ||
+                        result.clickLimit !== undefined) && <span> · </span>}
                     {result.createdAt && (
                       <span>{formatRelative(result.createdAt)}</span>
                     )}
@@ -564,6 +622,11 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                         {result.clicks === 1 ? "click" : "clicks"}
                       </span>
                     )}
+                    {result.clicks !== undefined &&
+                      typeof result.clickLimit === "number" && <span> · </span>}
+                    {typeof result.clickLimit === "number" ? (
+                      <span>limit {result.clickLimit}</span>
+                    ) : null}
                   </p>
                 )}
               </div>
