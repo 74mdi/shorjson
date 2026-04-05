@@ -8,6 +8,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { getLinks, setLink } from "@/lib/adapter-utils";
 import { getRemoteServerUrl } from "@/lib/config";
+import {
+  getOptionalPassword,
+  hashLinkPassword,
+  isPasswordProtected,
+  LINK_PASSWORD_MAX,
+  verifyLinkPassword,
+} from "@/lib/link-protection";
+import type { LinkEntry } from "@/lib/storage";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -153,6 +161,7 @@ export async function POST(req: NextRequest) {
     typeof body.slug === "string" && body.slug.trim()
       ? body.slug.trim().toLowerCase()
       : undefined;
+  const password = getOptionalPassword(body.password);
 
   // 3. Validations
   if (originalUrl.length > MAX_URL)
@@ -163,6 +172,13 @@ export async function POST(req: NextRequest) {
   if (!isValidUrl(originalUrl))
     return NextResponse.json(
       { error: "Invalid URL. Must start with http:// or https://" },
+      { status: 422 },
+    );
+  if (password && password.length > LINK_PASSWORD_MAX)
+    return NextResponse.json(
+      {
+        error: `Password is too long (max ${LINK_PASSWORD_MAX} characters).`,
+      },
       { status: 422 },
     );
   const safety = isSafeUrl(originalUrl);
@@ -177,6 +193,16 @@ export async function POST(req: NextRequest) {
   // 4. If remote server configured, proxy there
   const remoteUrl = getRemoteServerUrl();
   if (remoteUrl) {
+    if (password) {
+      return NextResponse.json(
+        {
+          error:
+            "Password-protected links are only available when Shor is storing links locally or in a configured database.",
+        },
+        { status: 400 },
+      );
+    }
+
     try {
       const upstream = await fetch(`${remoteUrl}/api/links`, {
         method: "POST",
@@ -195,7 +221,7 @@ export async function POST(req: NextRequest) {
       }
       const { shortId } = data as { shortId: string };
       return NextResponse.json(
-        { shortId, shortUrl: `${getBaseUrl(req)}/${shortId}` },
+        { shortId, shortUrl: `${getBaseUrl(req)}/${shortId}`, hasPassword: false },
         { status: upstream.status === 201 ? 201 : 200 },
       );
     } catch {
@@ -209,6 +235,20 @@ export async function POST(req: NextRequest) {
   // 5. Local storage path
   const links = await getLinks();
   const now = new Date().toISOString();
+
+  async function matchesProtection(entry: LinkEntry) {
+    if (!password) return !isPasswordProtected(entry);
+    return verifyLinkPassword(password, entry);
+  }
+
+  async function buildEntry(): Promise<LinkEntry> {
+    return {
+      originalUrl,
+      createdAt: now,
+      clicks: 0,
+      ...(password ? await hashLinkPassword(password) : {}),
+    };
+  }
 
   if (customSlug !== undefined) {
     const existingEntry = links[customSlug];
@@ -224,49 +264,62 @@ export async function POST(req: NextRequest) {
     }
     // Slug already points to the same URL → return existing metadata
     if (existingEntry !== undefined) {
+      if (!(await matchesProtection(existingEntry))) {
+        return NextResponse.json(
+          {
+            error:
+              "That slug already exists with a different password configuration.",
+          },
+          { status: 409 },
+        );
+      }
+
       return NextResponse.json({
         shortId: customSlug,
         shortUrl: `${getBaseUrl(req)}/${customSlug}`,
         createdAt: existingEntry.createdAt,
         clicks: existingEntry.clicks,
+        hasPassword: isPasswordProtected(existingEntry),
       });
     }
-    await setLink(customSlug, { originalUrl, createdAt: now, clicks: 0 });
+    await setLink(customSlug, await buildEntry());
     return NextResponse.json(
       {
         shortId: customSlug,
         shortUrl: `${getBaseUrl(req)}/${customSlug}`,
         createdAt: now,
         clicks: 0,
+        hasPassword: Boolean(password),
       },
       { status: 201 },
     );
   }
 
-  // Deduplication: same URL already shortened → return existing metadata
-  const existing = Object.entries(links).find(
-    ([, v]) => v.originalUrl === originalUrl,
-  );
-  if (existing) {
-    const [existingId, existingMeta] = existing;
+  // Deduplication: same URL + same protection config → return existing metadata
+  for (const [existingId, existingMeta] of Object.entries(links)) {
+    if (existingMeta.originalUrl !== originalUrl) continue;
+    if (!(await matchesProtection(existingMeta))) continue;
+
     return NextResponse.json({
       shortId: existingId,
       shortUrl: `${getBaseUrl(req)}/${existingId}`,
       createdAt: existingMeta.createdAt,
       clicks: existingMeta.clicks,
+      hasPassword: isPasswordProtected(existingMeta),
     });
   }
 
   let shortId = nanoid(7);
   let attempts = 0;
   while (links[shortId] && attempts++ < 5) shortId = nanoid(7);
-  await setLink(shortId, { originalUrl, createdAt: now, clicks: 0 });
+  await setLink(shortId, await buildEntry());
   return NextResponse.json(
     {
       shortId,
       shortUrl: `${getBaseUrl(req)}/${shortId}`,
       createdAt: now,
       clicks: 0,
+      hasPassword: Boolean(password),
     },
     { status: 201 },
   );

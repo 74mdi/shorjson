@@ -23,6 +23,10 @@ export interface LinkEntry {
   createdAt: string;
   /** Total number of times the short link has been followed (redirected). */
   clicks: number;
+  /** Password hash for protected links. */
+  passwordHash?: string;
+  /** Per-link salt paired with passwordHash. */
+  passwordSalt?: string;
 }
 
 /** The full on-disk map: shortId → LinkEntry */

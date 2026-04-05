@@ -15,7 +15,7 @@ export default function Home() {
           Shor
         </h1>
         <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-          Shorten any link, instantly.
+          Shorten any link with optional slugs and passwords.
         </p>
       </header>
 

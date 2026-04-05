@@ -7,6 +7,7 @@ interface LinkEntry {
   originalUrl: string;
   createdAt: string;
   clicks: number;
+  hasPassword?: boolean;
 }
 
 function formatRelative(iso: string): string {
@@ -59,6 +60,24 @@ const CheckIcon = () => (
     aria-hidden="true"
   >
     <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect width="14" height="10" x="5" y="11" rx="2" />
+    <path d="M8 11V8a4 4 0 1 1 8 0v3" />
   </svg>
 );
 
@@ -118,6 +137,19 @@ function LinkRow({ link, index }: { link: LinkEntry; index: number }) {
           >
             {link.clicks} {link.clicks === 1 ? "click" : "clicks"}
           </span>
+          {link.hasPassword && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em] flex-shrink-0"
+              style={{
+                background: "var(--surface-raised)",
+                color: "var(--text-muted)",
+                border: "1px solid var(--border)",
+              }}
+            >
+              <LockIcon />
+              Locked
+            </span>
+          )}
         </div>
         <p
           className="text-[11px] truncate mt-0.5"

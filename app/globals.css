@@ -140,6 +140,35 @@
         transform: translateX(0);
     }
 }
+@keyframes orbDrift {
+    0%,
+    100% {
+        transform: translate3d(-2%, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(4%, -5%, 0) scale(1.06);
+    }
+}
+@keyframes orbDriftReverse {
+    0%,
+    100% {
+        transform: translate3d(1%, 0, 0) scale(1);
+    }
+    50% {
+        transform: translate3d(-4%, 4%, 0) scale(0.96);
+    }
+}
+@keyframes softPulse {
+    0%,
+    100% {
+        opacity: 0.7;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.04);
+    }
+}
 
 /* ── Animation utility classes ───────────────────────────────────────────── */
 
@@ -160,6 +189,15 @@
 }
 .animate-morph-slide {
     animation: morphSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-orb-drift {
+    animation: orbDrift 8s ease-in-out infinite;
+}
+.animate-orb-drift-reverse {
+    animation: orbDriftReverse 9s ease-in-out infinite;
+}
+.animate-soft-pulse {
+    animation: softPulse 4s ease-in-out infinite;
 }
 
 .delay-50 {

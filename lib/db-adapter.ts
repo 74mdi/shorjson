@@ -119,6 +119,12 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
           originalUrl: doc.originalUrl as string,
           createdAt: doc.createdAt as string,
           clicks: (doc.clicks as number) ?? 0,
+          ...(typeof doc.passwordHash === "string"
+            ? { passwordHash: doc.passwordHash as string }
+            : {}),
+          ...(typeof doc.passwordSalt === "string"
+            ? { passwordSalt: doc.passwordSalt as string }
+            : {}),
         };
       }
       return map;
@@ -206,7 +212,9 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       id          TEXT        PRIMARY KEY,
       original_url TEXT       NOT NULL,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      clicks      INTEGER     NOT NULL DEFAULT 0
+      clicks      INTEGER     NOT NULL DEFAULT 0,
+      password_hash TEXT,
+      password_salt TEXT
     );
     CREATE TABLE IF NOT EXISTS shor_notes (
       id         TEXT        PRIMARY KEY,
@@ -215,6 +223,10 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE shor_links
+      ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    ALTER TABLE shor_links
+      ADD COLUMN IF NOT EXISTS password_salt TEXT;
   `);
 
   function toIso(v: unknown): string {
@@ -224,7 +236,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
   return {
     async readLinks(): Promise<LinksMap> {
       const { rows } = await pool.query(
-        "SELECT id, original_url, created_at, clicks FROM shor_links",
+        "SELECT id, original_url, created_at, clicks, password_hash, password_salt FROM shor_links",
       );
       const map: LinksMap = {};
       for (const r of rows) {
@@ -232,6 +244,12 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
           originalUrl: r.original_url,
           createdAt: toIso(r.created_at),
           clicks: r.clicks,
+          ...(typeof r.password_hash === "string"
+            ? { passwordHash: r.password_hash }
+            : {}),
+          ...(typeof r.password_salt === "string"
+            ? { passwordSalt: r.password_salt }
+            : {}),
         };
       }
       return map;
@@ -239,11 +257,18 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async writeLink(id, entry) {
       await pool.query(
-        `INSERT INTO shor_links (id, original_url, created_at, clicks)
-         VALUES ($1,$2,$3,$4)
+        `INSERT INTO shor_links (id, original_url, created_at, clicks, password_hash, password_salt)
+         VALUES ($1,$2,$3,$4,$5,$6)
          ON CONFLICT (id) DO UPDATE
-           SET original_url=$2, created_at=$3, clicks=$4`,
-        [id, entry.originalUrl, entry.createdAt, entry.clicks],
+           SET original_url=$2, created_at=$3, clicks=$4, password_hash=$5, password_salt=$6`,
+        [
+          id,
+          entry.originalUrl,
+          entry.createdAt,
+          entry.clicks,
+          entry.passwordHash ?? null,
+          entry.passwordSalt ?? null,
+        ],
       );
     },
 

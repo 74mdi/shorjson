@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { getLinks } from "@/lib/adapter-utils";
+import { isPasswordProtected } from "@/lib/link-protection";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET() {
       originalUrl: entry.originalUrl,
       createdAt: entry.createdAt,
       clicks: entry.clicks,
+      hasPassword: isPasswordProtected(entry),
     }))
     .sort(
       (a, b) =>

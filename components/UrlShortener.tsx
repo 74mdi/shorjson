@@ -40,6 +40,7 @@ interface ShortenResult {
   shortUrl: string;
   createdAt?: string;
   clicks?: number;
+  hasPassword?: boolean;
 }
 
 /* ─── Icons ──────────────────────────────────────────────────────────────── */
@@ -103,12 +104,33 @@ const Spinner = () => (
   </svg>
 );
 
+const LockIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <rect width="14" height="10" x="5" y="11" rx="2" />
+    <path d="M8 11V8a4 4 0 1 1 8 0v3" />
+  </svg>
+);
+
 /* ─── Component ──────────────────────────────────────────────────────────── */
 
 export default function UrlShortener({ onShorten }: { onShorten?: () => void }) {
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState("");
   const [showSlug, setShowSlug] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPasswordField, setShowPasswordField] = useState(false);
+  const [revealPassword, setRevealPassword] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ShortenResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -151,7 +173,11 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
       const res = await fetch("/api/shorten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: trimmed, slug: slug.trim() || undefined }),
+        body: JSON.stringify({
+          url: trimmed,
+          slug: slug.trim() || undefined,
+          password: showPasswordField ? password : undefined,
+        }),
       });
       const data = await res.json();
 
@@ -237,15 +263,24 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
           />
         </div>
 
-        {/* ── Custom slug toggle ── */}
+        {/* ── Optional controls toggles ── */}
         <div>
-          <button
-            type="button"
-            onClick={() => setShowSlug((v) => !v)}
-            className="text-xs transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--accent)]"
-          >
-            {showSlug ? "− slug" : "+ custom slug"}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowSlug((v) => !v)}
+              className="text-xs transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--accent)]"
+            >
+              {showSlug ? "− slug" : "+ custom slug"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowPasswordField((value) => !value)}
+              className="text-xs transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--accent)]"
+            >
+              {showPasswordField ? "− password" : "+ password"}
+            </button>
+          </div>
 
           {/* CSS grid 0fr → 1fr reveal */}
           <div
@@ -287,6 +322,57 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                       isLoading ? "opacity-50 cursor-not-allowed" : "",
                     ].join(" ")}
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: showPasswordField ? "1fr" : "0fr",
+              transition:
+                "grid-template-rows 0.28s cubic-bezier(0.22,1,0.36,1)",
+            }}
+          >
+            <div style={{ overflow: "hidden" }}>
+              <div className="pt-2">
+                <div
+                  className={[
+                    "flex items-center rounded-xl border transition-all duration-200 overflow-hidden",
+                    "bg-[var(--surface)] border-[var(--border)]",
+                    "focus-within:border-[var(--accent)] focus-within:shadow-[0_0_0_3px_var(--accent-glow)]",
+                  ].join(" ")}
+                >
+                  <span className="pl-3.5 text-[var(--text-muted)] select-none flex-shrink-0">
+                    <LockIcon />
+                  </span>
+                  <input
+                    type={revealPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Set a link password"
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                    spellCheck={false}
+                    className={[
+                      "flex-1 bg-transparent px-2 py-3 text-sm outline-none",
+                      "text-[var(--text)] placeholder:text-[var(--text-faint)]",
+                      isLoading ? "opacity-50 cursor-not-allowed" : "",
+                    ].join(" ")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setRevealPassword((value) => !value)}
+                    disabled={isLoading}
+                    className={[
+                      "px-3 text-xs font-medium transition-colors duration-200",
+                      "text-[var(--text-muted)] hover:text-[var(--accent)]",
+                      isLoading ? "opacity-50 cursor-not-allowed" : "",
+                    ].join(" ")}
+                  >
+                    {revealPassword ? "Hide" : "Show"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -374,14 +460,29 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                 {/* Short link row */}
                 <div className="flex items-center gap-3">
                   {/* Clickable short URL */}
-                  <a
-                    href={result.shortUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 truncate text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
-                  >
-                    {result.shortUrl}
-                  </a>
+                  <div className="flex flex-1 items-center gap-2 min-w-0">
+                    <a
+                      href={result.shortUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate text-sm font-medium text-[var(--accent)] underline-offset-2 hover:underline"
+                    >
+                      {result.shortUrl}
+                    </a>
+                    {result.hasPassword && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] flex-shrink-0"
+                        style={{
+                          borderColor: "var(--border)",
+                          background: "var(--surface-raised)",
+                          color: "var(--text-muted)",
+                        }}
+                      >
+                        <LockIcon />
+                        Locked
+                      </span>
+                    )}
+                  </div>
 
                   {/* ── Copy button — morph animation ── */}
                   <button
@@ -442,11 +543,16 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
 
                 {/* Metadata — creation date + click count */}
                 {(result.createdAt !== undefined ||
-                  result.clicks !== undefined) && (
+                  result.clicks !== undefined ||
+                  result.hasPassword) && (
                   <p
                     className="mt-2 text-[11px] select-none tabular-nums"
                     style={{ color: "var(--text-faint)" }}
                   >
+                    {result.hasPassword && <span>password protected</span>}
+                    {result.hasPassword &&
+                      (result.createdAt !== undefined ||
+                        result.clicks !== undefined) && <span> · </span>}
                     {result.createdAt && (
                       <span>{formatRelative(result.createdAt)}</span>
                     )}
