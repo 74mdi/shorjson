@@ -11,6 +11,7 @@
         --surface: #fafafa;
         --surface-raised: #f5f5f5;
         --border: #e5e5e5;
+        --border2: #d4d4d4;
         --text: #0a0a0a;
         --text-muted: #737373;
         --text-faint: #d4d4d4;
@@ -20,6 +21,12 @@
         --accent-soft: #f5f5f5;
         --accent-soft-border: #e0e0e0;
         --dot-color: rgba(0, 0, 0, 0.03);
+        --font-display:
+            "Iowan Old Style", "Palatino Linotype", "Book Antiqua",
+            Georgia, serif;
+        --font-mono:
+            ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Monaco,
+            Consolas, "Liberation Mono", "Courier New", monospace;
     }
 
     /* ── Dark mode — activated by .dark class on <html> ── */
@@ -28,6 +35,7 @@
         --surface: #111111;
         --surface-raised: #1a1a1a;
         --border: #2a2a2a;
+        --border2: #3a3a3a;
         --text: #fafafa;
         --text-muted: #737373;
         --text-faint: #252525;
@@ -68,6 +76,121 @@
     html {
         -webkit-tap-highlight-color: transparent;
     }
+}
+
+.btn-base {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 18px;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 150ms ease;
+}
+
+.btn-minimal {
+    background: #fff;
+    border: 0.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+}
+
+.btn-minimal:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--accent);
+    border-radius: 10px;
+    color: var(--accent);
+}
+
+.btn-outline:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-filled {
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+}
+
+.btn-filled:hover {
+    opacity: 0.88;
+    transform: translateY(-2px);
+}
+
+.btn-pill {
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    color: #fff;
+}
+
+.btn-pill:hover {
+    opacity: 0.88;
+    transform: translateY(-2px);
+}
+
+.btn-soft {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border: none;
+    border-radius: 10px;
+    color: var(--accent);
+}
+
+.btn-soft:hover {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.btn-ghost {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: var(--text);
+    padding-left: 4px;
+}
+
+.btn-ghost:hover {
+    text-decoration: underline;
+    color: var(--accent);
+}
+
+.btn-card {
+    background: #fff;
+    border: 0.5px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.btn-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-brutalist {
+    background: #fff;
+    border: 2px solid #1c1916;
+    border-radius: 0;
+    color: #1c1916;
+}
+
+.btn-brutalist:hover {
+    background: #1c1916;
+    color: #fff;
+}
+
+.preview-btn {
+    justify-content: center;
+    padding: 10px 14px;
 }
 
 /* ── Keyframes ────────────────────────────────────────────────────────────── */

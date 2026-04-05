@@ -4,7 +4,12 @@
 
 import type { LinksMap, LinkEntry } from "./storage";
 import type { Note } from "./notes-storage";
-import type { AccountUser, BioLink, PrivateNote } from "./account-types";
+import type {
+  AccountUser,
+  BioLink,
+  BioProfile,
+  PrivateNote,
+} from "./account-types";
 import { getActiveConnection } from "./db-connections";
 
 // ── Interface ─────────────────────────────────────────────────────────────────
@@ -22,6 +27,10 @@ export interface DataAdapter {
   getAccountUserById(userId: string): Promise<AccountUser | null>;
   getAccountUserByUsername(username: string): Promise<AccountUser | null>;
   createAccountUser(user: AccountUser): Promise<void>;
+
+  getBioProfileByUserId(userId: string): Promise<BioProfile | null>;
+  getBioProfileByUsername(username: string): Promise<BioProfile | null>;
+  writeBioProfile(profile: BioProfile): Promise<void>;
 
   readBioLinks(userId: string): Promise<BioLink[]>;
   getBioLinkById(userId: string, id: string): Promise<BioLink | null>;
@@ -130,6 +139,14 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
     .createIndex({ username: 1 }, { unique: true })
     .catch(() => {});
   await db
+    .collection("shor_bio_profiles")
+    .createIndex({ userId: 1 }, { unique: true })
+    .catch(() => {});
+  await db
+    .collection("shor_bio_profiles")
+    .createIndex({ username: 1 }, { unique: true })
+    .catch(() => {});
+  await db
     .collection("shor_user_links")
     .createIndex({ userId: 1, order: 1, createdAt: 1 })
     .catch(() => {});
@@ -142,6 +159,14 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
     deleteOne: (query: unknown) => Promise<unknown>;
     findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
     insertOne: (doc: unknown) => Promise<unknown>;
+  };
+  const bioProfilesCollection = db.collection("shor_bio_profiles") as {
+    findOne: (query: unknown) => Promise<Record<string, unknown> | null>;
+    replaceOne: (
+      query: unknown,
+      doc: unknown,
+      options: { upsert: boolean },
+    ) => Promise<unknown>;
   };
   const userLinksCollection = db.collection("shor_user_links") as {
     deleteOne: (query: unknown) => Promise<unknown>;
@@ -273,6 +298,54 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
       });
     },
 
+    async getBioProfileByUserId(userId) {
+      const profile = await bioProfilesCollection.findOne({ userId });
+      if (!profile) return null;
+
+      return {
+        id: String(profile._id),
+        userId: String(profile.userId),
+        username: String(profile.username),
+        displayName: String(profile.displayName ?? ""),
+        bio: String(profile.bio ?? ""),
+        avatar:
+          typeof profile.avatar === "string" ? String(profile.avatar) : null,
+        buttonStyle: String(profile.buttonStyle ?? "minimal") as BioProfile["buttonStyle"],
+        accentColor: String(profile.accentColor ?? "#d97b4a"),
+        createdAt: String(profile.createdAt),
+        updatedAt: String(profile.updatedAt),
+      };
+    },
+
+    async getBioProfileByUsername(username) {
+      const profile = await bioProfilesCollection.findOne({
+        username: username.toLowerCase(),
+      });
+      if (!profile) return null;
+
+      return {
+        id: String(profile._id),
+        userId: String(profile.userId),
+        username: String(profile.username),
+        displayName: String(profile.displayName ?? ""),
+        bio: String(profile.bio ?? ""),
+        avatar:
+          typeof profile.avatar === "string" ? String(profile.avatar) : null,
+        buttonStyle: String(profile.buttonStyle ?? "minimal") as BioProfile["buttonStyle"],
+        accentColor: String(profile.accentColor ?? "#d97b4a"),
+        createdAt: String(profile.createdAt),
+        updatedAt: String(profile.updatedAt),
+      };
+    },
+
+    async writeBioProfile(profile) {
+      await bioProfilesCollection.replaceOne(
+        { _id: profile.id, userId: profile.userId },
+        { _id: profile.id, ...profile, username: profile.username.toLowerCase() },
+        { upsert: true },
+      );
+    },
+
     async readBioLinks(userId) {
       const docs = await db
         .collection("shor_user_links")
@@ -283,8 +356,12 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
       return docs.map((doc) => ({
         id: String(doc._id),
         userId: String(doc.userId),
+        profileId: String(doc.profileId ?? ""),
         title: String(doc.title),
         url: String(doc.url),
+        icon: String(doc.icon ?? "🔗"),
+        section: String(doc.section ?? "main"),
+        visible: Boolean(doc.visible ?? true),
         order: Number(doc.order) || 0,
         createdAt: String(doc.createdAt),
       }));
@@ -297,8 +374,12 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
       return {
         id: String(doc._id),
         userId: String(doc.userId),
+        profileId: String(doc.profileId ?? ""),
         title: String(doc.title),
         url: String(doc.url),
+        icon: String(doc.icon ?? "🔗"),
+        section: String(doc.section ?? "main"),
+        visible: Boolean(doc.visible ?? true),
         order: Number(doc.order) || 0,
         createdAt: String(doc.createdAt),
       };
@@ -410,11 +491,27 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS shor_bio_profiles (
+      id           TEXT        PRIMARY KEY,
+      user_id      TEXT        NOT NULL UNIQUE REFERENCES shor_users(id) ON DELETE CASCADE,
+      username     TEXT        NOT NULL UNIQUE,
+      display_name TEXT        NOT NULL DEFAULT '',
+      bio          TEXT        NOT NULL DEFAULT '',
+      avatar       TEXT,
+      button_style TEXT        NOT NULL DEFAULT 'minimal',
+      accent_color TEXT        NOT NULL DEFAULT '#d97b4a',
+      created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
     CREATE TABLE IF NOT EXISTS shor_user_links (
       id          TEXT        PRIMARY KEY,
       user_id     TEXT        NOT NULL REFERENCES shor_users(id) ON DELETE CASCADE,
+      profile_id  TEXT,
       title       TEXT        NOT NULL,
       url         TEXT        NOT NULL,
+      icon        TEXT        NOT NULL DEFAULT '🔗',
+      section_label TEXT      NOT NULL DEFAULT 'main',
+      visible     BOOLEAN     NOT NULL DEFAULT true,
       order_index INTEGER     NOT NULL DEFAULT 0,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -428,8 +525,18 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
     );
     CREATE INDEX IF NOT EXISTS shor_user_links_user_order_idx
       ON shor_user_links (user_id, order_index, created_at);
+    CREATE INDEX IF NOT EXISTS shor_bio_profiles_username_idx
+      ON shor_bio_profiles (username);
     ALTER TABLE shor_user_notes
       ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '';
+    ALTER TABLE shor_user_links
+      ADD COLUMN IF NOT EXISTS profile_id TEXT;
+    ALTER TABLE shor_user_links
+      ADD COLUMN IF NOT EXISTS icon TEXT NOT NULL DEFAULT '🔗';
+    ALTER TABLE shor_user_links
+      ADD COLUMN IF NOT EXISTS section_label TEXT NOT NULL DEFAULT 'main';
+    ALTER TABLE shor_user_links
+      ADD COLUMN IF NOT EXISTS visible BOOLEAN NOT NULL DEFAULT true;
     CREATE INDEX IF NOT EXISTS shor_user_notes_user_updated_idx
       ON shor_user_notes (user_id, updated_at DESC);
   `);
@@ -563,9 +670,80 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       );
     },
 
+    async getBioProfileByUserId(userId) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, username, display_name, bio, avatar, button_style, accent_color, created_at, updated_at
+         FROM shor_bio_profiles
+         WHERE user_id=$1`,
+        [userId],
+      );
+      const row = rows[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        userId: row.user_id,
+        username: row.username,
+        displayName: row.display_name,
+        bio: row.bio,
+        avatar: row.avatar,
+        buttonStyle: row.button_style,
+        accentColor: row.accent_color,
+        createdAt: toIso(row.created_at),
+        updatedAt: toIso(row.updated_at),
+      };
+    },
+
+    async getBioProfileByUsername(username) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, username, display_name, bio, avatar, button_style, accent_color, created_at, updated_at
+         FROM shor_bio_profiles
+         WHERE username=$1`,
+        [username.toLowerCase()],
+      );
+      const row = rows[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        userId: row.user_id,
+        username: row.username,
+        displayName: row.display_name,
+        bio: row.bio,
+        avatar: row.avatar,
+        buttonStyle: row.button_style,
+        accentColor: row.accent_color,
+        createdAt: toIso(row.created_at),
+        updatedAt: toIso(row.updated_at),
+      };
+    },
+
+    async writeBioProfile(profile) {
+      await pool.query(
+        `INSERT INTO shor_bio_profiles (
+           id, user_id, username, display_name, bio, avatar, button_style, accent_color, created_at, updated_at
+         )
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         ON CONFLICT (id) DO UPDATE
+           SET user_id=$2, username=$3, display_name=$4, bio=$5, avatar=$6, button_style=$7, accent_color=$8, created_at=$9, updated_at=$10`,
+        [
+          profile.id,
+          profile.userId,
+          profile.username.toLowerCase(),
+          profile.displayName,
+          profile.bio,
+          profile.avatar,
+          profile.buttonStyle,
+          profile.accentColor,
+          profile.createdAt,
+          profile.updatedAt,
+        ],
+      );
+    },
+
     async readBioLinks(userId) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, title, url, order_index, created_at
+        `SELECT id, user_id, profile_id, title, url, icon, section_label, visible, order_index, created_at
          FROM shor_user_links
          WHERE user_id=$1
          ORDER BY order_index ASC, created_at ASC`,
@@ -575,8 +753,12 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       return rows.map((row) => ({
         id: row.id,
         userId: row.user_id,
+        profileId: row.profile_id ?? "",
         title: row.title,
         url: row.url,
+        icon: row.icon ?? "🔗",
+        section: row.section_label ?? "main",
+        visible: row.visible ?? true,
         order: row.order_index,
         createdAt: toIso(row.created_at),
       }));
@@ -584,7 +766,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async getBioLinkById(userId, id) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, title, url, order_index, created_at
+        `SELECT id, user_id, profile_id, title, url, icon, section_label, visible, order_index, created_at
          FROM shor_user_links
          WHERE user_id=$1 AND id=$2`,
         [userId, id],
@@ -595,8 +777,12 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       return {
         id: row.id,
         userId: row.user_id,
+        profileId: row.profile_id ?? "",
         title: row.title,
         url: row.url,
+        icon: row.icon ?? "🔗",
+        section: row.section_label ?? "main",
+        visible: row.visible ?? true,
         order: row.order_index,
         createdAt: toIso(row.created_at),
       };
@@ -604,11 +790,24 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async writeBioLink(link) {
       await pool.query(
-        `INSERT INTO shor_user_links (id, user_id, title, url, order_index, created_at)
-         VALUES ($1,$2,$3,$4,$5,$6)
+        `INSERT INTO shor_user_links (
+           id, user_id, profile_id, title, url, icon, section_label, visible, order_index, created_at
+         )
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT (id) DO UPDATE
-           SET user_id=$2, title=$3, url=$4, order_index=$5, created_at=$6`,
-        [link.id, link.userId, link.title, link.url, link.order, link.createdAt],
+           SET user_id=$2, profile_id=$3, title=$4, url=$5, icon=$6, section_label=$7, visible=$8, order_index=$9, created_at=$10`,
+        [
+          link.id,
+          link.userId,
+          link.profileId,
+          link.title,
+          link.url,
+          link.icon,
+          link.section,
+          link.visible,
+          link.order,
+          link.createdAt,
+        ],
       );
     },
 

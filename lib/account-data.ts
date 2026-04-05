@@ -1,13 +1,21 @@
 import { getActiveAdapter } from "./db-adapter";
 import {
   readBioLinksFile,
+  readBioProfilesFile,
   readPrivateNotesFile,
   readUsersFile,
   writeBioLinksFile,
+  writeBioProfilesFile,
   writePrivateNotesFile,
   writeUsersFile,
 } from "./account-file-storage";
-import type { AccountUser, BioLink, PrivateNote } from "./account-types";
+import type {
+  AccountUser,
+  BioLink,
+  BioProfile,
+  PrivateNote,
+} from "./account-types";
+import { isButtonStyle } from "./account-types";
 
 function normalisePrivateNote(note: PrivateNote | Record<string, unknown>): PrivateNote {
   return {
@@ -17,6 +25,72 @@ function normalisePrivateNote(note: PrivateNote | Record<string, unknown>): Priv
     content: typeof note.content === "string" ? note.content : "",
     createdAt: String(note.createdAt ?? new Date().toISOString()),
     updatedAt: String(note.updatedAt ?? note.createdAt ?? new Date().toISOString()),
+  };
+}
+
+function normaliseBioProfile(
+  profile: BioProfile | Record<string, unknown>,
+  fallbackUsername = "",
+): BioProfile {
+  const username =
+    typeof profile.username === "string" && profile.username.trim()
+      ? profile.username.trim().toLowerCase()
+      : fallbackUsername.toLowerCase();
+
+  return {
+    id: String(profile.id ?? ""),
+    userId: String(profile.userId ?? ""),
+    username,
+    displayName:
+      typeof profile.displayName === "string" ? profile.displayName : "",
+    bio: typeof profile.bio === "string" ? profile.bio : "",
+    avatar:
+      typeof profile.avatar === "string" && profile.avatar
+        ? profile.avatar
+        : null,
+    buttonStyle:
+      typeof profile.buttonStyle === "string" &&
+      isButtonStyle(profile.buttonStyle)
+        ? profile.buttonStyle
+        : "minimal",
+    accentColor:
+      typeof profile.accentColor === "string" && profile.accentColor
+        ? profile.accentColor
+        : "#d97b4a",
+    createdAt: String(profile.createdAt ?? new Date().toISOString()),
+    updatedAt: String(profile.updatedAt ?? profile.createdAt ?? new Date().toISOString()),
+  };
+}
+
+function normaliseBioLink(
+  link: BioLink | Record<string, unknown>,
+  fallbackUserId = "",
+  fallbackProfileId = "",
+): BioLink {
+  return {
+    id: String(link.id ?? ""),
+    userId:
+      typeof link.userId === "string" && link.userId
+        ? link.userId
+        : fallbackUserId,
+    profileId:
+      typeof link.profileId === "string" && link.profileId
+        ? link.profileId
+        : fallbackProfileId,
+    title: typeof link.title === "string" ? link.title : "",
+    url: typeof link.url === "string" ? link.url : "",
+    icon:
+      typeof link.icon === "string" && link.icon.trim() ? link.icon : "🔗",
+    section:
+      typeof link.section === "string" && link.section.trim()
+        ? link.section
+        : "main",
+    visible:
+      typeof link.visible === "boolean"
+        ? link.visible
+        : true,
+    order: typeof link.order === "number" ? link.order : 0,
+    createdAt: String(link.createdAt ?? new Date().toISOString()),
   };
 }
 
@@ -75,14 +149,108 @@ export async function createUser(user: AccountUser): Promise<void> {
   writeUsersFile(users);
 }
 
+export async function getBioProfileByUserId(
+  userId: string,
+): Promise<BioProfile | null> {
+  const adapter = await getActiveAdapter().catch(() => null);
+  if (adapter) {
+    return adapter.getBioProfileByUserId(userId);
+  }
+
+  const user = await getUserById(userId);
+  const profile = Object.values(readBioProfilesFile()).find(
+    (value) => value.userId === userId,
+  );
+  if (!profile) return null;
+
+  return normaliseBioProfile(profile, user?.username ?? "");
+}
+
+export async function getBioProfileByUsername(
+  username: string,
+): Promise<BioProfile | null> {
+  const normalizedUsername = username.trim().toLowerCase();
+  const adapter = await getActiveAdapter().catch(() => null);
+  if (adapter) {
+    return adapter.getBioProfileByUsername(normalizedUsername);
+  }
+
+  const profile = Object.values(readBioProfilesFile()).find(
+    (value) =>
+      typeof value.username === "string" &&
+      value.username.toLowerCase() === normalizedUsername,
+  );
+  if (!profile) return null;
+
+  return normaliseBioProfile(profile, normalizedUsername);
+}
+
+export async function saveBioProfile(profile: BioProfile): Promise<void> {
+  const adapter = await getActiveAdapter().catch(() => null);
+  if (adapter) {
+    await adapter.writeBioProfile(profile);
+    return;
+  }
+
+  const profiles = readBioProfilesFile();
+  profiles[profile.id] = normaliseBioProfile(profile, profile.username);
+  writeBioProfilesFile(profiles);
+}
+
+export async function ensureBioProfileForUser(
+  userId: string,
+): Promise<BioProfile | null> {
+  const [user, existingProfile] = await Promise.all([
+    getUserById(userId),
+    getBioProfileByUserId(userId),
+  ]);
+
+  if (!user) return null;
+  if (existingProfile) return existingProfile;
+
+  const now = new Date().toISOString();
+  const profile = {
+    id: `${userId}.profile`,
+    userId,
+    username: user.username.toLowerCase(),
+    displayName: "",
+    bio: "",
+    avatar: null,
+    buttonStyle: "minimal",
+    accentColor: "#d97b4a",
+    createdAt: now,
+    updatedAt: now,
+  } satisfies BioProfile;
+
+  await saveBioProfile(profile);
+  return profile;
+}
+
+export async function isBioUsernameAvailable(
+  username: string,
+  currentUserId?: string,
+): Promise<boolean> {
+  const normalizedUsername = username.trim().toLowerCase();
+  if (!normalizedUsername) return false;
+
+  const existingProfile = await getBioProfileByUsername(normalizedUsername);
+  if (!existingProfile) return true;
+
+  return currentUserId ? existingProfile.userId === currentUserId : false;
+}
+
 export async function listBioLinks(userId: string): Promise<BioLink[]> {
   const adapter = await getActiveAdapter().catch(() => null);
   if (adapter) {
     return adapter.readBioLinks(userId);
   }
 
+  const profile = await ensureBioProfileForUser(userId);
+
   return sortBioLinks(
-    Object.values(readBioLinksFile()).filter((link) => link.userId === userId),
+    Object.values(readBioLinksFile())
+      .map((link) => normaliseBioLink(link, userId, profile?.id ?? ""))
+      .filter((link) => link.userId === userId),
   );
 }
 
@@ -95,9 +263,10 @@ export async function getBioLinkById(
     return adapter.getBioLinkById(userId, id);
   }
 
+  const profile = await ensureBioProfileForUser(userId);
   const link = readBioLinksFile()[id];
   if (!link || link.userId !== userId) return null;
-  return link;
+  return normaliseBioLink(link, userId, profile?.id ?? "");
 }
 
 export async function saveBioLink(link: BioLink): Promise<void> {
@@ -108,7 +277,7 @@ export async function saveBioLink(link: BioLink): Promise<void> {
   }
 
   const links = readBioLinksFile();
-  links[link.id] = link;
+  links[link.id] = normaliseBioLink(link, link.userId, link.profileId);
   writeBioLinksFile(links);
 }
 

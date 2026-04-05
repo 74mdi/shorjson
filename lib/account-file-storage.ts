@@ -1,13 +1,20 @@
 import fs from "fs";
 import path from "path";
-import type { AccountUser, BioLink, PrivateNote } from "./account-types";
+import type {
+  AccountUser,
+  BioLink,
+  BioProfile,
+  PrivateNote,
+} from "./account-types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
+const BIO_PROFILES_FILE = path.join(DATA_DIR, "bio-profiles.json");
 const BIO_LINKS_FILE = path.join(DATA_DIR, "bio-links.json");
 const PRIVATE_NOTES_FILE = path.join(DATA_DIR, "private-notes.json");
 
 type UserMap = Record<string, AccountUser>;
+type BioProfileMap = Record<string, BioProfile>;
 type BioLinkMap = Record<string, BioLink>;
 type PrivateNoteMap = Record<string, PrivateNote>;
 
@@ -47,6 +54,14 @@ export function readBioLinksFile(): BioLinkMap {
 
 export function writeBioLinksFile(links: BioLinkMap): void {
   writeJsonFile(BIO_LINKS_FILE, links);
+}
+
+export function readBioProfilesFile(): BioProfileMap {
+  return readJsonFile<BioProfileMap>(BIO_PROFILES_FILE, {});
+}
+
+export function writeBioProfilesFile(profiles: BioProfileMap): void {
+  writeJsonFile(BIO_PROFILES_FILE, profiles);
 }
 
 export function readPrivateNotesFile(): PrivateNoteMap {

@@ -1,0 +1,1226 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import PublicBioPage from "./PublicBioPage";
+import styles from "./BioLinksDashboard.module.css";
+import {
+  bioLinkCreateSchema,
+  bioProfileSchema,
+  bioStyleSchema,
+  USERNAME_PATTERN,
+} from "@/lib/schemas";
+import {
+  buildBioPageData,
+  type BioPage,
+  type ButtonStyle,
+} from "@/lib/bio-shared";
+
+type EditorTab = "profile" | "links" | "style";
+type SaveState = "idle" | "saving" | "saved" | "error";
+
+type DashboardProfile = {
+  accentColor: string;
+  avatar: string | null;
+  bio: string;
+  buttonStyle: ButtonStyle;
+  displayName: string;
+  id: string;
+  updatedAt: string;
+  userId: string;
+  username: string;
+};
+
+type DashboardLink = {
+  id: string;
+  createdAt: string;
+  icon: string;
+  order: number;
+  profileId: string;
+  section: string;
+  title: string;
+  url: string;
+  userId: string;
+  visible: boolean;
+};
+
+const STYLE_OPTIONS: ButtonStyle[] = [
+  "minimal",
+  "outline",
+  "filled",
+  "pill",
+  "soft",
+  "ghost",
+  "card",
+  "brutalist",
+];
+
+const COLOR_PRESETS = [
+  "#d97b4a",
+  "#3b82f6",
+  "#10b981",
+  "#8b5cf6",
+  "#f43f5e",
+  "#f59e0b",
+  "#06b6d4",
+  "#ec4899",
+  "#1c1916",
+  "#6b7280",
+];
+
+const COMMON_EMOJIS = [
+  "🔗",
+  "✨",
+  "🎵",
+  "🎥",
+  "📚",
+  "💌",
+  "🛍️",
+  "🎨",
+  "📰",
+  "📷",
+  "🎙️",
+  "🧠",
+  "🌐",
+  "💼",
+  "🪄",
+  "🧩",
+  "🎯",
+  "☕",
+  "💬",
+  "🕊️",
+  "⚡",
+  "🔥",
+  "📺",
+  "🎧",
+  "💡",
+  "🫶",
+  "📩",
+  "🛠️",
+  "🎁",
+  "🌻",
+];
+
+function Spinner() {
+  return (
+    <svg
+      className="h-4 w-4 animate-spin"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+      />
+    </svg>
+  );
+}
+
+function EyeIcon({ open }: { open: boolean }) {
+  return open ? (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.06 12.35a1 1 0 0 1 0-.7C3.94 7.23 7.62 4 12 4s8.06 3.23 9.94 7.65a1 1 0 0 1 0 .7C20.06 16.77 16.38 20 12 20s-8.06-3.23-9.94-7.65Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m2 2 20 20" />
+      <path d="M6.71 6.71A9.94 9.94 0 0 0 2.06 12.35a1 1 0 0 0 0 .7C3.94 17.47 7.62 20.7 12 20.7c1.79 0 3.49-.42 5-1.16" />
+      <path d="M9.9 4.24A10.6 10.6 0 0 1 12 4c4.38 0 8.06 3.23 9.94 7.65a1 1 0 0 1 0 .7 12.5 12.5 0 0 1-2.16 3.19" />
+      <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6l-1 14H6L5 6" />
+    </svg>
+  );
+}
+
+function SortableLinkItem({
+  children,
+  id,
+}: {
+  children: React.ReactNode;
+  id: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={styles.linkItem}
+    >
+      <button
+        type="button"
+        className={styles.dragHandle}
+        aria-label="Reorder link"
+        {...attributes}
+        {...listeners}
+      >
+        ⠿
+      </button>
+      {children}
+    </div>
+  );
+}
+
+export default function BioLinksDashboard({
+  csrfToken,
+  initialLinks,
+  initialProfile,
+}: {
+  csrfToken: string;
+  initialLinks: DashboardLink[];
+  initialProfile: DashboardProfile;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+  );
+
+  const [activeTab, setActiveTab] = useState<EditorTab>("profile");
+  const [compactPreviewMode, setCompactPreviewMode] = useState<"edit" | "preview">(
+    "edit",
+  );
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
+  const [siteOrigin, setSiteOrigin] = useState("");
+
+  const [profile, setProfile] = useState(initialProfile);
+  const [profileErrors, setProfileErrors] = useState<Record<string, string[]>>({});
+  const [profileSaveState, setProfileSaveState] = useState<SaveState>("idle");
+  const [usernameAvailable, setUsernameAvailable] = useState(true);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+
+  const [links, setLinks] = useState(
+    [...initialLinks].sort((left, right) => left.order - right.order),
+  );
+  const [linksError, setLinksError] = useState("");
+  const [linksSaveState, setLinksSaveState] = useState<SaveState>("idle");
+  const [styleSaveState, setStyleSaveState] = useState<SaveState>("idle");
+
+  const [newLink, setNewLink] = useState({
+    icon: "🔗",
+    section: "main",
+    title: "",
+    url: "",
+  });
+  const [newLinkErrors, setNewLinkErrors] = useState<Record<string, string[]>>({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  const emojiPopoverRef = useRef<HTMLDivElement>(null);
+  const profileSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const profileSavePromiseRef = useRef<Promise<void> | null>(null);
+  const styleSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const styleStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingLinkPatchesRef = useRef<Record<string, Partial<DashboardLink>>>({});
+  const linkTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const lastSavedProfileRef = useRef(initialProfile);
+
+  useEffect(() => {
+    setSiteOrigin(window.location.origin);
+    const media = window.matchMedia("(max-width: 767px)");
+    const applyViewport = () => setIsCompactViewport(media.matches);
+    applyViewport();
+    media.addEventListener("change", applyViewport);
+
+    return () => {
+      media.removeEventListener("change", applyViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (
+        emojiPopoverRef.current &&
+        !emojiPopoverRef.current.contains(event.target as Node)
+      ) {
+        setShowEmojiPicker(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (profile.username === lastSavedProfileRef.current.username) {
+      setUsernameAvailable(true);
+      setCheckingUsername(false);
+      return;
+    }
+
+    if (!USERNAME_PATTERN.test(profile.username)) {
+      setUsernameAvailable(false);
+      setCheckingUsername(false);
+      return;
+    }
+
+    setCheckingUsername(true);
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/check-username?u=${encodeURIComponent(profile.username)}`,
+          { cache: "no-store" },
+        );
+        const data = (await response.json().catch(() => ({}))) as {
+          available?: boolean;
+        };
+        setUsernameAvailable(Boolean(data.available));
+      } catch {
+        setUsernameAvailable(false);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 280);
+
+    return () => window.clearTimeout(timeout);
+  }, [profile.username]);
+
+  useEffect(() => {
+    return () => {
+      if (profileSaveTimerRef.current) clearTimeout(profileSaveTimerRef.current);
+      if (profileStatusTimerRef.current)
+        clearTimeout(profileStatusTimerRef.current);
+      if (styleSaveTimerRef.current) clearTimeout(styleSaveTimerRef.current);
+      if (styleStatusTimerRef.current) clearTimeout(styleStatusTimerRef.current);
+
+      Object.values(linkTimersRef.current).forEach((timer) => clearTimeout(timer));
+    };
+  }, []);
+
+  const previewPage = useMemo<BioPage>(() => {
+    return buildBioPageData(profile, links);
+  }, [links, profile]);
+
+  function markSaved(setter: (value: SaveState) => void, timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) {
+    setter("saved");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setter("idle"), 1500);
+  }
+
+  function queueProfileSave(nextProfile = profile) {
+    if (profileSaveTimerRef.current) {
+      clearTimeout(profileSaveTimerRef.current);
+    }
+
+    profileSaveTimerRef.current = setTimeout(() => {
+      void persistProfile(nextProfile);
+    }, 600);
+  }
+
+  async function persistProfile(nextProfile = profile) {
+    const parsed = bioProfileSchema.safeParse(nextProfile);
+    if (!parsed.success) {
+      setProfileErrors(parsed.error.flatten().fieldErrors);
+      setProfileSaveState("error");
+      return;
+    }
+
+    if (
+      !checkingUsername &&
+      !usernameAvailable &&
+      nextProfile.username !== lastSavedProfileRef.current.username
+    ) {
+      setProfileErrors((current) => ({
+        ...current,
+        username: ["That username is already taken."],
+      }));
+      setProfileSaveState("error");
+      return;
+    }
+
+    setProfileSaveState("saving");
+    setProfileErrors({});
+
+    const savePromise = (async () => {
+      const response = await fetch("/api/bio/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify(parsed.data),
+      });
+      const data = (await response.json().catch(() => ({}))) as
+        | DashboardProfile
+        | { error?: string; fieldErrors?: Record<string, string[]> };
+
+      if (!response.ok) {
+        setProfileSaveState("error");
+        setProfileErrors(
+          "fieldErrors" in data && data.fieldErrors ? data.fieldErrors : {},
+        );
+        return;
+      }
+
+      const updatedProfile = data as DashboardProfile;
+      setProfile(updatedProfile);
+      lastSavedProfileRef.current = updatedProfile;
+      markSaved(setProfileSaveState, profileStatusTimerRef);
+    })().catch(() => {
+      setProfileSaveState("error");
+    });
+
+    profileSavePromiseRef.current = savePromise;
+    await savePromise;
+  }
+
+  function queueStyleSave(nextStyle: {
+    accentColor: string;
+    buttonStyle: ButtonStyle;
+  }) {
+    if (styleSaveTimerRef.current) {
+      clearTimeout(styleSaveTimerRef.current);
+    }
+
+    styleSaveTimerRef.current = setTimeout(async () => {
+      const parsed = bioStyleSchema.safeParse(nextStyle);
+      if (!parsed.success) {
+        setStyleSaveState("error");
+        return;
+      }
+
+      setStyleSaveState("saving");
+
+      try {
+        const response = await fetch("/api/bio/style", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+          },
+          body: JSON.stringify(parsed.data),
+        });
+
+        if (!response.ok) {
+          setStyleSaveState("error");
+          return;
+        }
+
+        markSaved(setStyleSaveState, styleStatusTimerRef);
+      } catch {
+        setStyleSaveState("error");
+      }
+    }, 240);
+  }
+
+  function queueLinkPatch(linkId: string, patch: Partial<DashboardLink>) {
+    pendingLinkPatchesRef.current[linkId] = {
+      ...(pendingLinkPatchesRef.current[linkId] ?? {}),
+      ...patch,
+    };
+
+    if (linkTimersRef.current[linkId]) {
+      clearTimeout(linkTimersRef.current[linkId]);
+    }
+
+    linkTimersRef.current[linkId] = setTimeout(async () => {
+      const nextPatch = pendingLinkPatchesRef.current[linkId];
+      delete pendingLinkPatchesRef.current[linkId];
+      delete linkTimersRef.current[linkId];
+      if (!nextPatch) return;
+
+      setLinksSaveState("saving");
+
+      try {
+        const response = await fetch(`/api/links/${encodeURIComponent(linkId)}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+          },
+          body: JSON.stringify(nextPatch),
+        });
+        const data = (await response.json().catch(() => ({}))) as
+          | DashboardLink
+          | { error?: string };
+
+        if (!response.ok) {
+          setLinksError(("error" in data && data.error) || "Unable to save link.");
+          setLinksSaveState("error");
+          return;
+        }
+
+        const savedLink = data as DashboardLink;
+        setLinks((current) =>
+          [...current]
+            .map((link) => (link.id === savedLink.id ? savedLink : link))
+            .sort((left, right) => left.order - right.order),
+        );
+        setLinksError("");
+        setLinksSaveState("saved");
+        window.setTimeout(() => setLinksSaveState("idle"), 1200);
+      } catch {
+        setLinksError("Unable to save link.");
+        setLinksSaveState("error");
+      }
+    }, 420);
+  }
+
+  async function handleAddLink(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const parsed = bioLinkCreateSchema.safeParse({
+      icon: newLink.icon,
+      section: newLink.section,
+      title: newLink.title,
+      url: newLink.url,
+      visible: true,
+    });
+
+    if (!parsed.success) {
+      setNewLinkErrors(parsed.error.flatten().fieldErrors);
+      return;
+    }
+
+    setLinksSaveState("saving");
+    setNewLinkErrors({});
+
+    try {
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify(parsed.data),
+      });
+      const data = (await response.json().catch(() => ({}))) as
+        | DashboardLink
+        | { error?: string; fieldErrors?: Record<string, string[]> };
+
+      if (!response.ok) {
+        setLinksError(("error" in data && data.error) || "Unable to create link.");
+        setNewLinkErrors(
+          "fieldErrors" in data && data.fieldErrors ? data.fieldErrors : {},
+        );
+        setLinksSaveState("error");
+        return;
+      }
+
+      setLinks((current) =>
+        [...current, data as DashboardLink].sort(
+          (left, right) => left.order - right.order,
+        ),
+      );
+      setNewLink({
+        icon: "🔗",
+        section: "main",
+        title: "",
+        url: "",
+      });
+      setShowEmojiPicker(false);
+      markSaved(setLinksSaveState, { current: null });
+    } catch {
+      setLinksError("Unable to create link.");
+      setLinksSaveState("error");
+    }
+  }
+
+  async function handleDeleteLink(linkId: string) {
+    const previousLinks = links;
+    setLinks((current) => current.filter((link) => link.id !== linkId));
+    setLinksSaveState("saving");
+
+    try {
+      const response = await fetch(`/api/links/${encodeURIComponent(linkId)}`, {
+        method: "DELETE",
+        headers: { "x-csrf-token": csrfToken },
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setLinks(previousLinks);
+        setLinksError(data.error ?? "Unable to delete link.");
+        setLinksSaveState("error");
+        return;
+      }
+
+      markSaved(setLinksSaveState, { current: null });
+    } catch {
+      setLinks(previousLinks);
+      setLinksError("Unable to delete link.");
+      setLinksSaveState("error");
+    }
+  }
+
+  function updateLinkLocally(linkId: string, patch: Partial<DashboardLink>) {
+    setLinks((current) =>
+      current.map((link) =>
+        link.id === linkId
+          ? {
+              ...link,
+              ...patch,
+            }
+          : link,
+      ),
+    );
+    queueLinkPatch(linkId, patch);
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = links.findIndex((link) => link.id === active.id);
+    const newIndex = links.findIndex((link) => link.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const reordered = arrayMove(links, oldIndex, newIndex).map((link, index) => ({
+      ...link,
+      order: index,
+    }));
+
+    setLinks(reordered);
+    reordered.forEach((link) => {
+      queueLinkPatch(link.id, { order: link.order });
+    });
+  }
+
+  const compactPreviewLabel = compactPreviewMode === "edit" ? "Preview" : "Edit";
+
+  return (
+    <main className={styles.workspace}>
+      <div className={styles.mobileSwitch}>
+        <button
+          type="button"
+          className={`${styles.tabButton} ${
+            compactPreviewMode === "edit" ? styles.tabButtonActive : ""
+          }`}
+          onClick={() => setCompactPreviewMode("edit")}
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          className={`${styles.tabButton} ${
+            compactPreviewMode === "preview" ? styles.tabButtonActive : ""
+          }`}
+          onClick={() => setCompactPreviewMode("preview")}
+        >
+          Preview
+        </button>
+      </div>
+
+      <div className={styles.layout}>
+        <section
+          className={[
+            styles.panel,
+            styles.editorPanel,
+            isCompactViewport && compactPreviewMode === "preview"
+              ? styles.mobileHidden
+              : "",
+          ].join(" ")}
+        >
+          <header className={styles.editorHeader}>
+            <div className={styles.eyebrow}>Dashboard / Links</div>
+            <div className={styles.titleRow}>
+              <div className={styles.titleGroup}>
+                <h1>Build your page</h1>
+                <p>
+                  Edit your public profile, manage links, and tune the button
+                  style while the preview updates live.
+                </p>
+              </div>
+              <div
+                className={`${styles.status} ${
+                  profileSaveState === "saving" ||
+                  linksSaveState === "saving" ||
+                  styleSaveState === "saving"
+                    ? styles.statusSaving
+                    : ""
+                }`}
+              >
+                {profileSaveState === "saving" ||
+                linksSaveState === "saving" ||
+                styleSaveState === "saving"
+                  ? "saving..."
+                  : profileSaveState === "saved" ||
+                      linksSaveState === "saved" ||
+                      styleSaveState === "saved"
+                    ? "saved"
+                    : profileSaveState === "error" ||
+                        linksSaveState === "error" ||
+                        styleSaveState === "error"
+                      ? "save failed"
+                      : ""}
+              </div>
+            </div>
+
+            <div className={styles.tabs}>
+              {(["profile", "links", "style"] as EditorTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`${styles.tabButton} ${
+                    activeTab === tab ? styles.tabButtonActive : ""
+                  }`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </header>
+
+          <div className={styles.editorBody}>
+            {activeTab === "profile" ? (
+              <div className={styles.sectionBlock}>
+                <div className={styles.fieldRow}>
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.label}>Display name</span>
+                    <input
+                      className={styles.input}
+                      maxLength={60}
+                      value={profile.displayName}
+                      onChange={(event) =>
+                        setProfile((current) => ({
+                          ...current,
+                          displayName: event.target.value,
+                        }))
+                      }
+                      onBlur={() => queueProfileSave()}
+                    />
+                    <span className={styles.fieldError}>
+                      {profileErrors.displayName?.[0] ?? ""}
+                    </span>
+                  </label>
+
+                  <label className={styles.fieldGroup}>
+                    <span className={styles.label}>Username</span>
+                    <input
+                      className={styles.input}
+                      maxLength={20}
+                      value={profile.username}
+                      onChange={(event) =>
+                        setProfile((current) => ({
+                          ...current,
+                          username: event.target.value.toLowerCase(),
+                        }))
+                      }
+                      onBlur={() => queueProfileSave()}
+                    />
+                    <div className={styles.fieldMeta}>
+                      <span className={styles.fieldHint}>
+                        {siteOrigin
+                          ? `${siteOrigin}/${profile.username || "username"}`
+                          : `/${profile.username || "username"}`}
+                      </span>
+                      <span className={styles.fieldHint}>
+                        {checkingUsername
+                          ? "checking..."
+                          : usernameAvailable
+                            ? "available"
+                            : "taken"}
+                      </span>
+                    </div>
+                    <span className={styles.fieldError}>
+                      {profileErrors.username?.[0] ??
+                        (!usernameAvailable ? "That username is already taken." : "")}
+                    </span>
+                  </label>
+                </div>
+
+                <label className={styles.fieldGroup}>
+                  <span className={styles.label}>Bio</span>
+                  <textarea
+                    className={styles.textarea}
+                    maxLength={160}
+                    value={profile.bio}
+                    onChange={(event) =>
+                      setProfile((current) => ({
+                        ...current,
+                        bio: event.target.value,
+                      }))
+                    }
+                    onBlur={() => queueProfileSave()}
+                  />
+                  <div className={styles.fieldMeta}>
+                    <span className={styles.fieldError}>
+                      {profileErrors.bio?.[0] ?? ""}
+                    </span>
+                    <span className={styles.fieldHint}>
+                      {profile.bio.length}/160
+                    </span>
+                  </div>
+                </label>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Avatar</span>
+                  <div className={styles.avatarRow}>
+                    {profile.avatar ? (
+                      <img
+                        src={profile.avatar}
+                        alt="Current avatar"
+                        className={styles.avatarPreview}
+                      />
+                    ) : (
+                      <div
+                        className={`${styles.avatarPreview} ${styles.avatarFallback}`}
+                      >
+                        {profile.displayName.slice(0, 1).toUpperCase() ||
+                          profile.username.slice(0, 1).toUpperCase() ||
+                          "@"}
+                      </div>
+                    )}
+
+                    <div className={styles.avatarControls}>
+                      <label className={styles.secondaryButton}>
+                        Upload image
+                        <input
+                          hidden
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (!file) return;
+
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const value =
+                                typeof reader.result === "string"
+                                  ? reader.result
+                                  : null;
+                              if (!value) return;
+
+                              setProfile((current) => ({
+                                ...current,
+                                avatar: value,
+                              }));
+                              queueProfileSave({
+                                ...profile,
+                                avatar: value,
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </label>
+
+                      {profile.avatar ? (
+                        <button
+                          type="button"
+                          className={styles.dangerButton}
+                          onClick={() => {
+                            const nextProfile = {
+                              ...profile,
+                              avatar: null,
+                            };
+                            setProfile(nextProfile);
+                            queueProfileSave(nextProfile);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  <span className={styles.fieldError}>
+                    {profileErrors.avatar?.[0] ?? ""}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            {activeTab === "links" ? (
+              <div className={styles.sectionBlock}>
+                <form className={styles.addCard} onSubmit={(event) => void handleAddLink(event)}>
+                  <div className={styles.addGrid}>
+                    <div className={styles.emojiWrap} ref={emojiPopoverRef}>
+                      <button
+                        type="button"
+                        className={styles.iconTrigger}
+                        onClick={() => setShowEmojiPicker((value) => !value)}
+                        aria-label="Choose link emoji"
+                      >
+                        {newLink.icon}
+                      </button>
+                      {showEmojiPicker ? (
+                        <div className={styles.emojiPopover}>
+                          {COMMON_EMOJIS.map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              className={styles.emojiButton}
+                              onClick={() => {
+                                setNewLink((current) => ({
+                                  ...current,
+                                  icon: emoji,
+                                }));
+                                setShowEmojiPicker(false);
+                              }}
+                            >
+                              {emoji}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <input
+                      className={styles.input}
+                      placeholder="Title"
+                      value={newLink.title}
+                      onChange={(event) =>
+                        setNewLink((current) => ({
+                          ...current,
+                          title: event.target.value,
+                        }))
+                      }
+                    />
+
+                    <input
+                      className={styles.input}
+                      placeholder="https://example.com"
+                      value={newLink.url}
+                      onChange={(event) =>
+                        setNewLink((current) => ({
+                          ...current,
+                          url: event.target.value,
+                        }))
+                      }
+                    />
+
+                    <button type="submit" className={styles.addButton}>
+                      + Add
+                    </button>
+                  </div>
+                  <div className={styles.fieldMeta} style={{ paddingTop: "8px" }}>
+                    <span className={styles.fieldError}>
+                      {newLinkErrors.title?.[0] ||
+                        newLinkErrors.url?.[0] ||
+                        newLinkErrors.icon?.[0] ||
+                        ""}
+                    </span>
+                    <span className={styles.fieldHint}>{links.length} links</span>
+                  </div>
+                </form>
+
+                <div className={styles.listCard}>
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(event) => void handleDragEnd(event)}
+                  >
+                    <SortableContext
+                      items={links.map((link) => link.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {links.map((link) => (
+                        <div
+                          key={link.id}
+                          className={link.visible ? "" : styles.linkItemHidden}
+                        >
+                          <SortableLinkItem id={link.id}>
+                            <input
+                              className={styles.inlineInput}
+                              value={link.icon}
+                              maxLength={20}
+                              onChange={(event) =>
+                                updateLinkLocally(link.id, {
+                                  icon: event.target.value || "🔗",
+                                })
+                              }
+                            />
+
+                            <div className={styles.linkFields}>
+                              <div className={styles.linkTopRow}>
+                                <input
+                                  className={styles.inlineInput}
+                                  value={link.title}
+                                  onChange={(event) =>
+                                    updateLinkLocally(link.id, {
+                                      title: event.target.value,
+                                    })
+                                  }
+                                />
+                                <input
+                                  className={styles.chipInput}
+                                  value={link.section}
+                                  onChange={(event) =>
+                                    updateLinkLocally(link.id, {
+                                      section: event.target.value || "main",
+                                    })
+                                  }
+                                />
+                              </div>
+
+                              <div className={styles.linkBottomRow}>
+                                <input
+                                  className={styles.inlineInput}
+                                  value={link.url}
+                                  onChange={(event) =>
+                                    updateLinkLocally(link.id, {
+                                      url: event.target.value,
+                                    })
+                                  }
+                                />
+                                <div className={styles.urlPreview}>
+                                  {link.visible ? "Visible" : "Hidden"}
+                                </div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              className={`${styles.toggleButton} ${
+                                link.visible ? styles.toggleButtonActive : ""
+                              }`}
+                              onClick={() =>
+                                updateLinkLocally(link.id, {
+                                  visible: !link.visible,
+                                })
+                              }
+                              aria-label={
+                                link.visible ? "Hide link" : "Show link"
+                              }
+                            >
+                              <EyeIcon open={link.visible} />
+                            </button>
+
+                            <button
+                              type="button"
+                              className={styles.deleteButton}
+                              onClick={() => void handleDeleteLink(link.id)}
+                              aria-label="Delete link"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </SortableLinkItem>
+                        </div>
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                </div>
+
+                {linksError ? (
+                  <div className={styles.fieldError}>{linksError}</div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {activeTab === "style" ? (
+              <div className={styles.sectionBlock}>
+                <div className={styles.styleGrid}>
+                  {STYLE_OPTIONS.map((style) => (
+                    <div
+                      key={style}
+                      role="button"
+                      tabIndex={0}
+                      className={`${styles.styleCard} ${
+                        profile.buttonStyle === style ? styles.styleCardActive : ""
+                      }`}
+                      onClick={() => {
+                        const nextProfile = {
+                          ...profile,
+                          buttonStyle: style,
+                        };
+                        setProfile(nextProfile);
+                          queueStyleSave({
+                            accentColor: nextProfile.accentColor,
+                            buttonStyle: nextProfile.buttonStyle,
+                          });
+                        }}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter" && event.key !== " ") {
+                          return;
+                        }
+
+                        event.preventDefault();
+                        const nextProfile = {
+                          ...profile,
+                          buttonStyle: style,
+                        };
+                        setProfile(nextProfile);
+                        queueStyleSave({
+                          accentColor: nextProfile.accentColor,
+                          buttonStyle: nextProfile.buttonStyle,
+                        });
+                      }}
+                    >
+                      <button
+                        className={`btn-base btn-${style} preview-btn`}
+                        type="button"
+                        tabIndex={-1}
+                      >
+                        Sample Link
+                      </button>
+                      <div className={styles.styleCardName}>{style}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Accent color</span>
+                  <div className={styles.swatches}>
+                    {COLOR_PRESETS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`${styles.swatch} ${
+                          profile.accentColor === color ? styles.swatchActive : ""
+                        }`}
+                        style={{ background: color }}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            accentColor: color,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave({
+                            accentColor: nextProfile.accentColor,
+                            buttonStyle: nextProfile.buttonStyle,
+                          });
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <label className={styles.fieldGroup}>
+                  <span className={styles.label}>Custom hex</span>
+                  <input
+                    className={styles.hexInput}
+                    value={profile.accentColor}
+                    onChange={(event) => {
+                      const value = event.target.value;
+                      setProfile((current) => ({
+                        ...current,
+                        accentColor: value,
+                      }));
+                    }}
+                    onBlur={() =>
+                      queueStyleSave({
+                        accentColor: profile.accentColor,
+                        buttonStyle: profile.buttonStyle,
+                      })
+                    }
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        <aside
+          className={[
+            styles.panel,
+            styles.previewPanel,
+            isCompactViewport && compactPreviewMode === "edit"
+              ? styles.mobileHidden
+              : "",
+          ].join(" ")}
+        >
+          <div className={styles.previewShell}>
+            <div className={styles.previewHeader}>
+              <h2>Live preview</h2>
+              <p>
+                This is the public page that will render at
+                {" "}
+                {siteOrigin ? `${siteOrigin}/${profile.username}` : `/${profile.username}`}.
+              </p>
+            </div>
+            <PublicBioPage page={previewPage} preview />
+          </div>
+        </aside>
+      </div>
+
+      <div className={styles.bottomTabs}>
+        {(["profile", "links", "style"] as EditorTab[]).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={`${styles.tabButton} ${
+              activeTab === tab ? styles.tabButtonActive : ""
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={styles.tabButton}
+          onClick={() =>
+            setCompactPreviewMode((current) =>
+              current === "edit" ? "preview" : "edit",
+            )
+          }
+        >
+          {compactPreviewLabel}
+        </button>
+      </div>
+    </main>
+  );
+}

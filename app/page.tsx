@@ -1,13 +1,5 @@
-import LinksDashboard from "@/components/LinksDashboard";
-import { requirePageSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default async function HomePage() {
-  const session = await requirePageSession();
-
-  return (
-    <LinksDashboard
-      csrfToken={session.csrfToken}
-      username={session.username}
-    />
-  );
+export default function HomePage() {
+  redirect("/dashboard/links");
 }

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAuthenticatedRequest, jsonWithOptionalRefresh } from "@/lib/api-auth";
-import { listBioLinks, saveBioLink } from "@/lib/account-data";
+import { ensureBioProfileForUser, listBioLinks, saveBioLink } from "@/lib/account-data";
 import { createScopedResourceId } from "@/lib/account-types";
 import { bioLinkCreateSchema } from "@/lib/schemas";
 
@@ -40,14 +40,27 @@ export async function POST(request: NextRequest) {
   }
 
   const existingLinks = await listBioLinks(auth.session.userId);
+  const profile = await ensureBioProfileForUser(auth.session.userId);
+  if (!profile) {
+    return jsonWithOptionalRefresh(
+      { error: "Profile not found." },
+      { status: 404 },
+      auth.refreshedToken,
+    );
+  }
+
   const nextOrder =
     existingLinks.reduce((highest, link) => Math.max(highest, link.order), -1) +
     1;
   const link = {
     id: createScopedResourceId(auth.session.userId),
     userId: auth.session.userId,
+    profileId: profile.id,
     title: parsed.data.title,
     url: parsed.data.url,
+    icon: parsed.data.icon,
+    section: parsed.data.section || "main",
+    visible: parsed.data.visible,
     order: nextOrder,
     createdAt: new Date().toISOString(),
   };
