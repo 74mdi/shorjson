@@ -2,13 +2,21 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomBar from "@/components/BottomBar";
 import TopControls from "@/components/TopControls";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export const metadata: Metadata = {
   title: "Shor",
   description: "A minimal link shortener and notepad.",
-  manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Shor" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Shor",
+    startupImage: [],
+  },
   formatDetection: { telephone: false },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
@@ -48,8 +56,11 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: darkModeScript }} />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="antialiased min-h-screen">
+        <ServiceWorkerRegister />
         <TopControls />
         <BottomBar />
         {children}

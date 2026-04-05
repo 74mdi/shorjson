@@ -41,6 +41,20 @@ data/            Local JSON storage (auto-created, gitignored)
 server-template/ Downloadable self-host server template
 ```
 
+## PWA / Android App
+
+The app is a fully configured Progressive Web App (PWA):
+
+- `app/manifest.ts` — Web App Manifest (auto-served at `/manifest.webmanifest`)
+- `public/sw.js` — Service worker: network-first for navigation, cache-first for assets, always-fresh API calls
+- `public/icons/` — PNG icons at 192×192 and 512×512 (regular + maskable)
+- `components/ServiceWorkerRegister.tsx` — registers the SW on mount
+
+**To get an APK:**
+1. Publish/deploy the app to get a public URL
+2. Go to **pwabuilder.com**, enter the URL
+3. Download the Android package — it generates a real APK/AAB via Trusted Web Activity (TWA)
+
 ## Replit-Specific Changes
 
 - Dev/start scripts updated to bind `0.0.0.0` on port 5000
