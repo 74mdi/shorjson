@@ -41,6 +41,9 @@ const EMPTY_FORMAT_STATE: FormatState = {
   underline: false,
 };
 
+const CONTENT_SAVE_DELAY_MS = 800;
+const TITLE_SAVE_DELAY_MS = 1600;
+
 function Spinner() {
   return (
     <svg
@@ -189,6 +192,8 @@ export default function NotesDashboard({
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestDraftContentRef = useRef("");
+  const latestDraftTitleRef = useRef("");
   const titleInputRef = useRef<HTMLInputElement>(null);
   const focusTitleOnOpenRef = useRef(false);
   const lastSavedRef = useRef({
@@ -226,6 +231,16 @@ export default function NotesDashboard({
     });
   }, [deferredSearch, notes]);
   const stats = useMemo(() => getTextStats(draftContent), [draftContent]);
+
+  function setDraftTitleValue(value: string) {
+    latestDraftTitleRef.current = value;
+    setDraftTitle(value);
+  }
+
+  function setDraftContentValue(value: string) {
+    latestDraftContentRef.current = value;
+    setDraftContent(value);
+  }
 
   function clearSaveTimers() {
     if (saveTimeoutRef.current) {
@@ -275,19 +290,25 @@ export default function NotesDashboard({
   }
 
   function readEditorHtml(): string {
-    return normaliseEditorHtml(editorRef.current?.innerHTML ?? draftContent);
+    return normaliseEditorHtml(
+      editorRef.current?.innerHTML ?? latestDraftContentRef.current,
+    );
   }
 
   function syncDraftFromEditor(options?: { scheduleSave?: boolean }) {
     const nextContent = readEditorHtml();
-    setDraftContent(nextContent);
+    setDraftContentValue(nextContent);
 
     if (options?.scheduleSave) {
-      queueSave(nextContent, draftTitle);
+      queueSave(nextContent, latestDraftTitleRef.current, CONTENT_SAVE_DELAY_MS);
     }
   }
 
-  function queueSave(nextContent = draftContent, nextTitle = draftTitle) {
+  function queueSave(
+    nextContent = latestDraftContentRef.current,
+    nextTitle = latestDraftTitleRef.current,
+    delayMs = CONTENT_SAVE_DELAY_MS,
+  ) {
     if (!activeNoteId) return;
 
     if (
@@ -314,14 +335,14 @@ export default function NotesDashboard({
 
     saveTimeoutRef.current = setTimeout(() => {
       void persistDraft();
-    }, 800);
+    }, delayMs);
   }
 
   async function persistDraft(): Promise<boolean> {
     const noteId = activeNoteId;
     if (!noteId) return true;
 
-    const currentTitle = draftTitle.slice(0, 100);
+    const currentTitle = latestDraftTitleRef.current.slice(0, 100);
     const currentContent = readEditorHtml();
 
     if (
@@ -372,11 +393,34 @@ export default function NotesDashboard({
             current.map((note) => (note.id === updatedNote.id ? updatedNote : note)),
           ),
         );
-        setDraftTitle(updatedNote.title);
-        setDraftContent(updatedNote.content);
+
+        const latestTitle = latestDraftTitleRef.current.slice(0, 100);
+        const latestContent = readEditorHtml();
+        const titleChangedWhileSaving = latestTitle !== currentTitle;
+        const contentChangedWhileSaving = latestContent !== currentContent;
+
+        if (!titleChangedWhileSaving) {
+          setDraftTitleValue(updatedNote.title);
+        }
+
+        if (!contentChangedWhileSaving) {
+          setDraftContentValue(updatedNote.content);
+        }
+
+        if (titleChangedWhileSaving || contentChangedWhileSaving) {
+          setSaveState("idle");
+          queueSave(
+            latestContent,
+            latestTitle,
+            contentChangedWhileSaving ? CONTENT_SAVE_DELAY_MS : TITLE_SAVE_DELAY_MS,
+          );
+          return true;
+        }
+
         setSavedState();
 
         if (
+          !contentChangedWhileSaving &&
           editorRef.current &&
           document.activeElement !== editorRef.current &&
           editorRef.current.innerHTML !== updatedNote.content
@@ -447,8 +491,8 @@ export default function NotesDashboard({
   useEffect(() => {
     if (!notes.length) {
       setActiveNoteId(null);
-      setDraftTitle("");
-      setDraftContent("");
+      setDraftTitleValue("");
+      setDraftContentValue("");
       lastSavedRef.current = { id: null, title: "", content: "" };
       if (editorRef.current) {
         editorRef.current.innerHTML = "";
@@ -464,8 +508,8 @@ export default function NotesDashboard({
   useEffect(() => {
     if (!activeNote) return;
 
-    setDraftTitle(activeNote.title);
-    setDraftContent(activeNote.content);
+    setDraftTitleValue(activeNote.title);
+    setDraftContentValue(activeNote.content);
     lastSavedRef.current = {
       id: activeNote.id,
       title: activeNote.title,
@@ -586,8 +630,8 @@ export default function NotesDashboard({
 
   function handleTitleChange(nextTitle: string) {
     const value = nextTitle.slice(0, 100);
-    setDraftTitle(value);
-    queueSave(draftContent, value);
+    setDraftTitleValue(value);
+    queueSave(latestDraftContentRef.current, value, TITLE_SAVE_DELAY_MS);
   }
 
   function executeCommand(command: string, value?: string) {

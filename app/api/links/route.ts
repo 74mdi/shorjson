@@ -66,7 +66,18 @@ export async function POST(request: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  await saveBioLink(link);
+  try {
+    await saveBioLink(link);
+  } catch (error) {
+    return jsonWithOptionalRefresh(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to create link.",
+      },
+      { status: 500 },
+      auth.refreshedToken,
+    );
+  }
 
   return jsonWithOptionalRefresh(link, { status: 201 }, auth.refreshedToken);
 }

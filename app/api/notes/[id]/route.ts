@@ -85,7 +85,17 @@ export async function PATCH(request: NextRequest, { params }: Context) {
     updatedAt: new Date().toISOString(),
   };
 
-  await savePrivateNote(updatedNote);
+  try {
+    await savePrivateNote(updatedNote);
+  } catch (error) {
+    return jsonWithOptionalRefresh(
+      {
+        error: error instanceof Error ? error.message : "Unable to save note.",
+      },
+      { status: 500 },
+      auth.refreshedToken,
+    );
+  }
 
   return jsonWithOptionalRefresh(
     updatedNote,
@@ -115,7 +125,18 @@ export async function DELETE(request: NextRequest, { params }: Context) {
     );
   }
 
-  await deletePrivateNote(auth.session.userId, id);
+  try {
+    await deletePrivateNote(auth.session.userId, id);
+  } catch (error) {
+    return jsonWithOptionalRefresh(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to delete note.",
+      },
+      { status: 500 },
+      auth.refreshedToken,
+    );
+  }
 
   return jsonWithOptionalRefresh(
     { ok: true },

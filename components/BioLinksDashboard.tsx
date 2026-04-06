@@ -729,6 +729,7 @@ export default function BioLinksDashboard({
           (left, right) => left.order - right.order,
         ),
       );
+      setLinksError("");
       setNewLink({
         icon: "🔗",
         iconColor: "#1c1916",

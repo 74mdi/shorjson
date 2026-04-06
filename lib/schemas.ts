@@ -34,6 +34,23 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
+function normaliseHttpUrlInput(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Let common bare domains like example.com save without forcing the user
+  // to type the protocol by hand every time.
+  if (!/\s/.test(trimmed) && /[.:]/.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
+  return trimmed;
+}
+
 function isHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
@@ -93,7 +110,7 @@ export const bioLinkCreateSchema = z.object({
     }),
   url: z
     .string()
-    .transform((value) => value.trim())
+    .transform(normaliseHttpUrlInput)
     .refine((value) => value.length > 0, { message: "URL is required." })
     .refine((value) => value.length <= 2048, {
       message: "URL is too long.",
@@ -138,7 +155,7 @@ export const bioLinkUpdateSchema = z
       .optional(),
     url: z
       .string()
-      .transform((value) => value.trim())
+      .transform(normaliseHttpUrlInput)
       .refine((value) => value.length > 0, { message: "URL is required." })
       .refine((value) => value.length <= 2048, {
         message: "URL is too long.",

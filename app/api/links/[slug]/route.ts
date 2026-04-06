@@ -80,7 +80,17 @@ export async function PATCH(request: NextRequest, { params }: Context) {
     ...parsed.data,
   };
 
-  await saveBioLink(updatedLink);
+  try {
+    await saveBioLink(updatedLink);
+  } catch (error) {
+    return jsonWithOptionalRefresh(
+      {
+        error: error instanceof Error ? error.message : "Unable to save link.",
+      },
+      { status: 500 },
+      auth.refreshedToken,
+    );
+  }
 
   return jsonWithOptionalRefresh(
     updatedLink,
@@ -111,7 +121,18 @@ export async function DELETE(request: NextRequest, { params }: Context) {
     );
   }
 
-  await deleteBioLink(auth.session.userId, slug);
+  try {
+    await deleteBioLink(auth.session.userId, slug);
+  } catch (error) {
+    return jsonWithOptionalRefresh(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to delete link.",
+      },
+      { status: 500 },
+      auth.refreshedToken,
+    );
+  }
 
   return jsonWithOptionalRefresh(
     { ok: true },

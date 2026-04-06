@@ -49,7 +49,18 @@ export async function POST(request: NextRequest) {
     updatedAt: now,
   };
 
-  await savePrivateNote(note);
+  try {
+    await savePrivateNote(note);
+  } catch (error) {
+    return jsonWithOptionalRefresh(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to create note.",
+      },
+      { status: 500 },
+      auth.refreshedToken,
+    );
+  }
 
   return jsonWithOptionalRefresh(note, { status: 201 }, auth.refreshedToken);
 }

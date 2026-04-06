@@ -18,6 +18,14 @@ type BioProfileMap = Record<string, BioProfile>;
 type BioLinkMap = Record<string, BioLink>;
 type PrivateNoteMap = Record<string, PrivateNote>;
 
+function getStorageWriteErrorMessage(): string {
+  if (process.env.VERCEL) {
+    return "Storage is read-only on Vercel. Add DATABASE_TYPE and DATABASE_URL so links and notes can save.";
+  }
+
+  return "Unable to write data to local storage.";
+}
+
 function readJsonFile<T>(filename: string, fallback: T): T {
   if (!fs.existsSync(filename)) return fallback;
 
@@ -36,7 +44,7 @@ function writeJsonFile(filename: string, value: unknown): void {
 
     fs.writeFileSync(filename, JSON.stringify(value, null, 2), "utf-8");
   } catch {
-    // Ignore write errors on read-only filesystems.
+    throw new Error(getStorageWriteErrorMessage());
   }
 }
 
