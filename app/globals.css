@@ -101,6 +101,21 @@
         opacity 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.btn-size-compact {
+    padding: 10px 14px;
+    font-size: 0.74rem;
+}
+
+.btn-size-balanced {
+    padding: 13px 18px;
+    font-size: 0.82rem;
+}
+
+.btn-size-roomy {
+    padding: 16px 20px;
+    font-size: 0.9rem;
+}
+
 .btn-minimal {
     background: var(--surface);
     border: 1px solid var(--border);

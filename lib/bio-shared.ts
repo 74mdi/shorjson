@@ -26,7 +26,9 @@ export type ThemePreset =
   | "paper"
   | "midnight"
   | "ocean"
-  | "sunset";
+  | "sunset"
+  | "forest"
+  | "graphite";
 
 export type FontPreset =
   | "sans"
@@ -39,6 +41,19 @@ export type AnimationPreset =
   | "fade"
   | "lift"
   | "drift";
+
+export type BackgroundStyle =
+  | "plain"
+  | "grid"
+  | "dots"
+  | "mesh"
+  | "grain"
+  | "stripes";
+
+export type ButtonSize =
+  | "compact"
+  | "balanced"
+  | "roomy";
 
 const BUTTON_STYLES: ButtonStyle[] = [
   "minimal",
@@ -70,6 +85,8 @@ const THEME_PRESETS: ThemePreset[] = [
   "midnight",
   "ocean",
   "sunset",
+  "forest",
+  "graphite",
 ];
 
 const FONT_PRESETS: FontPreset[] = [
@@ -84,6 +101,21 @@ const ANIMATION_PRESETS: AnimationPreset[] = [
   "fade",
   "lift",
   "drift",
+];
+
+const BACKGROUND_STYLES: BackgroundStyle[] = [
+  "plain",
+  "grid",
+  "dots",
+  "mesh",
+  "grain",
+  "stripes",
+];
+
+const BUTTON_SIZES: ButtonSize[] = [
+  "compact",
+  "balanced",
+  "roomy",
 ];
 
 export function isButtonStyle(value: string): value is ButtonStyle {
@@ -102,6 +134,14 @@ export function isAnimationPreset(value: string): value is AnimationPreset {
   return ANIMATION_PRESETS.includes(value as AnimationPreset);
 }
 
+export function isBackgroundStyle(value: string): value is BackgroundStyle {
+  return BACKGROUND_STYLES.includes(value as BackgroundStyle);
+}
+
+export function isButtonSize(value: string): value is ButtonSize {
+  return BUTTON_SIZES.includes(value as ButtonSize);
+}
+
 export type BioPage = {
   username: string;
   displayName: string;
@@ -112,6 +152,8 @@ export type BioPage = {
   themePreset: ThemePreset;
   fontPreset: FontPreset;
   animationPreset: AnimationPreset;
+  backgroundStyle: BackgroundStyle;
+  buttonSize: ButtonSize;
   watermarkText: string;
   showThemeToggle: boolean;
   links: {
@@ -136,6 +178,8 @@ type BuildBioPageProfile = {
   themePreset: ThemePreset;
   fontPreset: FontPreset;
   animationPreset: AnimationPreset;
+  backgroundStyle: BackgroundStyle;
+  buttonSize: ButtonSize;
   watermarkText: string;
   showThemeToggle: boolean;
 };
@@ -170,6 +214,8 @@ export function buildBioPageData(
     themePreset: profile.themePreset,
     fontPreset: profile.fontPreset,
     animationPreset: profile.animationPreset,
+    backgroundStyle: profile.backgroundStyle,
+    buttonSize: profile.buttonSize,
     watermarkText: profile.watermarkText || "made with shor",
     showThemeToggle: profile.showThemeToggle,
     links: links

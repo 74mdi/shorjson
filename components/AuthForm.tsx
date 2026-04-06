@@ -58,6 +58,17 @@ export default function AuthForm({ mode }: { mode: Mode }) {
           ? "That username is already taken."
           : "3-20 chars. Lowercase letters, numbers, underscores."
       : "Use the same username you created your account with.");
+  const featureRows = isSignUp
+    ? [
+        "Own one username across short links, notes, and your public /@ page.",
+        "Everything private stays private until you publish it.",
+        "You can fine-tune profile and style settings after sign up.",
+      ]
+    : [
+        "Jump back into your links, notes, and public page editor.",
+        "Your account keeps the workspace tied to one username.",
+        "The username in the top bar still takes you straight to profile.",
+      ];
 
   useEffect(() => {
     if (!isSignUp) return;
@@ -139,137 +150,126 @@ export default function AuthForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <main className="animate-page-fade min-h-dvh px-5 py-10 sm:py-14">
-      <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
-        <section
-          className="animate-morph-in rounded-[32px] border p-6 sm:p-8"
-          style={{
-            borderColor: "var(--border)",
-            background:
-              "linear-gradient(145deg, color-mix(in srgb, var(--surface) 82%, transparent), color-mix(in srgb, var(--accent) 7%, var(--bg)))",
-          }}
-        >
-          <div
-            className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em]"
+    <main className="animate-page-fade min-h-dvh px-5 py-8 sm:py-12">
+      <div
+        className="mx-auto w-full max-w-5xl rounded-[32px] border p-3 sm:p-4"
+        style={{
+          borderColor: "var(--border)",
+          background: "var(--surface)",
+        }}
+      >
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_420px]">
+          <section
+            className="animate-morph-in rounded-[26px] border p-6 sm:p-8"
             style={{
               borderColor: "var(--border)",
-              background: "var(--surface)",
-              color: "var(--text-muted)",
+              background: "var(--bg)",
             }}
           >
-            <span>Shor</span>
-            <span>{isSignUp ? "Create your space" : "Welcome back"}</span>
-          </div>
-
-          <h1
-            className="pt-6 text-4xl font-semibold tracking-tight sm:text-5xl"
-            style={{ color: "var(--text)" }}
-          >
-            {isSignUp
-              ? "Short links, notes, and your public bio in one account."
-              : "Pick up right where you left off."}
-          </h1>
-
-          <p
-            className="max-w-2xl pt-4 text-sm leading-7 sm:text-base"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {isSignUp
-              ? "Claim a username, publish an /@username page, and keep the rest of your workspace private."
-              : "Sign in to manage your links, edit your public page, and keep writing in your private notes."}
-          </p>
-
-          <div className="grid gap-3 pt-8 sm:grid-cols-3">
-            {[
-              {
-                title: "Shortener",
-                text: "Create private short links with custom slugs and protection.",
-              },
-              {
-                title: "Bio page",
-                text: "Share a clean public page that lives at /@username.",
-              },
-              {
-                title: "Notes",
-                text: "Keep a focused writing space tied only to your own account.",
-              },
-            ].map((item, index) => (
-              <div
-                key={item.title}
-                className={`rounded-3xl border p-4 ${index === 1 ? "sm:-translate-y-2" : ""}`}
+            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em]">
+              <span
+                className="rounded-full border px-3 py-1"
                 style={{
                   borderColor: "var(--border)",
-                  background: "color-mix(in srgb, var(--surface) 84%, transparent)",
+                  color: "var(--text-muted)",
                 }}
               >
-                <div className="text-sm font-medium" style={{ color: "var(--text)" }}>
-                  {item.title}
-                </div>
-                <p
-                  className="pt-2 text-sm leading-7"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {item.text}
-                </p>
-              </div>
-            ))}
-          </div>
+                Shor
+              </span>
+              <span style={{ color: "var(--text-faint)" }}>
+                {isSignUp ? "Create account" : "Account access"}
+              </span>
+            </div>
 
-          <div
-            className="mt-6 rounded-[28px] border p-5"
-            style={{
-              borderColor: "var(--border)",
-              background: "color-mix(in srgb, var(--bg) 78%, transparent)",
-            }}
-          >
-            <p
-              className="text-[11px] uppercase tracking-[0.18em]"
-              style={{ color: "var(--text-faint)" }}
+            <h1
+              className="max-w-2xl pt-6 text-4xl font-semibold tracking-tight sm:text-[3.6rem]"
+              style={{
+                color: "var(--text)",
+                fontFamily: "var(--font-grotesk-ui)",
+              }}
             >
-              Public bio preview
-            </p>
-            <div className="flex flex-col gap-4 pt-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div
-                  className="text-xl font-semibold sm:text-2xl"
-                  style={{ color: "var(--text)" }}
-                >
-                  {publicPreviewPath}
-                </div>
-                <p
-                  className="pt-2 text-sm leading-7"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Your username becomes the public URL for your bio links page.
-                </p>
-              </div>
+              {isSignUp ? "One username. One clean workspace." : "Welcome back."}
+            </h1>
 
-              <div
-                className="rounded-2xl border px-4 py-3 text-right"
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                }}
-              >
-                <div className="text-[11px] uppercase tracking-[0.18em] text-[var(--text-faint)]">
-                  Username
+            <p
+              className="max-w-xl pt-4 text-sm leading-7 sm:text-base"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {isSignUp
+                ? "Create a quiet account for short links, notes, and your public /@username page."
+                : "Sign in to manage your links, notes, and public page without the clutter."}
+            </p>
+
+            <div
+              className="mt-8 rounded-[24px] border p-5"
+              style={{
+                borderColor: "var(--border)",
+                background: "var(--surface)",
+              }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div
+                    className="text-[11px] uppercase tracking-[0.18em]"
+                    style={{ color: "var(--text-faint)" }}
+                  >
+                    Public URL
+                  </div>
+                  <div
+                    className="pt-3 text-2xl font-semibold tracking-tight sm:text-3xl"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {publicPreviewPath}
+                  </div>
                 </div>
-                <div className="pt-1 text-sm font-medium">
-                  @{normalizedUsername || "username"}
+
+                <div
+                  className="min-w-[160px] rounded-2xl border px-4 py-3"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--bg)",
+                  }}
+                >
+                  <div
+                    className="text-[11px] uppercase tracking-[0.18em]"
+                    style={{ color: "var(--text-faint)" }}
+                  >
+                    Username
+                  </div>
+                  <div
+                    className="pt-2 text-sm font-medium"
+                    style={{ color: "var(--text)" }}
+                  >
+                    @{normalizedUsername || "username"}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section
-          className="animate-morph-in rounded-[32px] border p-6 sm:p-7"
-          style={{
-            borderColor: "var(--border)",
-            background: "var(--surface)",
-          }}
-        >
+            <div className="mt-6 grid gap-3">
+              {featureRows.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-2xl border px-4 py-3.5 text-sm leading-7"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section
+            className="animate-morph-in rounded-[26px] border p-6 sm:p-7"
+            style={{
+              borderColor: "var(--border)",
+              background: "var(--surface)",
+            }}
+          >
           <header>
             <p
               className="text-[11px] uppercase tracking-[0.18em]"
@@ -390,16 +390,16 @@ export default function AuthForm({ mode }: { mode: Mode }) {
           </form>
 
           <div
-            className="mt-5 rounded-3xl border p-4 text-sm"
+            className="mt-5 rounded-[22px] border p-4 text-sm leading-7"
             style={{
               borderColor: "var(--border)",
               background: "var(--bg)",
               color: "var(--text-muted)",
             }}
-          >
-            {isSignUp
-              ? "You can change your name, username, avatar, and password later from your profile page."
-              : "After signing in, your top bar username takes you straight to your profile page."}
+            >
+              {isSignUp
+                ? "You can change your name, username, avatar, and password later from your profile page."
+                : "After signing in, your top bar username takes you straight to your profile page."}
           </div>
 
           <p className="pt-5 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -411,7 +411,8 @@ export default function AuthForm({ mode }: { mode: Mode }) {
               {isSignUp ? "Sign in" : "Create one"}
             </Link>
           </p>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   );

@@ -4,8 +4,8 @@ import { ensureBioProfileForUser } from "@/lib/account-data";
 import { requirePageSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
-  title: "Profile - Shor",
-  description: "Edit your profile, username, password, and settings.",
+  title: "Account - Shor",
+  description: "Manage your profile, password, preferences, and workspace.",
 };
 
 export default async function UserPage() {

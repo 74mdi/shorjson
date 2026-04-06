@@ -259,6 +259,63 @@
   --bio-hover-lift: -2px;
 }
 
+.backgroundPlain {
+  background-image: none;
+}
+
+.backgroundGrid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--accent) 7%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--accent) 7%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 26px 26px;
+}
+
+.backgroundDots {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 10%, transparent) 1px,
+    transparent 1.2px
+  );
+  background-size: 18px 18px;
+}
+
+.backgroundMesh {
+  background-image:
+    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 36%),
+    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--page-border) 80%, transparent), transparent 32%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 40%);
+}
+
+.backgroundGrain {
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--page-surface) 35%, transparent),
+      color-mix(in srgb, var(--page-bg) 85%, transparent)
+    ),
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--accent) 8%, transparent) 0, transparent 28%),
+    radial-gradient(circle at 78% 22%, color-mix(in srgb, var(--page-border) 70%, transparent) 0, transparent 26%);
+  filter: saturate(0.98);
+}
+
+.backgroundStripes {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 7%, transparent) 0,
+    color-mix(in srgb, var(--accent) 7%, transparent) 10px,
+    transparent 10px,
+    transparent 24px
+  );
+}
+
 @media (max-width: 640px) {
   .page {
     padding: 48px 16px 76px;

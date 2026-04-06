@@ -316,28 +316,28 @@ export default function UserSettingsPage({
           ? "Save failed"
           : "Ready";
 
-  const cardClassName = "rounded-[28px] border p-5 sm:p-6";
+  const cardClassName = "rounded-[24px] border p-5 sm:p-6";
   const surfaceStyle: CSSProperties = {
     borderColor: "var(--border)",
     background: "var(--surface)",
   };
+  const insetSurfaceStyle: CSSProperties = {
+    borderColor: "var(--border)",
+    background: "var(--bg)",
+  };
   const actionButtonClassName =
-    "rounded-2xl border px-4 py-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
+    "rounded-[20px] border px-4 py-4 text-left transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
   const primaryButtonClassName =
     "rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60";
   const pillButtonClassName =
     "rounded-full border px-4 py-2 text-sm transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
 
   return (
-    <main className="min-h-dvh px-5 pb-28 pt-12 sm:pt-16">
+    <main className="min-h-dvh px-5 pb-28 pt-10 sm:pt-14">
       <div className="mx-auto w-full max-w-5xl animate-morph-in">
         <header
-          className="rounded-[32px] border px-5 py-6 sm:px-7 sm:py-7"
-          style={{
-            borderColor: "var(--border)",
-            background:
-              "linear-gradient(135deg, color-mix(in srgb, var(--surface) 82%, transparent), color-mix(in srgb, var(--accent) 6%, var(--bg)))",
-          }}
+          className="rounded-[30px] border px-5 py-6 sm:px-7 sm:py-7"
+          style={surfaceStyle}
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
@@ -363,36 +363,51 @@ export default function UserSettingsPage({
 
               <div>
                 <div
-                  className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px]"
+                  className="inline-flex flex-wrap items-center gap-2 rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em]"
                   style={{
                     borderColor: "var(--border)",
-                    background: "var(--surface)",
+                    background: "var(--bg)",
                     color: "var(--text-muted)",
                   }}
                 >
+                  <span>Account</span>
                   <span>@{activeUsername}</span>
                   <span>Joined {formatAccountDate(initialProfile.createdAt)}</span>
                 </div>
 
                 <h1
                   className="pt-4 text-3xl font-semibold tracking-tight sm:text-4xl"
-                  style={{ color: "var(--text)" }}
+                  style={{
+                    color: "var(--text)",
+                    fontFamily: "var(--font-grotesk-ui)",
+                  }}
                 >
                   {profile.displayName || `@${activeUsername}`}
                 </h1>
                 <p
-                  className="max-w-2xl pt-2 text-sm leading-7"
+                  className="max-w-2xl pt-2 text-sm leading-7 sm:text-base"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  Manage your public profile, account username, password, and
-                  app settings from one place.
+                  Your profile, account settings, and workspace controls all live
+                  here now.
                 </p>
-                <p
-                  className="pt-3 text-xs"
-                  style={{ color: "var(--text-faint)" }}
-                >
-                  Public page: {publicUrl}
-                </p>
+                <div className="flex flex-wrap items-center gap-3 pt-4 text-xs">
+                  <span style={{ color: "var(--text-faint)" }}>Public page:</span>
+                  <span style={{ color: "var(--text-muted)" }}>{publicUrl}</span>
+                  <span
+                    className="rounded-full border px-3 py-1"
+                    style={{
+                      borderColor: "var(--border)",
+                      background: "var(--bg)",
+                      color:
+                        profileSaveState === "error"
+                          ? "#c0392b"
+                          : "var(--text-muted)",
+                    }}
+                  >
+                    {profileSaveLabel}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -415,29 +430,28 @@ export default function UserSettingsPage({
                 </div>
               </Link>
 
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(true)}
+              <Link
+                href="/dashboard/links"
                 className={actionButtonClassName}
                 style={{
                   borderColor: "var(--border)",
-                  background: "var(--surface)",
+                  background: "var(--bg)",
                   color: "var(--text)",
                 }}
               >
-                <div className="text-sm font-medium">Settings</div>
+                <div className="text-sm font-medium">Bio links editor</div>
                 <div
                   className="pt-1 text-xs leading-6"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  Database, import/export, and remote sync.
+                  Update your public links, page style, and live preview.
                 </div>
-              </button>
+              </Link>
             </div>
           </div>
         </header>
 
-        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
+        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
           <form
             onSubmit={handleProfileSubmit}
             className={cardClassName}
@@ -458,35 +472,10 @@ export default function UserSettingsPage({
                   Public identity
                 </h2>
               </div>
-
-              <div className="flex items-center gap-3">
-                <span
-                  className="text-xs"
-                  style={{
-                    color:
-                      profileSaveState === "error"
-                        ? "#c0392b"
-                        : "var(--text-muted)",
-                  }}
-                >
-                  {profileSaveLabel}
-                </span>
-                <button
-                  type="submit"
-                  disabled={profileSaveState === "saving"}
-                  className="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60"
-                  style={{
-                    background: "var(--accent)",
-                    color: "var(--bg)",
-                  }}
-                >
-                  {profileSaveState === "saving" ? "Saving..." : "Save profile"}
-                </button>
-              </div>
             </div>
 
             <div className="mt-6 grid gap-5">
-              <div className="rounded-3xl border p-4" style={surfaceStyle}>
+              <div className="rounded-3xl border p-4" style={insetSurfaceStyle}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   {profile.avatar ? (
                     <img
@@ -665,6 +654,64 @@ export default function UserSettingsPage({
                   </span>
                 </div>
               </label>
+
+              <div
+                className="rounded-3xl border p-4"
+                style={insetSurfaceStyle}
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div
+                      className="text-sm font-medium"
+                      style={{ color: "var(--text)" }}
+                    >
+                      Public URL
+                    </div>
+                    <p
+                      className="pt-1 text-xs leading-6"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Your bio page always stays in the `/@username` format.
+                    </p>
+                  </div>
+
+                  <div
+                    className="rounded-2xl border px-4 py-3 text-sm"
+                    style={{
+                      borderColor: "var(--border)",
+                      background: "var(--surface)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    {publicUrl}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className="text-xs"
+                  style={{
+                    color:
+                      profileSaveState === "error"
+                        ? "#c0392b"
+                        : "var(--text-muted)",
+                  }}
+                >
+                  {profileSaveLabel}
+                </span>
+                <button
+                  type="submit"
+                  disabled={profileSaveState === "saving"}
+                  className="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60"
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--bg)",
+                  }}
+                >
+                  {profileSaveState === "saving" ? "Saving..." : "Save account"}
+                </button>
+              </div>
             </div>
           </form>
 
@@ -884,41 +931,70 @@ export default function UserSettingsPage({
                     color: "var(--text-muted)",
                   }}
                 >
-                  Your public URL stays in the `/@username` format and updates
-                  automatically when you save a new username.
+                  The profile screen now includes your settings directly. Only
+                  data tools stay behind a separate button so the page stays
+                  cleaner.
                 </div>
               </div>
             </section>
+
+            <section className={cardClassName} style={surfaceStyle}>
+              <p
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: "var(--text-faint)" }}
+              >
+                Utilities
+              </p>
+              <h2
+                className="pt-2 text-xl font-semibold"
+                style={{ color: "var(--text)" }}
+              >
+                Data and session
+              </h2>
+              <div className="grid gap-3 pt-5">
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  className={actionButtonClassName}
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                  }}
+                >
+                  <div className="text-sm font-medium">Open data tools</div>
+                  <div
+                    className="pt-1 text-xs leading-6"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Database connections, import/export, and remote sync live here.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => void handleSignOut()}
+                  disabled={signingOut}
+                  className="rounded-[20px] border px-4 py-4 text-left transition-all duration-200 hover:-translate-y-px hover:border-[#c0392b55] hover:bg-[color-mix(in_srgb,#c0392b_10%,transparent)] disabled:opacity-60"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                  }}
+                >
+                  <div className="text-sm font-medium">
+                    {signingOut ? "Signing out..." : "Sign out"}
+                  </div>
+                  <div
+                    className="pt-1 text-xs leading-6"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    End this session and return to the sign-in page.
+                  </div>
+                </button>
+              </div>
+            </section>
           </div>
-        </div>
-
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => setSettingsOpen(true)}
-            className="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]"
-            style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
-              color: "var(--text)",
-            }}
-          >
-            Settings
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void handleSignOut()}
-            disabled={signingOut}
-            className="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:border-[#c0392b55] hover:bg-[color-mix(in_srgb,#c0392b_10%,transparent)] disabled:opacity-60"
-            style={{
-              borderColor: "var(--border)",
-              background: "var(--surface)",
-              color: "var(--text)",
-            }}
-          >
-            {signingOut ? "Signing out..." : "Sign out"}
-          </button>
         </div>
       </div>
 

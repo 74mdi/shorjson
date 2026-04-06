@@ -40,6 +40,8 @@ export async function PATCH(request: NextRequest) {
     themePreset: parsed.data.themePreset,
     fontPreset: parsed.data.fontPreset,
     animationPreset: parsed.data.animationPreset,
+    backgroundStyle: parsed.data.backgroundStyle,
+    buttonSize: parsed.data.buttonSize,
     watermarkText: parsed.data.watermarkText,
     showThemeToggle: parsed.data.showThemeToggle,
     updatedAt: new Date().toISOString(),

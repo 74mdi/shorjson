@@ -29,7 +29,9 @@ import {
   buildBioPageData,
   getPublicBioPath,
   type AnimationPreset,
+  type BackgroundStyle,
   type BioPage,
+  type ButtonSize,
   type ButtonStyle,
   type FontPreset,
   type ThemePreset,
@@ -47,6 +49,8 @@ type DashboardProfile = {
   fontPreset: FontPreset;
   id: string;
   animationPreset: AnimationPreset;
+  backgroundStyle: BackgroundStyle;
+  buttonSize: ButtonSize;
   themePreset: ThemePreset;
   updatedAt: string;
   userId: string;
@@ -142,6 +146,18 @@ const THEME_OPTIONS: Array<{
     accentColor: "#f97316",
     description: "Warm blush palette for brighter pages.",
   },
+  {
+    id: "forest",
+    label: "Forest",
+    accentColor: "#2f855a",
+    description: "Quiet green neutrals with a soft natural edge.",
+  },
+  {
+    id: "graphite",
+    label: "Graphite",
+    accentColor: "#334155",
+    description: "Cool editorial gray with sharper contrast.",
+  },
 ];
 
 const FONT_OPTIONS: Array<{
@@ -164,6 +180,29 @@ const ANIMATION_OPTIONS: Array<{
   { id: "fade", label: "Fade", preview: "Minimal opacity only" },
   { id: "lift", label: "Lift", preview: "Small upward reveal" },
   { id: "drift", label: "Drift", preview: "Slower floating motion" },
+];
+
+const BACKGROUND_OPTIONS: Array<{
+  id: BackgroundStyle;
+  label: string;
+  preview: string;
+}> = [
+  { id: "plain", label: "Plain", preview: "No texture, just the palette" },
+  { id: "grid", label: "Grid", preview: "Fine editorial grid lines" },
+  { id: "dots", label: "Dots", preview: "Soft dotted field" },
+  { id: "mesh", label: "Mesh", preview: "Blurred glow clusters" },
+  { id: "grain", label: "Grain", preview: "Quiet textured wash" },
+  { id: "stripes", label: "Stripes", preview: "Diagonal stripe rhythm" },
+];
+
+const BUTTON_SIZE_OPTIONS: Array<{
+  id: ButtonSize;
+  label: string;
+  preview: string;
+}> = [
+  { id: "compact", label: "Compact", preview: "Tighter links for dense stacks" },
+  { id: "balanced", label: "Balanced", preview: "The default all-round size" },
+  { id: "roomy", label: "Roomy", preview: "More breathing room and weight" },
 ];
 
 const COMMON_EMOJIS = [
@@ -586,7 +625,9 @@ export default function BioLinksDashboard({
     return {
       accentColor: nextProfile.accentColor,
       animationPreset: nextProfile.animationPreset,
+      backgroundStyle: nextProfile.backgroundStyle,
       buttonStyle: nextProfile.buttonStyle,
+      buttonSize: nextProfile.buttonSize,
       fontPreset: nextProfile.fontPreset,
       themePreset: nextProfile.themePreset,
       watermarkText: nextProfile.watermarkText.trim() || "made with shor",
@@ -1434,7 +1475,7 @@ export default function BioLinksDashboard({
                       }}
                     >
                       <button
-                        className={`btn-base btn-${style} preview-btn`}
+                        className={`btn-base btn-size-${profile.buttonSize} btn-${style} preview-btn`}
                         type="button"
                         tabIndex={-1}
                       >
@@ -1443,6 +1484,34 @@ export default function BioLinksDashboard({
                       <div className={styles.styleCardName}>{style}</div>
                     </div>
                   ))}
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Button size</span>
+                  <div className={styles.optionGrid}>
+                    {BUTTON_SIZE_OPTIONS.map((buttonSize) => (
+                      <button
+                        key={buttonSize.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.buttonSize === buttonSize.id
+                            ? styles.optionCardActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            buttonSize: buttonSize.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{buttonSize.label}</div>
+                        <div className={styles.optionCardText}>{buttonSize.preview}</div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className={styles.fieldGroup}>
@@ -1467,6 +1536,34 @@ export default function BioLinksDashboard({
                       >
                         <div className={styles.optionCardTitle}>{theme.label}</div>
                         <div className={styles.optionCardText}>{theme.description}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Background</span>
+                  <div className={styles.optionGrid}>
+                    {BACKGROUND_OPTIONS.map((background) => (
+                      <button
+                        key={background.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.backgroundStyle === background.id
+                            ? styles.optionCardActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            backgroundStyle: background.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{background.label}</div>
+                        <div className={styles.optionCardText}>{background.preview}</div>
                       </button>
                     ))}
                   </div>

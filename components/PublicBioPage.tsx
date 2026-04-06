@@ -319,6 +319,22 @@ const PAGE_THEME_STYLES: Record<BioPage["themePreset"], Record<string, string>> 
     "--page-muted": "#b45309",
     "--page-faint": "#fdba74",
   },
+  forest: {
+    "--page-bg": "#eff6f0",
+    "--page-surface": "#f8fcf8",
+    "--page-border": "#d5e6d7",
+    "--page-text": "#15261a",
+    "--page-muted": "#5f7a67",
+    "--page-faint": "#9bb3a1",
+  },
+  graphite: {
+    "--page-bg": "#eceef2",
+    "--page-surface": "#f8f9fb",
+    "--page-border": "#d5dae3",
+    "--page-text": "#171b24",
+    "--page-muted": "#677287",
+    "--page-faint": "#9ca3b2",
+  },
 };
 
 const FONT_CLASS_NAMES: Record<BioPage["fontPreset"], string> = {
@@ -333,6 +349,21 @@ const MOTION_CLASS_NAMES: Record<BioPage["animationPreset"], string> = {
   fade: styles.motionFade,
   lift: styles.motionLift,
   drift: styles.motionDrift,
+};
+
+const BACKGROUND_CLASS_NAMES: Record<BioPage["backgroundStyle"], string> = {
+  plain: styles.backgroundPlain,
+  grid: styles.backgroundGrid,
+  dots: styles.backgroundDots,
+  mesh: styles.backgroundMesh,
+  grain: styles.backgroundGrain,
+  stripes: styles.backgroundStripes,
+};
+
+const BUTTON_SIZE_CLASS_NAMES: Record<BioPage["buttonSize"], string> = {
+  compact: "btn-size-compact",
+  balanced: "btn-size-balanced",
+  roomy: "btn-size-roomy",
 };
 
 function getPageStyle(page: BioPage): CSSProperties {
@@ -354,6 +385,8 @@ export default function PublicBioPage({
   const pageStyle = getPageStyle(page);
   const fontClassName = FONT_CLASS_NAMES[page.fontPreset];
   const motionClassName = MOTION_CLASS_NAMES[page.animationPreset];
+  const backgroundClassName = BACKGROUND_CLASS_NAMES[page.backgroundStyle];
+  const buttonSizeClassName = BUTTON_SIZE_CLASS_NAMES[page.buttonSize];
 
   return (
     <div
@@ -361,6 +394,7 @@ export default function PublicBioPage({
         styles.page,
         fontClassName,
         motionClassName,
+        backgroundClassName,
         manualDark ? styles.manualDark : "",
         preview ? styles.previewMode : "",
       ].join(" ")}
@@ -417,7 +451,7 @@ export default function PublicBioPage({
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`btn-base btn-${page.buttonStyle} ${styles.linkAnchor}`}
+                        className={`btn-base ${buttonSizeClassName} btn-${page.buttonStyle} ${styles.linkAnchor}`}
                       >
                         <span
                           className={styles.iconWrap}

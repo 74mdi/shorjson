@@ -1,7 +1,9 @@
 import { z } from "zod";
 import {
   isAnimationPreset,
+  isBackgroundStyle,
   isButtonStyle,
+  isButtonSize,
   isFontPreset,
   isThemePreset,
 } from "./bio-shared";
@@ -306,6 +308,18 @@ export const bioStyleSchema = z.object({
     .string()
     .refine((value) => isAnimationPreset(value), {
       message: "Invalid animation preset.",
+    })
+    .transform((value) => value),
+  backgroundStyle: z
+    .string()
+    .refine((value) => isBackgroundStyle(value), {
+      message: "Invalid background style.",
+    })
+    .transform((value) => value),
+  buttonSize: z
+    .string()
+    .refine((value) => isButtonSize(value), {
+      message: "Invalid button size.",
     })
     .transform((value) => value),
   watermarkText: z

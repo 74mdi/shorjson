@@ -746,9 +746,11 @@ export default function NotesDashboard({
           <div>
             <Link href="/" className={styles.logoLink}>
               <span className={styles.logoDot}>●</span>
-              <span>Shor</span>
+              <span>Notes</span>
             </Link>
-            <p className={styles.noteItemTime}>@{username}</p>
+            <p className={styles.noteItemTime}>
+              @{username} · {notes.length} {notes.length === 1 ? "note" : "notes"}
+            </p>
           </div>
 
           <button
@@ -811,7 +813,9 @@ export default function NotesDashboard({
             <div className={styles.mobileShelfHeader}>
               <div>
                 <div className={styles.mobileShelfTitle}>Notes</div>
-                <div className={styles.mobileShelfMeta}>@{username}</div>
+                <div className={styles.mobileShelfMeta}>
+                  @{username} · {notes.length} {notes.length === 1 ? "note" : "notes"}
+                </div>
               </div>
               <button
                 type="button"

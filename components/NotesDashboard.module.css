@@ -1,36 +1,44 @@
 .workspace {
-  --font-display: var(--font-instrument-serif), serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-heading: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --muted: var(--text-muted);
-  --accent2: var(--accent-hover);
-  --radius: 8px;
   min-height: 100dvh;
-  background: transparent;
   color: var(--text);
-  font-family: var(--font-mono);
-  padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  padding: 28px 24px calc(104px + env(safe-area-inset-bottom));
 }
 
 .layout {
-  min-height: 100dvh;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
 }
 
 .mobileShelf {
   display: none;
 }
 
-.sidebar {
-  width: 240px;
+.sidebar,
+.editorPanel {
+  border: 1px solid var(--border);
+  border-radius: 28px;
   background: var(--surface);
-  border-right: 1px solid var(--border);
-  padding: 26px 16px 18px;
+  animation: notesMorphIn 320ms cubic-bezier(.22,1,.36,1) both;
+  transition:
+    background 240ms cubic-bezier(.22,1,.36,1),
+    border-color 240ms cubic-bezier(.22,1,.36,1),
+    transform 240ms cubic-bezier(.22,1,.36,1);
+}
+
+.sidebar {
+  position: sticky;
+  top: 84px;
+  min-height: calc(100dvh - 132px);
+  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-height: 100dvh;
-  animation: notesMorphIn 320ms cubic-bezier(.22,1,.36,1) both;
 }
 
 .logoLink {
@@ -39,8 +47,9 @@
   gap: 8px;
   color: var(--text);
   text-decoration: none;
-  font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-family: var(--font-heading);
+  font-size: 1.28rem;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -49,41 +58,57 @@
   font-size: 0.95rem;
 }
 
-.newNoteButton {
-  width: 100%;
-  border: 1px solid var(--accent);
-  border-radius: var(--radius);
+.newNoteButton,
+.mobileNewNoteButton,
+.emptyPanelAction {
+  border: none;
+  border-radius: 999px;
   background: var(--accent);
   color: var(--bg);
   cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
-  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 0.84rem;
+  font-weight: 600;
   transition:
     background 220ms cubic-bezier(.22,1,.36,1),
-    border-color 220ms cubic-bezier(.22,1,.36,1),
-    transform 220ms cubic-bezier(.22,1,.36,1);
+    transform 220ms cubic-bezier(.22,1,.36,1),
+    opacity 220ms cubic-bezier(.22,1,.36,1);
 }
 
-.newNoteButton:hover {
-  background: var(--accent2);
-  border-color: var(--accent2);
+.newNoteButton {
+  width: 100%;
+  padding: 12px 14px;
+}
+
+.mobileNewNoteButton {
+  padding: 10px 14px;
+}
+
+.newNoteButton:hover,
+.mobileNewNoteButton:hover,
+.emptyPanelAction:hover {
+  background: var(--accent-hover);
   transform: translateY(-1px);
 }
 
-.newNoteButton:active {
-  transform: translateY(1px);
+.newNoteButton:disabled,
+.mobileNewNoteButton:disabled,
+.deleteButton:disabled,
+.emptyPanelAction:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
-.searchInput {
+.searchInput,
+.mobileSearchInput {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 18px;
   background: var(--bg);
   color: var(--text);
-  padding: 10px 12px;
-  font-family: var(--font-mono);
-  font-size: 0.76rem;
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 0.88rem;
   outline: none;
   transition:
     border-color 220ms cubic-bezier(.22,1,.36,1),
@@ -91,68 +116,41 @@
     transform 220ms cubic-bezier(.22,1,.36,1);
 }
 
-.searchInput:focus {
+.searchInput:focus,
+.mobileSearchInput:focus {
   border-color: var(--border2);
   transform: translateY(-1px);
 }
 
-.searchInput::placeholder {
+.searchInput::placeholder,
+.mobileSearchInput::placeholder {
   color: var(--muted);
 }
 
 .mobileShelfHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
 .mobileShelfTitle {
-  font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-family: var(--font-heading);
+  font-size: 1.24rem;
+  font-weight: 600;
   line-height: 1;
 }
 
+.mobileShelfMeta,
+.noteItemTime,
+.editorMeta,
+.saveIndicator {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
 .mobileShelfMeta {
-  color: var(--muted);
-  font-size: 0.7rem;
   padding-top: 6px;
-}
-
-.mobileNewNoteButton {
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--bg);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  padding: 9px 12px;
-  transition:
-    background 220ms cubic-bezier(.22,1,.36,1),
-    border-color 220ms cubic-bezier(.22,1,.36,1),
-    transform 220ms cubic-bezier(.22,1,.36,1);
-}
-
-.mobileNewNoteButton:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.mobileSearchInput {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: var(--bg);
-  color: var(--text);
-  padding: 12px 14px;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  outline: none;
-}
-
-.mobileSearchInput::placeholder {
-  color: var(--muted);
 }
 
 .mobileNoteScroller {
@@ -162,57 +160,81 @@
   padding-bottom: 2px;
 }
 
-.mobileNoteCard {
-  flex: 0 0 min(220px, calc(100vw - 72px));
-  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--surface) 74%, transparent);
-  padding: 12px 13px;
-  text-align: left;
+.mobileNoteCard,
+.noteItem {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
   transition:
-    background 220ms cubic-bezier(.22,1,.36,1),
     border-color 220ms cubic-bezier(.22,1,.36,1),
+    background 220ms cubic-bezier(.22,1,.36,1),
     transform 220ms cubic-bezier(.22,1,.36,1);
 }
 
-.mobileNoteCardActive {
-  background: color-mix(in srgb, var(--surface-raised) 86%, var(--surface));
-  border-color: var(--border2);
+.mobileNoteCard {
+  flex: 0 0 min(240px, calc(100vw - 70px));
+  border-radius: 18px;
+  padding: 13px 14px;
+  text-align: left;
 }
 
-.mobileNoteCardTitle {
-  font-size: 0.78rem;
-  font-weight: 700;
+.noteItem {
+  border-radius: 18px;
+  padding: 13px 14px;
+  text-align: left;
+  cursor: pointer;
+  animation: notesMorphIn 300ms cubic-bezier(.22,1,.36,1) both;
+}
+
+.mobileNoteCard:hover,
+.mobileNoteCardActive,
+.noteItem:hover,
+.noteItemActive {
+  border-color: var(--border2);
+  background: var(--surface-raised);
+  transform: translateY(-1px);
+}
+
+.mobileNoteCardTitle,
+.noteItemTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font-body);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.mobileNoteCardPreview {
+.mobileNoteCardPreview,
+.noteItemPreview {
   color: var(--muted);
-  font-size: 0.7rem;
-  line-height: 1.55;
-  min-height: 2.1em;
-  padding-top: 4px;
+  font-size: 0.75rem;
+  line-height: 1.65;
+  min-height: 2.45em;
+  padding-top: 5px;
 }
 
 .mobileNoteCardTime {
   color: var(--muted);
-  font-size: 0.66rem;
-  padding-top: 8px;
+  font-size: 0.7rem;
+  padding-top: 10px;
 }
 
-.mobileEmptyState {
-  min-width: 100%;
+.mobileEmptyState,
+.emptySidebar {
   border: 1px dashed var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 16px 14px;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   line-height: 1.7;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.mobileEmptyState {
+  min-width: 100%;
 }
 
 .sidebarRule {
@@ -226,85 +248,19 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding-right: 2px;
-}
-
-.noteItem {
-  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 74%, transparent);
-  padding: 12px;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background 220ms cubic-bezier(.22,1,.36,1),
-    border-color 220ms cubic-bezier(.22,1,.36,1),
-    transform 220ms cubic-bezier(.22,1,.36,1),
-    opacity 220ms cubic-bezier(.22,1,.36,1);
-  animation: notesMorphIn 300ms cubic-bezier(.22,1,.36,1) both;
-}
-
-.noteItem:hover {
-  background: var(--surface);
-  border-color: var(--border2);
-  transform: translateY(-1px);
-}
-
-.noteItemActive {
-  background: color-mix(in srgb, var(--surface-raised) 84%, var(--surface));
-  border-color: var(--border2);
-}
-
-.noteItemTitle {
-  font-size: 0.78rem;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.noteItemPreview {
-  color: var(--muted);
-  font-size: 0.7rem;
-  line-height: 1.55;
-  padding-top: 4px;
-  min-height: 2.2em;
-}
-
-.noteItemTime {
-  color: var(--muted);
-  font-size: 0.68rem;
-  padding-top: 8px;
-}
-
-.emptySidebar {
-  border: 1px dashed var(--border);
-  border-radius: 12px;
-  padding: 14px 12px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  line-height: 1.7;
 }
 
 .editorShell {
   min-width: 0;
-  padding: 22px 24px 24px;
 }
 
 .editorPanel {
-  min-height: calc(100dvh - 46px);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--surface);
+  min-height: calc(100dvh - 132px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: notesMorphIn 320ms cubic-bezier(.22,1,.36,1) both;
-  transition:
-    background 240ms cubic-bezier(.22,1,.36,1),
-    border-color 240ms cubic-bezier(.22,1,.36,1),
-    transform 240ms cubic-bezier(.22,1,.36,1);
 }
 
 .editorPanelInner {
@@ -315,7 +271,8 @@
 }
 
 .editorHeader {
-  padding: 22px 28px 0;
+  padding: 24px 26px 18px;
+  border-bottom: 1px solid var(--border);
 }
 
 .editorMetaRow {
@@ -323,22 +280,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.editorMeta {
-  color: var(--muted);
-  font-size: 0.72rem;
+  padding-bottom: 10px;
 }
 
 .deleteButton {
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: transparent;
+  background: var(--bg);
   color: var(--muted);
   cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
-  padding: 6px 11px;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  padding: 8px 13px;
   transition:
     color 220ms cubic-bezier(.22,1,.36,1),
     border-color 220ms cubic-bezier(.22,1,.36,1),
@@ -353,21 +306,17 @@
   transform: translateY(-1px);
 }
 
-.deleteButton:disabled {
-  cursor: default;
-  opacity: 0.55;
-}
-
 .titleInput {
   width: 100%;
   border: none;
   background: transparent;
   color: var(--text);
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 3vw, 2.75rem);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
-  padding: 14px 0 18px;
+  font-family: var(--font-heading);
+  font-size: clamp(2.1rem, 4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  padding: 6px 0 0;
   outline: none;
 }
 
@@ -376,22 +325,22 @@
 }
 
 .toolbar {
-  padding: 8px 28px;
-  border-top: 1px solid var(--border);
+  padding: 14px 18px;
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 8px;
+  background: color-mix(in srgb, var(--surface) 65%, var(--bg));
 }
 
 .toolbarButton {
-  background: none;
+  background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 4px 9px;
+  border-radius: 999px;
+  padding: 7px 11px;
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-body);
+  font-size: 0.76rem;
   cursor: pointer;
   transition:
     border-color 200ms cubic-bezier(.22,1,.36,1),
@@ -407,7 +356,7 @@
 }
 
 .toolbarButtonActive {
-  transform: scale(0.95);
+  transform: translateY(-1px);
 }
 
 .editorFrame {
@@ -419,12 +368,12 @@
 
 .editorBody {
   flex: 1;
-  min-height: 360px;
+  min-height: 380px;
   outline: none;
-  padding: 16px 28px 28px;
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  line-height: 1.8;
+  padding: 24px 26px 32px;
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  line-height: 1.82;
   overflow-y: auto;
   color: var(--text);
   white-space: normal;
@@ -437,25 +386,26 @@
 }
 
 .editorBody h1 {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1.2;
-  margin: 16px 0 8px;
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  line-height: 1.1;
+  margin: 16px 0 10px;
 }
 
 .editorBody h2 {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  line-height: 1.25;
-  margin: 12px 0 6px;
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin: 14px 0 8px;
 }
 
 .editorBody code {
   background: var(--surface-raised);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-size: 0.78rem;
+  border-radius: 8px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
 }
 
 .editorBody a {
@@ -467,17 +417,17 @@
 .editorBody hr {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 16px 0;
+  margin: 18px 0;
 }
 
 .editorBody strong,
 .editorBody b {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .editorBody p,
 .editorBody div {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
 }
 
 .editorBody p:last-child,
@@ -487,17 +437,17 @@
 
 .editorFooter {
   border-top: 1px solid var(--border);
-  padding: 12px 28px 14px;
+  padding: 14px 26px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  font-size: 0.72rem;
+  font-size: 0.76rem;
   color: var(--muted);
 }
 
 .saveIndicator {
-  min-width: 72px;
+  min-width: 84px;
   text-align: right;
 }
 
@@ -518,7 +468,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 36px 28px 40px;
+  padding: 40px 28px;
 }
 
 .emptyPanelCard {
@@ -527,42 +477,28 @@
 }
 
 .emptyPanelTitle {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  line-height: 1.1;
+  font-family: var(--font-heading);
+  font-size: 2.2rem;
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
 }
 
 .emptyPanelText {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   line-height: 1.8;
-  padding-top: 8px;
+  padding-top: 10px;
 }
 
 .emptyPanelAction {
-  margin-top: 18px;
-  border: none;
-  border-radius: var(--radius);
-  background: var(--accent);
-  color: var(--bg);
-  cursor: pointer;
-  font-family: var(--font-mono);
-  font-size: 0.74rem;
-  padding: 10px 14px;
-  transition:
-    background 220ms cubic-bezier(.22,1,.36,1),
-    border-color 220ms cubic-bezier(.22,1,.36,1),
-    transform 220ms cubic-bezier(.22,1,.36,1);
-}
-
-.emptyPanelAction:hover {
-  background: var(--accent2);
-  transform: translateY(-1px);
+  margin-top: 20px;
+  padding: 11px 16px;
 }
 
 .workspace :global(*::-webkit-scrollbar) {
-  width: 3px;
-  height: 3px;
+  width: 4px;
+  height: 4px;
 }
 
 .workspace :global(*::-webkit-scrollbar-track) {
@@ -575,14 +511,14 @@
 }
 
 .workspace,
-.sidebar,
 .noteList,
-.editorBody {
+.editorBody,
+.mobileNoteScroller {
   scrollbar-width: thin;
   scrollbar-color: var(--border2) transparent;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 900px) {
   .layout {
     display: block;
   }
@@ -597,28 +533,33 @@
     padding-bottom: 14px;
   }
 
-  .editorShell {
-    padding: 18px 16px 24px;
-  }
-
   .editorPanel {
-    min-height: calc(100dvh - 232px);
+    min-height: calc(100dvh - 246px);
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace {
+    padding: 20px 16px calc(98px + env(safe-area-inset-bottom));
   }
 
   .editorHeader {
-    padding: 22px 18px 0;
+    padding: 22px 18px 16px;
   }
 
   .toolbar {
-    padding: 8px 18px;
+    padding: 12px 14px;
   }
 
   .editorBody {
-    padding: 16px 18px 26px;
+    min-height: 320px;
+    padding: 20px 18px 28px;
+    font-size: 0.94rem;
   }
 
   .editorFooter {
     padding: 12px 18px 14px;
+    flex-wrap: wrap;
   }
 }
 
