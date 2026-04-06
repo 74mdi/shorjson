@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import PublicBioPage from "@/components/PublicBioPage";
-import { geistMono, instrumentSerif } from "@/lib/fonts";
-import { getBioPageByUsername } from "@/lib/bio-page";
 import { clickLink, getLinks } from "@/lib/adapter-utils";
 import { getLinkBySlug } from "@/lib/links";
 import {
@@ -20,17 +17,6 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const bioPage = slug.startsWith("@")
-    ? await getBioPageByUsername(slug.slice(1))
-    : null;
-
-  if (bioPage) {
-    return {
-      title: `${bioPage.displayName} (@${bioPage.username}) - Shor`,
-      description: bioPage.bio || `Links from @${bioPage.username}`,
-    };
-  }
-
   return {
     title: `/${slug} - Shor`,
   };
@@ -42,17 +28,6 @@ export default async function SlugPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const bioPage = slug.startsWith("@")
-    ? await getBioPageByUsername(slug.slice(1))
-    : null;
-
-  if (bioPage) {
-    return (
-      <div className={`${instrumentSerif.variable} ${geistMono.variable}`}>
-        <PublicBioPage page={bioPage} />
-      </div>
-    );
-  }
 
   const entry = await getLinkBySlug(slug);
   if (!entry) {

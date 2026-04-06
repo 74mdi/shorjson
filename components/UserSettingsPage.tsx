@@ -18,6 +18,7 @@ import {
   passwordChangeSchema,
   USERNAME_PATTERN,
 } from "@/lib/schemas";
+import { applyTheme, getCurrentThemeIsDark, subscribeToTheme } from "@/lib/theme-client";
 
 const DbPanel = dynamic(() => import("./DbPanel"), {
   ssr: false,
@@ -96,9 +97,13 @@ export default function UserSettingsPage({
   useEffect(() => {
     setMounted(true);
     setSiteOrigin(window.location.origin);
-    setIsDark(document.documentElement.classList.contains("dark"));
+    setIsDark(getCurrentThemeIsDark());
+    const unsubscribe = subscribeToTheme((nextIsDark) => {
+      setIsDark(nextIsDark);
+    });
 
     return () => {
+      unsubscribe();
       if (profileResetTimerRef.current) {
         window.clearTimeout(profileResetTimerRef.current);
       }
@@ -142,8 +147,7 @@ export default function UserSettingsPage({
   function toggleTheme() {
     const next = !isDark;
     setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("shor-mode", next ? "dark" : "light");
+    applyTheme(next);
   }
 
   function markProfileSaved() {
@@ -318,7 +322,11 @@ export default function UserSettingsPage({
     background: "var(--surface)",
   };
   const actionButtonClassName =
-    "rounded-2xl border px-4 py-3 text-left transition-all duration-200";
+    "rounded-2xl border px-4 py-3 text-left transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
+  const primaryButtonClassName =
+    "rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60";
+  const pillButtonClassName =
+    "rounded-full border px-4 py-2 text-sm transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
 
   return (
     <main className="min-h-dvh px-5 pb-28 pt-12 sm:pt-16">
@@ -394,7 +402,7 @@ export default function UserSettingsPage({
                 className={actionButtonClassName}
                 style={{
                   borderColor: "var(--border)",
-                  background: "var(--bg)",
+                  background: "var(--surface)",
                   color: "var(--text)",
                 }}
               >
@@ -413,7 +421,7 @@ export default function UserSettingsPage({
                 className={actionButtonClassName}
                 style={{
                   borderColor: "var(--border)",
-                  background: "var(--bg)",
+                  background: "var(--surface)",
                   color: "var(--text)",
                 }}
               >
@@ -466,7 +474,7 @@ export default function UserSettingsPage({
                 <button
                   type="submit"
                   disabled={profileSaveState === "saving"}
-                  className="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 disabled:opacity-60"
+                  className="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60"
                   style={{
                     background: "var(--accent)",
                     color: "var(--bg)",
@@ -517,10 +525,10 @@ export default function UserSettingsPage({
 
                   <div className="flex flex-wrap gap-2">
                     <label
-                      className="cursor-pointer rounded-full border px-4 py-2 text-sm"
+                      className={`cursor-pointer ${pillButtonClassName}`}
                       style={{
                         borderColor: "var(--border)",
-                        background: "var(--bg)",
+                        background: "var(--surface)",
                         color: "var(--text)",
                       }}
                     >
@@ -542,10 +550,10 @@ export default function UserSettingsPage({
                             avatar: null,
                           }))
                         }
-                        className="rounded-full border px-4 py-2 text-sm"
+                        className={pillButtonClassName}
                         style={{
                           borderColor: "var(--border)",
-                          background: "var(--bg)",
+                          background: "var(--surface)",
                           color: "var(--text)",
                         }}
                       >
@@ -770,7 +778,7 @@ export default function UserSettingsPage({
                 <button
                   type="submit"
                   disabled={passwordSubmitting}
-                  className="mt-1 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 disabled:opacity-60"
+                  className={`mt-1 ${primaryButtonClassName}`}
                   style={{
                     background: "var(--accent)",
                     color: "var(--bg)",
@@ -823,7 +831,7 @@ export default function UserSettingsPage({
                     className={actionButtonClassName}
                     style={{
                       borderColor: "var(--border)",
-                      background: "var(--bg)",
+                      background: "var(--surface)",
                       color: "var(--text)",
                     }}
                   >
@@ -853,7 +861,7 @@ export default function UserSettingsPage({
                   className={actionButtonClassName}
                   style={{
                     borderColor: "var(--border)",
-                    background: "var(--bg)",
+                    background: "var(--surface)",
                     color: "var(--text)",
                   }}
                 >
@@ -888,7 +896,7 @@ export default function UserSettingsPage({
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
-            className="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200"
+            className="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]"
             style={{
               borderColor: "var(--border)",
               background: "var(--surface)",
@@ -902,7 +910,7 @@ export default function UserSettingsPage({
             type="button"
             onClick={() => void handleSignOut()}
             disabled={signingOut}
-            className="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200 disabled:opacity-60"
+            className="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:border-[#c0392b55] hover:bg-[color-mix(in_srgb,#c0392b_10%,transparent)] disabled:opacity-60"
             style={{
               borderColor: "var(--border)",
               background: "var(--surface)",

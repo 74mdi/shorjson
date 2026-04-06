@@ -25,6 +25,14 @@ const nextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: "/@:username",
+        destination: "/bio/:username",
+      },
+    ];
+  },
   // Include server-template files in the Vercel build output so the
   // /api/server-download route can read and ZIP them at runtime.
   outputFileTracingIncludes: {

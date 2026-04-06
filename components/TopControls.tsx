@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { getPublicBioPath } from "@/lib/bio-shared";
+import { applyTheme, getCurrentThemeIsDark, subscribeToTheme } from "@/lib/theme-client";
 
 /* ── Icons ──────────────────────────────────────────────────────────────── */
 
@@ -34,8 +35,12 @@ export default function TopControls({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
+    setIsDark(getCurrentThemeIsDark());
     setMounted(true);
+
+    return subscribeToTheme((nextIsDark) => {
+      setIsDark(nextIsDark);
+    });
   }, []);
 
   const isAppRoute =
@@ -51,8 +56,7 @@ export default function TopControls({
   function toggleTheme() {
     const next = !isDark;
     setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("shor-mode", next ? "dark" : "light");
+    applyTheme(next);
   }
 
   const btnStyle: React.CSSProperties = {
