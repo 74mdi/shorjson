@@ -1,5 +1,5 @@
-import { createHmac, randomBytes } from "crypto";
-import bcrypt from "bcrypt";
+import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHmac } from "crypto";
+import { promisify } from "util";
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -86,15 +86,31 @@ export async function createSessionRefreshToken(input: {
   return createSessionToken(input);
 }
 
+const scrypt = promisify(scryptCallback);
+
 export async function hashAccountPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
+  const salt = randomBytes(16).toString("base64");
+  const derived = (await scrypt(password, salt, 64)) as Buffer;
+  return `${salt}:${derived.toString("base64")}`;
 }
 
 export async function verifyAccountPassword(
   password: string,
   passwordHash: string,
 ): Promise<boolean> {
-  return bcrypt.compare(password, passwordHash);
+  if (!passwordHash.includes(":")) {
+    // Legacy bcrypt hashes won't work anymore without the bcrypt dependency
+    return false;
+  }
+  
+  const [salt, hashBase64] = passwordHash.split(":");
+  const derived = (await scrypt(password, salt, 64)) as Buffer;
+  
+  const expectedHash = Buffer.from(hashBase64, "base64");
+  
+  // To avoid timing attacks
+  if (derived.length !== expectedHash.length) return false;
+  return timingSafeEqual(derived, expectedHash);
 }
 
 export function setSessionCookie(response: NextResponse, token: string): void {
