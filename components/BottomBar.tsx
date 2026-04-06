@@ -13,6 +13,14 @@ const LinkIcon = ({ size = 17 }: { size?: number }) => (
   </svg>
 );
 
+const AtIcon = ({ size = 17 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M16 8v5a2 2 0 1 0 4 0 8 8 0 1 0-3.4 6.56" />
+  </svg>
+);
+
 const PencilIcon = ({ size = 17 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
     stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -32,10 +40,31 @@ const ProfileIcon = ({ size = 17 }: { size?: number }) => (
 /* ── Nav tabs ────────────────────────────────────────────────────────────── */
 
 const NAV_TABS = [
-  { href: "/", label: "Links", Icon: LinkIcon },
-  { href: "/notes", label: "Notes",  Icon: PencilIcon },
-  { href: "/user", label: "Profile", Icon: ProfileIcon },
-];
+  {
+    href: "/",
+    label: "Shortener",
+    Icon: LinkIcon,
+    matches: (pathname: string) => pathname === "/",
+  },
+  {
+    href: "/dashboard/links",
+    label: "Bio Links",
+    Icon: AtIcon,
+    matches: (pathname: string) => pathname.startsWith("/dashboard/links"),
+  },
+  {
+    href: "/notes",
+    label: "Notes",
+    Icon: PencilIcon,
+    matches: (pathname: string) => pathname.startsWith("/notes"),
+  },
+  {
+    href: "/user",
+    label: "Profile",
+    Icon: ProfileIcon,
+    matches: (pathname: string) => pathname.startsWith("/user"),
+  },
+] as const;
 
 const TAB_W = 72; // px — each tab, indicator matches
 
@@ -46,8 +75,8 @@ export default function BottomBar({
 }: {
   authenticated: boolean;
 }) {
-  const pathname  = usePathname();
-  const activeIdx = NAV_TABS.findIndex((tab) => tab.href === pathname);
+  const pathname = usePathname();
+  const activeIdx = NAV_TABS.findIndex((tab) => tab.matches(pathname));
 
   if (!authenticated || activeIdx < 0) return null;
 

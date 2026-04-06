@@ -41,26 +41,6 @@ const EMPTY_FORMAT_STATE: FormatState = {
   underline: false,
 };
 
-function MenuIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M3 12h18" />
-      <path d="M3 18h18" />
-    </svg>
-  );
-}
-
 function Spinner() {
   return (
     <svg
@@ -221,7 +201,6 @@ export default function NotesDashboard({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
@@ -549,7 +528,6 @@ export default function NotesDashboard({
       focusTitleOnOpenRef.current = true;
       setNotes((current) => sortNotes([createdNote, ...current]));
       setActiveNoteId(createdNote.id);
-      setSidebarOpen(false);
       setCreating(false);
     } catch {
       setError("Unable to create note.");
@@ -558,14 +536,10 @@ export default function NotesDashboard({
   }
 
   async function handleSelectNote(noteId: string) {
-    if (noteId === activeNoteId) {
-      setSidebarOpen(false);
-      return;
-    }
+    if (noteId === activeNoteId) return;
 
     await flushPendingSave();
     setActiveNoteId(noteId);
-    setSidebarOpen(false);
   }
 
   async function handleDeleteActiveNote() {
@@ -723,30 +697,8 @@ export default function NotesDashboard({
 
   return (
     <div className={styles.workspace}>
-      <button
-        type="button"
-        className={styles.mobileToggle}
-        onClick={() => setSidebarOpen((open) => !open)}
-        aria-label={sidebarOpen ? "Close notes sidebar" : "Open notes sidebar"}
-      >
-        <MenuIcon />
-      </button>
-
-      <div
-        className={[
-          styles.backdrop,
-          sidebarOpen ? styles.backdropVisible : "",
-        ].join(" ")}
-        onClick={() => setSidebarOpen(false)}
-      />
-
       <div className={styles.layout}>
-        <aside
-          className={[
-            styles.sidebar,
-            sidebarOpen ? styles.sidebarOpen : "",
-          ].join(" ")}
-        >
+        <aside className={styles.sidebar}>
           <div>
             <Link href="/" className={styles.logoLink}>
               <span className={styles.logoDot}>●</span>
@@ -811,6 +763,67 @@ export default function NotesDashboard({
         </aside>
 
         <section className={styles.editorShell}>
+          <div className={styles.mobileShelf}>
+            <div className={styles.mobileShelfHeader}>
+              <div>
+                <div className={styles.mobileShelfTitle}>Notes</div>
+                <div className={styles.mobileShelfMeta}>@{username}</div>
+              </div>
+              <button
+                type="button"
+                className={styles.mobileNewNoteButton}
+                onClick={() => void handleCreateNote()}
+                disabled={creating}
+              >
+                {creating ? "Creating..." : "+ New"}
+              </button>
+            </div>
+
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className={styles.mobileSearchInput}
+              placeholder="Search notes"
+            />
+
+            <div className={styles.mobileNoteScroller}>
+              {loading ? (
+                <div className={styles.mobileEmptyState}>
+                  <Spinner />
+                </div>
+              ) : filteredNotes.length === 0 ? (
+                <div className={styles.mobileEmptyState}>
+                  {search.trim()
+                    ? "No notes match this search."
+                    : "Create a note to start writing."}
+                </div>
+              ) : (
+                filteredNotes.map((note) => (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => void handleSelectNote(note.id)}
+                    className={[
+                      styles.mobileNoteCard,
+                      activeNoteId === note.id ? styles.mobileNoteCardActive : "",
+                    ].join(" ")}
+                  >
+                    <div className={styles.mobileNoteCardTitle}>
+                      {getNoteTitle(note)}
+                    </div>
+                    <div className={styles.mobileNoteCardPreview}>
+                      {getNotePreview(note)}
+                    </div>
+                    <div className={styles.mobileNoteCardTime}>
+                      {getRelativeTimestamp(note.updatedAt)}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
           <div className={styles.editorPanel}>
             <div key={activeNote?.id ?? "empty"} className={styles.editorPanelInner}>
               {activeNote ? (

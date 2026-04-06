@@ -65,6 +65,24 @@ export const signInSchema = z.object({
   password: z.string().min(1),
 });
 
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required."),
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters.")
+      .max(200, "Password is too long."),
+    confirmPassword: z.string().min(1, "Please confirm your new password."),
+  })
+  .refine((value) => value.newPassword === value.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  })
+  .refine((value) => value.currentPassword !== value.newPassword, {
+    message: "Choose a new password that is different from the current one.",
+    path: ["newPassword"],
+  });
+
 export const bioLinkCreateSchema = z.object({
   title: z
     .string()
@@ -202,6 +220,7 @@ export const noteUpdateSchema = z
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
 export type BioLinkCreateInput = z.infer<typeof bioLinkCreateSchema>;
 export type BioLinkUpdateInput = z.infer<typeof bioLinkUpdateSchema>;
 export type NoteCreateInput = z.infer<typeof noteCreateSchema>;

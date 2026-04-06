@@ -38,16 +38,13 @@ export default function TopControls({
     setMounted(true);
   }, []);
 
-  const singleSegmentPath =
-    pathname !== "/" && /^\/[^/]+$/.test(pathname) ? pathname.slice(1) : null;
-  const shouldHide =
-    !auth ||
-    pathname.startsWith("/dashboard/links") ||
+  const isAppRoute =
+    pathname === "/" ||
+    pathname === "/notes" ||
     pathname === "/user" ||
-    (singleSegmentPath !== null &&
-      !["notes", "sign-in", "sign-up", "user"].includes(singleSegmentPath));
+    pathname.startsWith("/dashboard/links");
 
-  if (shouldHide) {
+  if (!auth || !isAppRoute) {
     return null;
   }
 
@@ -82,11 +79,15 @@ export default function TopControls({
         {auth ? (
           <Link
             href="/user"
-            className="hidden rounded-full border px-3 py-1.5 text-xs font-medium sm:block"
+            className="rounded-full border px-3 py-1.5 text-xs font-medium"
             style={{
               borderColor: "var(--border)",
               background: "var(--surface)",
               color: "var(--text)",
+              maxWidth: 164,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
             }}
           >
             @{auth.username}
