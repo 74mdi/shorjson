@@ -16,7 +16,7 @@ import {
   LINK_PASSWORD_MAX,
   verifyLinkPassword,
 } from "@/lib/link-protection";
-import { verifySameOrigin } from "@/lib/security";
+import { getClientIp, verifySameOrigin } from "@/lib/security";
 import type { LinkEntry } from "@/lib/storage";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -91,14 +91,6 @@ function isValidSlug(s: string): { valid: boolean; reason?: string } {
 function getBaseUrl(req: NextRequest) {
   const { protocol, host } = new URL(req.url);
   return `${protocol}//${host}`;
-}
-
-function getClientIp(req: NextRequest) {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
 }
 
 // ── Rate limiter (in-memory) ──────────────────────────────────────────────────
@@ -182,6 +174,19 @@ export async function POST(req: NextRequest) {
     body.clickLimit > 0
       ? body.clickLimit
       : undefined;
+
+  // Parse optional expiration
+  let expiresAt: string | undefined;
+  if (body.expiresAt) {
+    const parsed = new Date(body.expiresAt);
+    if (isNaN(parsed.getTime()) || parsed.getTime() <= Date.now()) {
+      return NextResponse.json(
+        { error: "Expiration date must be in the future." },
+        { status: 422 },
+      );
+    }
+    expiresAt = parsed.toISOString();
+  }
 
   // 3. Validations
   if (originalUrl.length > MAX_URL)
@@ -288,6 +293,7 @@ export async function POST(req: NextRequest) {
       clicks: 0,
       userId: activeSession.userId,
       ...(typeof clickLimit === "number" ? { clickLimit } : {}),
+      ...(expiresAt ? { expiresAt } : {}),
       ...(password ? await hashLinkPassword(password) : {}),
     };
   }
@@ -376,6 +382,12 @@ export async function POST(req: NextRequest) {
   let shortId = nanoid(7);
   let attempts = 0;
   while (links[shortId] && attempts++ < 5) shortId = nanoid(7);
+  if (links[shortId]) {
+    return NextResponse.json(
+      { error: "Unable to generate a unique short ID. Please try again." },
+      { status: 500 },
+    );
+  }
   await setLink(shortId, await buildEntry());
   const response = NextResponse.json(
     {
@@ -384,6 +396,7 @@ export async function POST(req: NextRequest) {
       createdAt: now,
       clicks: 0,
       clickLimit: clickLimit ?? null,
+      expiresAt: expiresAt ?? null,
       hasPassword: Boolean(password),
     },
     { status: 201 },

@@ -95,7 +95,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
       } finally {
         setCheckingUsername(false);
       }
-    }, 220);
+    }, 500);
 
     return () => window.clearTimeout(timeout);
   }, [isSignUp, normalizedUsername]);

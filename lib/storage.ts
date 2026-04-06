@@ -31,6 +31,8 @@ export interface LinkEntry {
   userId?: string;
   /** Optional redirect limit for the short link. */
   clickLimit?: number | null;
+  /** Optional ISO-8601 expiration timestamp. */
+  expiresAt?: string | null;
 }
 
 /** The full on-disk map: shortId → LinkEntry */
@@ -74,6 +76,11 @@ function normalise(value: unknown): LinkEntry {
       ? { clickLimit: entry.clickLimit }
       : entry.clickLimit === null
         ? { clickLimit: null }
+        : {}),
+    ...(typeof entry.expiresAt === "string" && entry.expiresAt
+      ? { expiresAt: entry.expiresAt }
+      : entry.expiresAt === null
+        ? { expiresAt: null }
         : {}),
   };
 }

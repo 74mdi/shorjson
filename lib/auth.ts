@@ -25,10 +25,16 @@ export interface AuthSession {
 }
 
 function getAuthSecret(): string {
-  return (
-    process.env.AUTH_SECRET?.trim() ??
-    "development-only-auth-secret-change-this-before-production"
-  );
+  const secret = process.env.AUTH_SECRET?.trim();
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      console.error(
+        "[Shor] AUTH_SECRET is not set. Using insecure fallback. Set AUTH_SECRET before deploying to production!",
+      );
+    }
+    return "development-only-auth-secret-change-this-before-production";
+  }
+  return secret;
 }
 
 function getAuthKey(): Uint8Array {
@@ -92,11 +98,12 @@ export async function verifyAccountPassword(
 }
 
 export function setSessionCookie(response: NextResponse, token: string): void {
+  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set({
     name: SESSION_COOKIE_NAME,
     value: token,
     httpOnly: true,
-    secure: true,
+    secure: isProduction,
     sameSite: "strict",
     path: "/",
     maxAge: SESSION_MAX_AGE_SECONDS,
@@ -104,11 +111,12 @@ export function setSessionCookie(response: NextResponse, token: string): void {
 }
 
 export function clearSessionCookie(response: NextResponse): void {
+  const isProduction = process.env.NODE_ENV === "production";
   response.cookies.set({
     name: SESSION_COOKIE_NAME,
     value: "",
     httpOnly: true,
-    secure: true,
+    secure: isProduction,
     sameSite: "strict",
     path: "/",
     maxAge: 0,

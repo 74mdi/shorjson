@@ -76,12 +76,40 @@ export async function PATCH(request: NextRequest, { params }: Context) {
     );
   }
 
+  // Handle slug uniqueness if one is provided
+  if (parsed.data.slug) {
+    const slugOwner = await import("@/lib/account-data").then(m => m.getPrivateNoteBySlug(parsed.data.slug!));
+    if (slugOwner && slugOwner.id !== existingNote.id) {
+      return jsonWithOptionalRefresh(
+        { error: "Slug is already taken by another note." },
+        { status: 409 },
+        auth.refreshedToken
+      );
+    }
+  }
+
+  let passwordHash = existingNote.passwordHash;
+  let passwordSalt = existingNote.passwordSalt;
+  if (parsed.data.password === "") {
+    passwordHash = undefined;
+    passwordSalt = undefined;
+  } else if (parsed.data.password) {
+    const { hashLinkPassword } = await import("@/lib/link-protection");
+    const hashed = await hashLinkPassword(parsed.data.password);
+    passwordHash = hashed.passwordHash;
+    passwordSalt = hashed.passwordSalt;
+  }
+
   const updatedNote = {
     ...existingNote,
     ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
     ...(parsed.data.content !== undefined
       ? { content: parsed.data.content }
       : {}),
+    ...(parsed.data.isPublic !== undefined ? { isPublic: parsed.data.isPublic } : {}),
+    ...(parsed.data.slug !== undefined ? { slug: parsed.data.slug } : {}),
+    passwordHash,
+    passwordSalt,
     updatedAt: new Date().toISOString(),
   };
 

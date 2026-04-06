@@ -40,6 +40,7 @@ export interface DataAdapter {
 
   readPrivateNotes(userId: string): Promise<PrivateNote[]>;
   getPrivateNoteById(userId: string, id: string): Promise<PrivateNote | null>;
+  getPrivateNoteBySlug(slug: string): Promise<PrivateNote | null>;
   writePrivateNote(note: PrivateNote): Promise<void>;
   deletePrivateNote(userId: string, id: string): Promise<void>;
 
@@ -158,6 +159,10 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
   await db
     .collection("shor_user_notes")
     .createIndex({ userId: 1, updatedAt: -1, createdAt: -1 })
+    .catch(() => {});
+  await db
+    .collection("shor_user_notes")
+    .createIndex({ slug: 1 }, { unique: true, sparse: true })
     .catch(() => {});
 
   const usersCollection = db.collection("shor_users") as {
@@ -455,6 +460,10 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         userId: String(doc.userId),
         title: String(doc.title ?? ""),
         content: String(doc.content),
+        isPublic: doc.isPublic ? true : undefined,
+        slug: doc.slug ? String(doc.slug) : undefined,
+        passwordHash: doc.passwordHash ? String(doc.passwordHash) : undefined,
+        passwordSalt: doc.passwordSalt ? String(doc.passwordSalt) : undefined,
         createdAt: String(doc.createdAt),
         updatedAt: String(doc.updatedAt),
       }));
@@ -469,6 +478,26 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         userId: String(doc.userId),
         title: String(doc.title ?? ""),
         content: String(doc.content),
+        isPublic: doc.isPublic ? true : undefined,
+        slug: doc.slug ? String(doc.slug) : undefined,
+        passwordHash: doc.passwordHash ? String(doc.passwordHash) : undefined,
+        createdAt: String(doc.createdAt),
+        updatedAt: String(doc.updatedAt),
+      };
+    },
+
+    async getPrivateNoteBySlug(slug: string) {
+      const doc = await userNotesCollection.findOne({ slug });
+      if (!doc) return null;
+
+      return {
+        id: String(doc._id),
+        userId: String(doc.userId),
+        title: String(doc.title ?? ""),
+        content: String(doc.content),
+        isPublic: doc.isPublic ? true : undefined,
+        slug: doc.slug ? String(doc.slug) : undefined,
+        passwordHash: doc.passwordHash ? String(doc.passwordHash) : undefined,
         createdAt: String(doc.createdAt),
         updatedAt: String(doc.updatedAt),
       };
@@ -580,6 +609,10 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       user_id     TEXT        NOT NULL REFERENCES shor_users(id) ON DELETE CASCADE,
       title       TEXT        NOT NULL DEFAULT '',
       content     TEXT        NOT NULL DEFAULT '',
+      is_public   BOOLEAN,
+      slug        TEXT UNIQUE,
+      password_hash TEXT,
+      password_salt TEXT,
       created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
@@ -589,6 +622,14 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       ON shor_bio_profiles (username);
     ALTER TABLE shor_user_notes
       ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT '';
+    ALTER TABLE shor_user_notes
+      ADD COLUMN IF NOT EXISTS is_public BOOLEAN;
+    ALTER TABLE shor_user_notes
+      ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
+    ALTER TABLE shor_user_notes
+      ADD COLUMN IF NOT EXISTS password_hash TEXT;
+    ALTER TABLE shor_user_notes
+      ADD COLUMN IF NOT EXISTS password_salt TEXT;
     ALTER TABLE shor_user_links
       ADD COLUMN IF NOT EXISTS profile_id TEXT;
     ALTER TABLE shor_user_links
@@ -945,7 +986,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async readPrivateNotes(userId) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, title, content, created_at, updated_at
+        `SELECT id, user_id, title, content, is_public, slug, password_hash, password_salt, created_at, updated_at
          FROM shor_user_notes
          WHERE user_id=$1
          ORDER BY updated_at DESC`,
@@ -957,6 +998,10 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         userId: row.user_id,
         title: row.title ?? "",
         content: row.content,
+        isPublic: row.is_public ? true : undefined,
+        slug: row.slug ? String(row.slug) : undefined,
+        passwordHash: row.password_hash ? String(row.password_hash) : undefined,
+        passwordSalt: row.password_salt ? String(row.password_salt) : undefined,
         createdAt: toIso(row.created_at),
         updatedAt: toIso(row.updated_at),
       }));
@@ -964,7 +1009,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async getPrivateNoteById(userId, id) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, title, content, created_at, updated_at
+        `SELECT id, user_id, title, content, is_public, slug, password_hash, password_salt, created_at, updated_at
          FROM shor_user_notes
          WHERE user_id=$1 AND id=$2`,
         [userId, id],
@@ -977,6 +1022,34 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         userId: row.user_id,
         title: row.title ?? "",
         content: row.content,
+        isPublic: row.is_public ? true : undefined,
+        slug: row.slug ? String(row.slug) : undefined,
+        passwordHash: row.password_hash ? String(row.password_hash) : undefined,
+        passwordSalt: row.password_salt ? String(row.password_salt) : undefined,
+        createdAt: toIso(row.created_at),
+        updatedAt: toIso(row.updated_at),
+      };
+    },
+
+    async getPrivateNoteBySlug(slug: string) {
+      const { rows } = await pool.query(
+        `SELECT id, user_id, title, content, is_public, slug, password_hash, password_salt, created_at, updated_at
+         FROM shor_user_notes
+         WHERE slug=$1`,
+        [slug],
+      );
+      const row = rows[0];
+      if (!row) return null;
+
+      return {
+        id: row.id,
+        userId: row.user_id,
+        title: row.title ?? "",
+        content: row.content,
+        isPublic: row.is_public ? true : undefined,
+        slug: row.slug ? String(row.slug) : undefined,
+        passwordHash: row.password_hash ? String(row.password_hash) : undefined,
+        passwordSalt: row.password_salt ? String(row.password_salt) : undefined,
         createdAt: toIso(row.created_at),
         updatedAt: toIso(row.updated_at),
       };
@@ -984,15 +1057,19 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async writePrivateNote(note) {
       await pool.query(
-        `INSERT INTO shor_user_notes (id, user_id, title, content, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6)
+        `INSERT INTO shor_user_notes (id, user_id, title, content, is_public, slug, password_hash, password_salt, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT (id) DO UPDATE
-           SET user_id=$2, title=$3, content=$4, created_at=$5, updated_at=$6`,
+           SET user_id=$2, title=$3, content=$4, is_public=$5, slug=$6, password_hash=$7, password_salt=$8, created_at=$9, updated_at=$10`,
         [
           note.id,
           note.userId,
           note.title,
           note.content,
+          note.isPublic ?? null,
+          note.slug ?? null,
+          note.passwordHash ?? null,
+          note.passwordSalt ?? null,
           note.createdAt,
           note.updatedAt,
         ],

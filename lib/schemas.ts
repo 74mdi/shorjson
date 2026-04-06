@@ -234,6 +234,17 @@ export const noteUpdateSchema = z
         message: "Note content is too long.",
       })
       .optional(),
+    slug: z
+      .string()
+      .max(50, "Slug must be 50 characters or less")
+      .regex(/^[a-z0-9_-]*$/, "Slug can only contain lowercase letters, numbers, hyphens, and underscores")
+      .optional(),
+    password: z
+      .string()
+      .max(100, "Password is too long")
+      .nullable()
+      .optional(),
+    isPublic: z.boolean().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "At least one field is required.",

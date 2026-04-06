@@ -72,6 +72,10 @@ export interface PrivateNote {
   userId: string;
   title: string;
   content: string;
+  slug?: string;
+  passwordHash?: string;
+  passwordSalt?: string;
+  isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
 }

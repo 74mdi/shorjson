@@ -2,17 +2,30 @@ const NOTE_LINK_PROTOCOLS = new Set(["http:", "https:"]);
 const NOTE_ALLOWED_TAGS = new Set([
   "a",
   "b",
+  "blockquote",
   "br",
   "code",
   "div",
   "em",
   "h1",
   "h2",
+  "h3",
   "hr",
   "i",
+  "li",
+  "ol",
   "p",
+  "pre",
+  "s",
   "strong",
+  "table",
+  "tbody",
+  "td",
+  "th",
+  "thead",
+  "tr",
   "u",
+  "ul",
 ]);
 
 function decodeHtmlEntities(value: string): string {
@@ -94,10 +107,11 @@ export function stripNoteHtml(value: string): string {
   return decodeHtmlEntities(
     String(value ?? "")
       .replace(/<\s*br\s*\/?>/gi, "\n")
-      .replace(/<\s*\/\s*(div|p|h1|h2)\s*>/gi, "\n")
+      .replace(/<\s*\/\s*(div|p|h1|h2|h3|tr|li|blockquote|table|ul|ol|pre)\s*>/gi, "\n")
       .replace(/<\s*hr\s*\/?>/gi, "\n")
       .replace(/<[^>]*>/g, " ")
       .replace(/\s+/g, " ")
+      .replace(/\n\s*\n+/g, "\n\n")
       .trim(),
   );
 }

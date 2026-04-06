@@ -34,6 +34,10 @@ export const metadata: Metadata = {
     title: "Shor",
     startupImage: [],
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
   formatDetection: { telephone: false },
   other: {
     "mobile-web-app-capable": "yes",

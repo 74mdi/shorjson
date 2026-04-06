@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       clicks: entry.clicks,
       hasPassword: Boolean(entry.passwordHash),
       clickLimit: entry.clickLimit ?? null,
+      expiresAt: entry.expiresAt ?? null,
     }))
     .sort((left, right) => {
       return (

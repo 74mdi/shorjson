@@ -30,6 +30,10 @@ function normalisePrivateNote(note: PrivateNote | Record<string, unknown>): Priv
     userId: String(note.userId ?? ""),
     title: typeof note.title === "string" ? note.title : "",
     content: typeof note.content === "string" ? note.content : "",
+    slug: typeof note.slug === "string" ? note.slug : undefined,
+    passwordHash: typeof note.passwordHash === "string" ? note.passwordHash : undefined,
+    passwordSalt: typeof note.passwordSalt === "string" ? note.passwordSalt : undefined,
+    isPublic: typeof note.isPublic === "boolean" ? note.isPublic : undefined,
     createdAt: String(note.createdAt ?? new Date().toISOString()),
     updatedAt: String(note.updatedAt ?? note.createdAt ?? new Date().toISOString()),
   };
@@ -389,6 +393,17 @@ export async function getPrivateNoteById(
 
   const note = readPrivateNotesFile()[id];
   if (!note || note.userId !== userId) return null;
+  return normalisePrivateNote(note);
+}
+
+export async function getPrivateNoteBySlug(slug: string): Promise<PrivateNote | null> {
+  const adapter = await getActiveAdapter().catch(() => null);
+  if (adapter) {
+    return adapter.getPrivateNoteBySlug(slug);
+  }
+
+  const note = Object.values(readPrivateNotesFile()).find(n => n.slug === slug);
+  if (!note) return null;
   return normalisePrivateNote(note);
 }
 

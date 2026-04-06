@@ -4,15 +4,19 @@
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 5) return "just now";
-  if (s < 60) return `${s}s ago`;
+  const isFuture = diff < 0;
+  const absDiff = Math.abs(diff);
+  const s = Math.floor(absDiff / 1000);
+  const prefix = isFuture ? "in " : "";
+  const suffix = isFuture ? "" : " ago";
+  if (s < 5) return isFuture ? "soon" : "just now";
+  if (s < 60) return `${prefix}${s}s${suffix}`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return `${prefix}${m}m${suffix}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `${prefix}${h}h${suffix}`;
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
+  if (d < 7) return `${prefix}${d}d${suffix}`;
   return new Date(iso).toLocaleDateString("en", {
     month: "short",
     day: "numeric",
@@ -41,6 +45,7 @@ interface ShortenResult {
   createdAt?: string;
   clicks?: number;
   clickLimit?: number | null;
+  expiresAt?: string | null;
   hasPassword?: boolean;
 }
 
@@ -133,12 +138,15 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
   const [showPasswordField, setShowPasswordField] = useState(false);
   const [clickLimit, setClickLimit] = useState("");
   const [showClickLimitField, setShowClickLimitField] = useState(false);
+  const [expiresIn, setExpiresIn] = useState("");
+  const [showExpirationField, setShowExpirationField] = useState(false);
   const [revealPassword, setRevealPassword] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<ShortenResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [errorKey, setErrorKey] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [qrSvg, setQrSvg] = useState("");
 
   const resultRef = useRef<HTMLDivElement>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -171,6 +179,22 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
     setResult(null);
     setErrorMsg("");
     setCopied(false);
+    setQrSvg("");
+
+    // Calculate expiresAt from preset
+    let expiresAt: string | undefined;
+    if (showExpirationField && expiresIn) {
+      const ms: Record<string, number> = {
+        "1h": 60 * 60 * 1000,
+        "24h": 24 * 60 * 60 * 1000,
+        "7d": 7 * 24 * 60 * 60 * 1000,
+        "30d": 30 * 24 * 60 * 60 * 1000,
+      };
+      const duration = ms[expiresIn];
+      if (duration) {
+        expiresAt = new Date(Date.now() + duration).toISOString();
+      }
+    }
 
     try {
       const res = await fetch("/api/shorten", {
@@ -184,6 +208,7 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
             showClickLimitField && clickLimit.trim()
               ? Number(clickLimit.trim())
               : undefined,
+          expiresAt,
         }),
       });
       const data = await res.json();
@@ -195,9 +220,35 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
         return;
       }
 
-      setResult(data as ShortenResult);
+      const shortenResult = data as ShortenResult;
+      setResult(shortenResult);
       setStatus("success");
       onShorten?.();
+
+      // Clear form and collapse fields
+      setUrl("");
+      setSlug("");
+      setPassword("");
+      setClickLimit("");
+      setExpiresIn("");
+      setShowSlug(false);
+      setShowPasswordField(false);
+      setShowClickLimitField(false);
+      setShowExpirationField(false);
+
+      // Generate QR code asynchronously
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const svg = await QRCode.toString(shortenResult.shortUrl, {
+          type: "svg",
+          width: 160,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+        setQrSvg(svg);
+      } catch {
+        // QR generation is optional
+      }
     } catch {
       setErrorMsg("Network error. Check your connection and try again.");
       setStatus("error");
@@ -293,6 +344,13 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
               className="text-xs transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--accent)]"
             >
               {showClickLimitField ? "− click limit" : "+ click limit"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowExpirationField((value) => !value)}
+              className="text-xs transition-colors duration-200 text-[var(--text-muted)] hover:text-[var(--accent)]"
+            >
+              {showExpirationField ? "− expiration" : "+ expiration"}
             </button>
           </div>
 
@@ -433,6 +491,51 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
               </div>
             </div>
           </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateRows: showExpirationField ? "1fr" : "0fr",
+              transition:
+                "grid-template-rows 0.28s cubic-bezier(0.22,1,0.36,1)",
+            }}
+          >
+            <div style={{ overflow: "hidden" }}>
+              <div className="pt-2">
+                <div
+                  className="flex items-center gap-1.5 rounded-xl border px-3 py-2.5 transition-all duration-200 bg-[var(--surface)] border-[var(--border)]"
+                >
+                  <span className="text-xs text-[var(--text-muted)] select-none flex-shrink-0 mr-1">
+                    Expires in
+                  </span>
+                  {[
+                    { label: "1h", value: "1h" },
+                    { label: "24h", value: "24h" },
+                    { label: "7d", value: "7d" },
+                    { label: "30d", value: "30d" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() =>
+                        setExpiresIn(expiresIn === preset.value ? "" : preset.value)
+                      }
+                      disabled={isLoading}
+                      className={[
+                        "rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-150",
+                        expiresIn === preset.value
+                          ? "bg-[var(--accent)] text-[var(--bg)]"
+                          : "bg-[var(--surface-raised)] text-[var(--text-muted)] hover:text-[var(--text)]",
+                        isLoading ? "opacity-50 cursor-not-allowed" : "",
+                      ].join(" ")}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Shorten button — morph animation ── */}
@@ -553,11 +656,11 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                       "transition-all duration-150",
                       copied
                         ? // Confirmed — universally green (works across all themes)
-                          "border-green-200 bg-green-50 text-green-600"
+                        "border-green-200 bg-green-50 text-green-600"
                         : [
-                            "border-[var(--border)] bg-[var(--surface)] text-[var(--accent)]",
-                            "hover:border-[var(--accent-soft-border)] hover:bg-[var(--accent-soft)]",
-                          ].join(" "),
+                          "border-[var(--border)] bg-[var(--surface)] text-[var(--accent)]",
+                          "hover:border-[var(--accent-soft-border)] hover:bg-[var(--accent-soft)]",
+                        ].join(" "),
                     ].join(" ")}
                   >
                     {/* Invisible sizer — fixes width to wider "Copied!" state */}
@@ -601,33 +704,59 @@ export default function UrlShortener({ onShorten }: { onShorten?: () => void }) 
                 {(result.createdAt !== undefined ||
                   result.clicks !== undefined ||
                   result.clickLimit !== undefined ||
+                  result.expiresAt !== undefined ||
                   result.hasPassword) && (
-                  <p
-                    className="mt-2 text-[11px] select-none tabular-nums"
-                    style={{ color: "var(--text-faint)" }}
-                  >
-                    {result.hasPassword && <span>password protected</span>}
-                    {result.hasPassword &&
-                      (result.createdAt !== undefined ||
-                        result.clicks !== undefined ||
-                        result.clickLimit !== undefined) && <span> · </span>}
-                    {result.createdAt && (
-                      <span>{formatRelative(result.createdAt)}</span>
-                    )}
-                    {result.createdAt !== undefined &&
-                      result.clicks !== undefined && <span> · </span>}
-                    {result.clicks !== undefined && (
-                      <span>
-                        {result.clicks}{" "}
-                        {result.clicks === 1 ? "click" : "clicks"}
-                      </span>
-                    )}
-                    {result.clicks !== undefined &&
-                      typeof result.clickLimit === "number" && <span> · </span>}
-                    {typeof result.clickLimit === "number" ? (
-                      <span>limit {result.clickLimit}</span>
-                    ) : null}
-                  </p>
+                    <p
+                      className="mt-2 text-[11px] select-none tabular-nums"
+                      style={{ color: "var(--text-faint)" }}
+                    >
+                      {result.hasPassword && <span>password protected</span>}
+                      {result.hasPassword &&
+                        (result.createdAt !== undefined ||
+                          result.clicks !== undefined ||
+                          result.clickLimit !== undefined ||
+                          result.expiresAt !== undefined) && <span> · </span>}
+                      {result.createdAt && (
+                        <span>{formatRelative(result.createdAt)}</span>
+                      )}
+                      {result.createdAt !== undefined &&
+                        result.clicks !== undefined && <span> · </span>}
+                      {result.clicks !== undefined && (
+                        <span>
+                          {result.clicks}{" "}
+                          {result.clicks === 1 ? "click" : "clicks"}
+                        </span>
+                      )}
+                      {result.clicks !== undefined &&
+                        typeof result.clickLimit === "number" && <span> · </span>}
+                      {typeof result.clickLimit === "number" ? (
+                        <span>limit {result.clickLimit}</span>
+                      ) : null}
+                      {(result.clicks !== undefined || typeof result.clickLimit === "number") &&
+                        result.expiresAt && <span> · </span>}
+                      {result.expiresAt ? (
+                        <span>expires {formatRelative(result.expiresAt)}</span>
+                      ) : null}
+                    </p>
+                  )}
+
+                {/* QR Code */}
+                {qrSvg && (
+                  <div className="mt-4 flex flex-col items-center justify-center gap-3 animate-morph-in">
+                    <div
+                      className="overflow-hidden rounded-lg border bg-white p-2"
+                      style={{ borderColor: "var(--border)" }}
+                      dangerouslySetInnerHTML={{ __html: qrSvg }}
+                    />
+                    <a
+                      href={`data:image/svg+xml;base64,${btoa(qrSvg)}`}
+                      download={`qr-${result.shortId}.svg`}
+                      className="text-[11px] transition-colors hover:text-[var(--text)]"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      Download SVG
+                    </a>
+                  </div>
                 )}
               </div>
             )}

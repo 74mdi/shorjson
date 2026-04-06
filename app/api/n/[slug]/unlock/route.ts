@@ -1,11 +1,10 @@
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { NextRequest, NextResponse } from "next/server";
-import { getLinks } from "@/lib/adapter-utils";
+import { getPrivateNoteBySlug } from "@/lib/account-data";
 import {
   createUnlockCookieValue,
   getOptionalPassword,
   getUnlockCookieName,
-  isPasswordProtected,
   verifyLinkPassword,
 } from "@/lib/link-protection";
 import { getClientIp, verifySameOrigin } from "@/lib/security";
@@ -36,7 +35,7 @@ export async function POST(
   const { slug } = await params;
 
   // Rate limit by IP + slug to prevent brute-force
-  const rateLimitKey = `${getClientIp(req)}:${slug}`;
+  const rateLimitKey = `${getClientIp(req)}:note:${slug}`;
   try {
     await unlockRateLimiter.consume(rateLimitKey);
   } catch {
@@ -56,21 +55,20 @@ export async function POST(
     );
   }
 
-  const links = await getLinks();
-  const entry = links[slug];
+  const note = await getPrivateNoteBySlug(slug);
 
-  if (!entry) {
-    return NextResponse.json({ error: "Link not found." }, { status: 404 });
+  if (!note || !note.isPublic) {
+    return NextResponse.json({ error: "Note not found." }, { status: 404 });
   }
 
-  if (!isPasswordProtected(entry)) {
+  if (!note.passwordHash) {
     return NextResponse.json(
-      { error: "This link does not require a password." },
+      { error: "This note does not require a password." },
       { status: 400 },
     );
   }
 
-  const isValidPassword = await verifyLinkPassword(password, entry);
+  const isValidPassword = await verifyLinkPassword(password, note);
   if (!isValidPassword) {
     return NextResponse.json(
       { error: "Wrong password. Try again." },
@@ -78,17 +76,16 @@ export async function POST(
     );
   }
 
-  const response = NextResponse.json({ ok: true, redirectTo: `/${slug}` });
+  const response = NextResponse.json({ ok: true, redirectTo: `/n/${slug}` });
   response.cookies.set({
-    name: getUnlockCookieName(slug),
-    value: createUnlockCookieValue(slug, entry),
+    name: getUnlockCookieName(`n/${slug}`),
+    value: createUnlockCookieValue(`n/${slug}`, note),
     httpOnly: true,
     sameSite: "lax",
     secure: isSecureRequest(req),
-    path: `/${slug}`,
+    path: `/n/${slug}`,
     maxAge: UNLOCK_COOKIE_MAX_AGE,
   });
 
   return response;
 }
-

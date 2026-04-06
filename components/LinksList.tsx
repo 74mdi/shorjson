@@ -9,19 +9,24 @@ interface LinkEntry {
   clicks: number;
   hasPassword?: boolean;
   clickLimit?: number | null;
+  expiresAt?: string | null;
 }
 
 function formatRelative(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 5) return "just now";
-  if (s < 60) return `${s}s ago`;
+  const isFuture = diff < 0;
+  const absDiff = Math.abs(diff);
+  const s = Math.floor(absDiff / 1000);
+  const prefix = isFuture ? "in " : "";
+  const suffix = isFuture ? "" : " ago";
+  if (s < 5) return isFuture ? "soon" : "just now";
+  if (s < 60) return `${prefix}${s}s${suffix}`;
   const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
+  if (m < 60) return `${prefix}${m}m${suffix}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
+  if (h < 24) return `${prefix}${h}h${suffix}`;
   const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
+  if (d < 7) return `${prefix}${d}d${suffix}`;
   return new Date(iso).toLocaleDateString("en", {
     month: "short",
     day: "numeric",
@@ -82,7 +87,7 @@ const LockIcon = () => (
   </svg>
 );
 
-function LinkRow({ link, index }: { link: LinkEntry; index: number }) {
+function LinkRow({ link, index, onDelete }: { link: LinkEntry; index: number; onDelete: (id: string) => void }) {
   const [copied, setCopied] = useState(false);
   const shortUrl = `${window.location.origin}/${link.shortId}`;
 
@@ -164,20 +169,33 @@ function LinkRow({ link, index }: { link: LinkEntry; index: number }) {
         >
           {formatRelative(link.createdAt)}
           {typeof link.clickLimit === "number" ? ` · limit ${link.clickLimit}` : ""}
+          {link.expiresAt ? ` · expires ${formatRelative(link.expiresAt)}` : ""}
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={handleCopy}
-        title={copied ? "Copied!" : "Copy short URL"}
-        className="relative overflow-hidden flex-shrink-0 flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 opacity-0 group-hover:opacity-100 focus:opacity-100"
-        style={{
-          borderColor: copied ? "var(--accent-soft-border)" : "var(--border)",
-          background: copied ? "var(--accent-soft)" : "var(--surface)",
-          color: "var(--accent)",
-        }}
-      >
+      <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm("Are you sure you want to delete this link?")) {
+              onDelete(link.shortId);
+            }
+          }}
+          className="relative overflow-hidden flex-shrink-0 flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border-[var(--border)] bg-[var(--surface)] hover:bg-red-50 hover:border-red-200 hover:text-red-600 text-[var(--text-muted)]"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+        </button>
+        <button
+          type="button"
+          onClick={handleCopy}
+          title={copied ? "Copied!" : "Copy short URL"}
+          className="relative overflow-hidden flex-shrink-0 flex items-center rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-all duration-150"
+          style={{
+            borderColor: copied ? "var(--accent-soft-border)" : "var(--border)",
+            background: copied ? "var(--accent-soft)" : "var(--surface)",
+            color: "var(--accent)",
+          }}
+        >
         <span
           className="absolute inset-0 flex items-center justify-center gap-1 transition-all duration-200"
           style={{
@@ -203,6 +221,7 @@ function LinkRow({ link, index }: { link: LinkEntry; index: number }) {
           <span>Done!</span>
         </span>
       </button>
+      </div>
     </div>
   );
 }
@@ -228,6 +247,19 @@ export default function LinksList({ refreshKey }: { refreshKey: number }) {
   useEffect(() => {
     fetchLinks();
   }, [fetchLinks, refreshKey]);
+
+  const handleDelete = async (shortId: string) => {
+    try {
+      const res = await fetch(`/api/short-links/${shortId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setLinks((prev) => prev.filter((l) => l.shortId !== shortId));
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   if (loading) {
     return (
@@ -274,7 +306,7 @@ export default function LinksList({ refreshKey }: { refreshKey: number }) {
       </div>
       <div>
         {links.map((link, i) => (
-          <LinkRow key={link.shortId} link={link} index={i} />
+          <LinkRow key={link.shortId} link={link} index={i} onDelete={handleDelete} />
         ))}
       </div>
     </div>

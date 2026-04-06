@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { clickLink, getLinks } from "@/lib/adapter-utils";
-import { getLinkBySlug, getLinkDestinationLabel } from "@/lib/links";
+import { getLinkBySlug } from "@/lib/links";
 import {
   getUnlockCookieName,
   hasValidUnlockCookie,
@@ -22,28 +22,33 @@ export async function generateMetadata({
   const entry = await getLinkBySlug(slug);
 
   if (!entry) {
-    return createPageMetadata({
-      title: `/${slug} - Shor`,
-      description: "This short link is not available.",
-      path,
-      eyebrow: "Short link",
-      badge: "Unavailable",
-      ogTitle: `/${slug}`,
-    });
+    return {
+      ...createPageMetadata({
+        title: `/${slug} - Shor`,
+        description: "This short link is not available.",
+        path,
+        eyebrow: "Short link",
+        badge: "Unavailable",
+        ogTitle: `/${slug}`,
+      }),
+      robots: { index: false },
+    };
   }
 
   if (isPasswordProtected(entry)) {
-    return createPageMetadata({
-      title: `/${slug} - Protected Link - Shor`,
-      description: "Password-protected short link hosted on Shor.",
-      path,
-      eyebrow: "Protected link",
-      badge: "Locked",
-      ogTitle: `/${slug}`,
-    });
+    return {
+      ...createPageMetadata({
+        title: `/${slug} - Protected Link - Shor`,
+        description: "Password-protected short link hosted on Shor.",
+        path,
+        eyebrow: "Protected link",
+        badge: "Locked",
+        ogTitle: `/${slug}`,
+      }),
+      robots: { index: false },
+    };
   }
 
-  const destinationLabel = getLinkDestinationLabel(entry.originalUrl);
   const clickLabel =
     entry.clicks > 0
       ? `${entry.clicks} click${entry.clicks === 1 ? "" : "s"}`
@@ -51,9 +56,7 @@ export async function generateMetadata({
 
   return createPageMetadata({
     title: `/${slug} - Shor`,
-    description: destinationLabel
-      ? `Redirects to ${destinationLabel}.`
-      : "Short link hosted on Shor.",
+    description: "Short link hosted on Shor.",
     path,
     eyebrow: "Short link",
     badge: clickLabel,
@@ -92,6 +95,31 @@ export default async function SlugPage({
           </div>
           <p className="pt-3 text-sm leading-7" style={{ color: "var(--text-muted)" }}>
             This short link reached its click limit and is no longer accepting visits.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  // Check expiration
+  if (
+    entry.expiresAt &&
+    new Date(entry.expiresAt).getTime() <= Date.now()
+  ) {
+    return (
+      <main className="min-h-dvh px-5 pb-16 pt-24">
+        <div
+          className="mx-auto max-w-sm rounded-3xl border p-6 text-center"
+          style={{
+            borderColor: "var(--border)",
+            background: "var(--surface)",
+          }}
+        >
+          <div className="text-lg font-semibold" style={{ color: "var(--text)" }}>
+            Link expired
+          </div>
+          <p className="pt-3 text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+            This short link has expired and is no longer available.
           </p>
         </div>
       </main>

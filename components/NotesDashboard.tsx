@@ -15,6 +15,9 @@ interface PrivateNote {
   id: string;
   title: string;
   content: string;
+  isPublic?: boolean;
+  slug?: string;
+  passwordHash?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -191,6 +194,7 @@ export default function NotesDashboard({
   const editorRef = useRef<HTMLDivElement>(null);
   const savePromiseRef = useRef<Promise<boolean> | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shareSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestDraftContentRef = useRef("");
   const latestDraftTitleRef = useRef("");
@@ -215,6 +219,13 @@ export default function NotesDashboard({
   const [formatState, setFormatState] = useState<FormatState>(
     EMPTY_FORMAT_STATE,
   );
+
+  const [draftIsPublic, setDraftIsPublic] = useState(false);
+  const [draftSlug, setDraftSlug] = useState("");
+  const [draftPassword, setDraftPassword] = useState("");
+  const [showSharePanel, setShowSharePanel] = useState(false);
+  const [saveShareState, setSaveShareState] = useState<SaveState>("idle");
+  const [shareError, setShareError] = useState("");
 
   const deferredSearch = useDeferredValue(search);
   const activeNote = useMemo(
@@ -444,6 +455,42 @@ export default function NotesDashboard({
     return didSave;
   }
 
+  function handleShareStateChange(isPublic: boolean, slug: string, password?: string) {
+    if (!activeNoteId) return;
+
+    if (shareSaveTimeoutRef.current) clearTimeout(shareSaveTimeoutRef.current);
+    setSaveShareState("saving");
+    setShareError("");
+
+    shareSaveTimeoutRef.current = setTimeout(() => {
+      fetch(`/api/notes/${encodeURIComponent(activeNoteId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-csrf-token": csrfToken },
+        body: JSON.stringify({ isPublic, slug: slug || undefined, password }),
+      })
+        .then(async (res) => {
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            setSaveShareState("error");
+            setShareError(body.error || "Failed to save share options");
+          } else {
+            setSaveShareState("saved");
+            setNotes((current) =>
+              current.map((note) =>
+                note.id === activeNoteId
+                  ? { ...note, isPublic: body.isPublic, slug: body.slug, passwordHash: body.passwordHash }
+                  : note
+              )
+            );
+          }
+        })
+        .catch(() => {
+          setSaveShareState("error");
+          setShareError("Network error");
+        });
+    }, 800);
+  }
+
   async function flushPendingSave() {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -510,13 +557,18 @@ export default function NotesDashboard({
 
     setDraftTitleValue(activeNote.title);
     setDraftContentValue(activeNote.content);
+    setDraftIsPublic(activeNote.isPublic ?? false);
+    setDraftSlug(activeNote.slug ?? "");
+    setDraftPassword(""); // Don't show password hash
     lastSavedRef.current = {
       id: activeNote.id,
       title: activeNote.title,
       content: activeNote.content,
     };
     setSaveState("idle");
+    setSaveShareState("idle");
     setError("");
+    setShareError("");
 
     requestAnimationFrame(() => {
       if (editorRef.current) {
@@ -941,8 +993,25 @@ export default function NotesDashboard({
                     />
 
                     <footer className={styles.editorFooter}>
-                      <div>
-                        {stats.words} words · {stats.chars} chars
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => setShowSharePanel(!showSharePanel)}
+                          style={{
+                            fontSize: "0.80rem",
+                            cursor: "pointer",
+                            background: "none",
+                            border: "none",
+                            color: "var(--text)",
+                            textDecoration: "underline",
+                            padding: 0
+                          }}
+                        >
+                          {showSharePanel ? "Hide share settings" : "Share Note"}
+                        </button>
+                        <div>
+                          {stats.words} words · {stats.chars} chars
+                        </div>
                       </div>
                       <div
                         className={[
@@ -962,6 +1031,85 @@ export default function NotesDashboard({
                       </div>
                     </footer>
                   </div>
+                  
+                  {showSharePanel && (
+                    <div className="mt-4 rounded-xl border p-5 shadow-sm transition-all animate-in fade-in slide-in-from-top-2" style={{ borderColor: 'var(--border)', background: 'var(--subtle)' }}>
+                      <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text)" }}>Share Settings</h3>
+                      <div className="flex flex-col gap-4">
+                        <label className="flex items-center gap-3">
+                          <input 
+                            type="checkbox" 
+                            checked={draftIsPublic}
+                            onChange={(e) => {
+                              setDraftIsPublic(e.target.checked);
+                              handleShareStateChange(e.target.checked, draftSlug, draftPassword);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <span className="text-sm font-medium" style={{ color: "var(--text)" }}>Enable Public Link</span>
+                        </label>
+                        
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>CUSTOM SLUG (OPTIONAL)</label>
+                            <input 
+                              type="text" 
+                              value={draftSlug}
+                              onChange={(e) => {
+                                setDraftSlug(e.target.value);
+                                handleShareStateChange(draftIsPublic, e.target.value, draftPassword);
+                              }}
+                              placeholder="e.g. my-note"
+                              disabled={!draftIsPublic}
+                              className="rounded-lg border px-3 py-2 text-sm outline-none transition-all disabled:opacity-50"
+                              style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text)" }}
+                            />
+                          </div>
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>PASSWORD (OPTIONAL)</label>
+                            <input 
+                              type="password" 
+                              value={draftPassword}
+                              onChange={(e) => {
+                                setDraftPassword(e.target.value);
+                                handleShareStateChange(draftIsPublic, draftSlug, e.target.value);
+                              }}
+                              placeholder={activeNote.passwordHash ? "••••••••" : "Leave empty for none"}
+                              disabled={!draftIsPublic}
+                              className="rounded-lg border px-3 py-2 text-sm outline-none transition-all disabled:opacity-50"
+                              style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text)" }}
+                            />
+                          </div>
+                        </div>
+
+                        {draftIsPublic && (
+                          <div className="mt-2 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: "var(--bg)" }}>
+                            <div className="text-xs font-mono truncate mr-2" style={{ color: "var(--text-muted)" }}>
+                              {draftSlug ? `${window.location.origin}/n/${draftSlug}` : "Slug required to view"}
+                            </div>
+                            <button
+                              type="button"
+                              disabled={!draftSlug}
+                              className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/n/${draftSlug}`);
+                                alert("Link copied!");
+                              }}
+                            >
+                              Copy Link
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="mt-1 flex items-center text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+                          {saveShareState === "saving" && "Saving sharing settings..."}
+                          {saveShareState === "saved" && <span className="text-emerald-500">Share settings saved</span>}
+                          {saveShareState === "error" && <span className="text-red-500">{shareError || "Failed to save share settings (slug may be taken)"}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className={styles.emptyPanel}>
