@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import UserSettingsPage from "@/components/UserSettingsPage";
 import { ensureBioProfileForUser } from "@/lib/account-data";
 import { requirePageSession } from "@/lib/auth";
+import { createPageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Account - Shor",
   description: "Manage your profile, password, preferences, and workspace.",
-};
+  path: "/user",
+  eyebrow: "Account",
+  badge: "Settings",
+});
 
 export default async function UserPage() {
   const session = await requirePageSession();

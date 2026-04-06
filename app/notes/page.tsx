@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import NotesDashboard from "@/components/NotesDashboard";
 import { requirePageSession } from "@/lib/auth";
 import { geistMono, instrumentSerif } from "@/lib/fonts";
+import { createPageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Notes - Shor",
-  description: "Private notes workspace.",
-};
+  description: "Private notes workspace inside Shor.",
+  path: "/notes",
+  eyebrow: "Workspace",
+  badge: "Private",
+});
 
 export default async function NotesPage() {
   const session = await requirePageSession();

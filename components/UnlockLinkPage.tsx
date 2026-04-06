@@ -54,10 +54,8 @@ function Spinner() {
 
 export default function UnlockLinkPage({
   slug,
-  destinationLabel,
 }: {
   slug: string;
-  destinationLabel: string | null;
 }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -185,17 +183,7 @@ export default function UnlockLinkPage({
 
             <div className="space-y-2">
               <p className="text-sm leading-6" style={{ color: "var(--text-muted)" }}>
-                Enter the password to continue
-                {destinationLabel ? (
-                  <>
-                    {" "}
-                    to{" "}
-                    <span className="font-medium" style={{ color: "var(--text)" }}>
-                      {destinationLabel}
-                    </span>
-                  </>
-                ) : null}
-                .
+                Enter the password to continue to this protected link.
               </p>
               <p className="text-xs" style={{ color: "var(--text-faint)" }}>
                 This browser stays unlocked for 12 hours after a successful entry.

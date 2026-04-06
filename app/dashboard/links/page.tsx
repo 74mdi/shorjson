@@ -3,11 +3,15 @@ import BioLinksDashboard from "@/components/BioLinksDashboard";
 import { ensureBioProfileForUser, listBioLinks } from "@/lib/account-data";
 import { requirePageSession } from "@/lib/auth";
 import { geistMono, instrumentSerif } from "@/lib/fonts";
+import { createPageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Links Dashboard - Shor",
-  description: "Edit your public bio page and manage your links.",
-};
+  description: "Edit your public bio page, customize its style, and manage your links.",
+  path: "/dashboard/links",
+  eyebrow: "Dashboard",
+  badge: "Bio links",
+});
 
 export default async function DashboardLinksPage() {
   const session = await requirePageSession();

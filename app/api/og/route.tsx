@@ -3,26 +3,26 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
-  const slug    = searchParams.get("slug")   ?? "";
-  const destUrl = searchParams.get("url")    ?? "";
-  const clicks  = parseInt(searchParams.get("clicks") ?? "0", 10);
+function clampText(value: string | null, fallback: string, maxLength: number): string {
+  const normalized = value?.trim().replace(/\s+/g, " ") || fallback;
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1)}…`;
+}
 
-  // Truncate long URLs nicely
-  function truncate(str: string, max: number) {
-    if (!str) return "";
-    try {
-      const clean = str.replace(/^https?:\/\//, "");
-      return clean.length > max ? clean.slice(0, max) + "…" : clean;
-    } catch {
-      return str.slice(0, max);
-    }
-  }
+export async function GET(request: NextRequest) {
+  const { searchParams } = request.nextUrl;
 
-  const displayUrl   = truncate(destUrl, 52);
-  const displaySlug  = `/${slug}`;
-  const clickLabel   = clicks === 1 ? "1 click" : `${clicks} clicks`;
+  const title = clampText(searchParams.get("title"), "Shor", 72);
+  const description = clampText(
+    searchParams.get("description"),
+    "A minimal private links and notes workspace.",
+    180,
+  );
+  const eyebrow = clampText(searchParams.get("eyebrow"), "Shor", 32);
+  const path = clampText(searchParams.get("path"), "/", 48);
+  const badge = searchParams.get("badge")
+    ? clampText(searchParams.get("badge"), "", 28)
+    : "";
 
   return new ImageResponse(
     (
@@ -33,106 +33,141 @@ export async function GET(req: NextRequest) {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#0a0a0a",
-          padding: "60px 72px",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+          background:
+            "radial-gradient(circle at top left, rgba(236, 116, 42, 0.22), transparent 34%), linear-gradient(180deg, #111315 0%, #090a0c 100%)",
+          color: "#f8fafc",
+          padding: "58px 70px",
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         }}
       >
-        {/* Top row — branding + click badge */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          {/* Shor wordmark */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: "#ffffff",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 26,
-                fontWeight: 800,
-                color: "#0a0a0a",
-              }}
-            >
-              S
-            </div>
-            <span style={{ fontSize: 26, fontWeight: 700, color: "#ffffff", letterSpacing: "-0.5px" }}>
-              Shor
-            </span>
-          </div>
-
-          {/* Click count badge */}
-          {clicks > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "8px 20px",
-                borderRadius: 100,
-                border: "1px solid #2a2a2a",
-                background: "#111111",
-                color: "#737373",
-                fontSize: 18,
-                fontWeight: 500,
-              }}
-            >
-              {clickLabel}
-            </div>
-          )}
-        </div>
-
-        {/* Center — slug + destination */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Short slug */}
-          <div
-            style={{
-              fontSize: 80,
-              fontWeight: 800,
-              color: "#ffffff",
-              letterSpacing: "-2px",
-              lineHeight: 1,
-            }}
-          >
-            {displaySlug}
-          </div>
-
-          {/* Arrow + destination URL */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ color: "#404040", fontSize: 28 }}>→</div>
-            <div
-              style={{
-                fontSize: 26,
-                color: "#737373",
-                fontWeight: 400,
-                letterSpacing: "-0.2px",
-              }}
-            >
-              {displayUrl}
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom — subtle domain watermark */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
-            borderTop: "1px solid #1a1a1a",
-            paddingTop: 28,
+            justifyContent: "space-between",
           }}
         >
-          <div style={{ fontSize: 16, color: "#404040", fontWeight: 500 }}>
-            Shared via Shor · Short link manager
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                borderRadius: 16,
+                background: "#f8fafc",
+                color: "#090a0c",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 28,
+                fontWeight: 800,
+              }}
+            >
+              S
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div
+                style={{
+                  fontSize: 18,
+                  letterSpacing: "0.28em",
+                  textTransform: "uppercase",
+                  color: "#94a3b8",
+                }}
+              >
+                {eyebrow}
+              </div>
+              <div
+                style={{
+                  fontSize: 34,
+                  fontWeight: 700,
+                  letterSpacing: "-0.04em",
+                }}
+              >
+                Shor
+              </div>
+            </div>
+          </div>
+
+          {badge ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                borderRadius: 999,
+                border: "1px solid rgba(148, 163, 184, 0.22)",
+                background: "rgba(15, 23, 42, 0.72)",
+                padding: "10px 20px",
+                fontSize: 20,
+                fontWeight: 600,
+                color: "#e2e8f0",
+              }}
+            >
+              {badge}
+            </div>
+          ) : null}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+            maxWidth: "88%",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 78,
+              lineHeight: 1,
+              letterSpacing: "-0.06em",
+              fontWeight: 800,
+            }}
+          >
+            {title}
+          </div>
+
+          <div
+            style={{
+              fontSize: 28,
+              lineHeight: 1.45,
+              color: "#cbd5e1",
+            }}
+          >
+            {description}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderTop: "1px solid rgba(148, 163, 184, 0.14)",
+            paddingTop: 24,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 18,
+              color: "#94a3b8",
+            }}
+          >
+            Shared from Shor
+          </div>
+          <div
+            style={{
+              fontSize: 18,
+              color: "#64748b",
+            }}
+          >
+            {path}
           </div>
         </div>
       </div>
     ),
     {
-      width:  1200,
+      width: 1200,
       height: 630,
-    }
+    },
   );
 }

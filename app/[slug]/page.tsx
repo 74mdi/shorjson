@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { clickLink, getLinks } from "@/lib/adapter-utils";
-import { getLinkBySlug } from "@/lib/links";
+import { getLinkBySlug, getLinkDestinationLabel } from "@/lib/links";
 import {
   getUnlockCookieName,
   hasValidUnlockCookie,
   isPasswordProtected,
 } from "@/lib/link-protection";
+import { createPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,47 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  return {
+  const path = `/${slug}`;
+  const entry = await getLinkBySlug(slug);
+
+  if (!entry) {
+    return createPageMetadata({
+      title: `/${slug} - Shor`,
+      description: "This short link is not available.",
+      path,
+      eyebrow: "Short link",
+      badge: "Unavailable",
+      ogTitle: `/${slug}`,
+    });
+  }
+
+  if (isPasswordProtected(entry)) {
+    return createPageMetadata({
+      title: `/${slug} - Protected Link - Shor`,
+      description: "Password-protected short link hosted on Shor.",
+      path,
+      eyebrow: "Protected link",
+      badge: "Locked",
+      ogTitle: `/${slug}`,
+    });
+  }
+
+  const destinationLabel = getLinkDestinationLabel(entry.originalUrl);
+  const clickLabel =
+    entry.clicks > 0
+      ? `${entry.clicks} click${entry.clicks === 1 ? "" : "s"}`
+      : "Live";
+
+  return createPageMetadata({
     title: `/${slug} - Shor`,
-  };
+    description: destinationLabel
+      ? `Redirects to ${destinationLabel}.`
+      : "Short link hosted on Shor.",
+    path,
+    eyebrow: "Short link",
+    badge: clickLabel,
+    ogTitle: `/${slug}`,
+  });
 }
 
 export default async function SlugPage({
