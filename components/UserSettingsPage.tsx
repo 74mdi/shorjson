@@ -12,7 +12,14 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { BioProfile } from "@/lib/account-types";
-import { getPublicBioPath } from "@/lib/bio-shared";
+import {
+  ANIMATION_PRESETS,
+  BACKGROUND_STYLES,
+  BUTTON_STYLES,
+  FONT_PRESETS,
+  getPublicBioPath,
+  THEME_PRESETS,
+} from "@/lib/bio-shared";
 import {
   bioProfileSchema,
   MAX_AVATAR_FILE_BYTES,
@@ -94,6 +101,7 @@ export default function UserSettingsPage({
   const [siteOrigin, setSiteOrigin] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [copiedPublicLink, setCopiedPublicLink] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -149,6 +157,16 @@ export default function UserSettingsPage({
     const next = !isDark;
     setIsDark(next);
     applyTheme(next);
+  }
+
+  async function handleCopyPublicUrl() {
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopiedPublicLink(true);
+      window.setTimeout(() => setCopiedPublicLink(false), 1600);
+    } catch {
+      setCopiedPublicLink(false);
+    }
   }
 
   function markProfileSaved() {
@@ -457,6 +475,45 @@ export default function UserSettingsPage({
                   Update your public links, page style, and live preview.
                 </div>
               </Link>
+
+              <button
+                type="button"
+                onClick={() => void handleCopyPublicUrl()}
+                className={actionButtonClassName}
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--surface)",
+                  color: "var(--text)",
+                }}
+              >
+                <div className="text-sm font-medium">
+                  {copiedPublicLink ? "Public URL copied" : "Copy public URL"}
+                </div>
+                <div
+                  className="pt-1 text-xs leading-6"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Share your live `@username` page faster.
+                </div>
+              </button>
+
+              <Link
+                href="/notes"
+                className={actionButtonClassName}
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                  color: "var(--text)",
+                }}
+              >
+                <div className="text-sm font-medium">Open notes</div>
+                <div
+                  className="pt-1 text-xs leading-6"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Jump straight back into your private notes workspace.
+                </div>
+              </Link>
             </div>
           </div>
         </header>
@@ -726,6 +783,74 @@ export default function UserSettingsPage({
           </form>
 
           <div className="grid gap-5">
+            <section className={cardClassName} style={surfaceStyle}>
+              <p
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: "var(--text-faint)" }}
+              >
+                Features
+              </p>
+              <h2
+                className="pt-2 text-xl font-semibold"
+                style={{ color: "var(--text)" }}
+              >
+                Customization library
+              </h2>
+              <p
+                className="pt-2 text-sm leading-7"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Your public bio page now has a much larger styling system with
+                more motion, fonts, themes, and hover treatments.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 pt-5">
+                {[
+                  { label: "Button styles", value: BUTTON_STYLES.length },
+                  { label: "Themes", value: THEME_PRESETS.length },
+                  { label: "Font presets", value: FONT_PRESETS.length },
+                  { label: "Motion presets", value: ANIMATION_PRESETS.length },
+                  { label: "Backgrounds", value: BACKGROUND_STYLES.length },
+                  { label: "Accent swatches", value: 32 },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border px-4 py-4"
+                    style={{
+                      borderColor: "var(--border)",
+                      background: "var(--bg)",
+                    }}
+                  >
+                    <div
+                      className="text-2xl font-semibold"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {item.value}
+                    </div>
+                    <div
+                      className="pt-1 text-xs uppercase tracking-[0.16em]"
+                      style={{ color: "var(--text-faint)" }}
+                    >
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                className="mt-4 rounded-2xl border px-4 py-4 text-sm leading-7"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                Hover motion now changes with the selected animation preset, the
+                public page can switch between light and dark palettes, and the
+                Shor watermark always stays visible.
+              </div>
+            </section>
+
             <section className={cardClassName} style={surfaceStyle}>
               <p
                 className="text-[11px] uppercase tracking-[0.18em]"

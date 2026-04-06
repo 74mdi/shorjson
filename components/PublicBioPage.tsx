@@ -285,6 +285,14 @@ function groupLinks(page: BioPage) {
   return [...sections.entries()];
 }
 
+function capitalizeToken(value: string): string {
+  return value.slice(0, 1).toUpperCase() + value.slice(1);
+}
+
+function getModuleClassName(prefix: string, value: string): string {
+  return styles[`${prefix}${value.split("-").map(capitalizeToken).join("")}`] ?? "";
+}
+
 type ThemeTokens = {
   bg: string;
   border: string;
@@ -514,26 +522,150 @@ const PAGE_THEME_STYLES: Record<
       faint: "#64748b",
     },
   },
-};
-
-const FONT_CLASS_NAMES: Record<BioPage["fontPreset"], string> = {
-  sans: styles.fontSans,
-  editorial: styles.fontEditorial,
-  grotesk: styles.fontGrotesk,
-  mono: styles.fontMono,
-  sora: styles.fontSora,
-  fraunces: styles.fontFraunces,
-  outfit: styles.fontOutfit,
-  ibm: styles.fontIbm,
-  newsreader: styles.fontNewsreader,
-  syne: styles.fontSyne,
-};
-
-const MOTION_CLASS_NAMES: Record<BioPage["animationPreset"], string> = {
-  morph: styles.motionMorph,
-  fade: styles.motionFade,
-  lift: styles.motionLift,
-  drift: styles.motionDrift,
+  ember: {
+    light: {
+      bg: "#fff1eb",
+      surface: "#ffffff",
+      border: "#fdc7b5",
+      text: "#7c2d12",
+      muted: "#c2410c",
+      faint: "#f5a48a",
+    },
+    dark: {
+      bg: "#26110d",
+      surface: "#341510",
+      border: "#6f2d20",
+      text: "#fff1ea",
+      muted: "#fdba74",
+      faint: "#9d5848",
+    },
+  },
+  mint: {
+    light: {
+      bg: "#ecfdf5",
+      surface: "#ffffff",
+      border: "#bbf7d0",
+      text: "#14532d",
+      muted: "#059669",
+      faint: "#86efac",
+    },
+    dark: {
+      bg: "#081611",
+      surface: "#10211a",
+      border: "#214d38",
+      text: "#ecfdf5",
+      muted: "#6ee7b7",
+      faint: "#3f7e63",
+    },
+  },
+  berry: {
+    light: {
+      bg: "#fff1f9",
+      surface: "#ffffff",
+      border: "#f5c2e7",
+      text: "#701a75",
+      muted: "#a21caf",
+      faint: "#e879f9",
+    },
+    dark: {
+      bg: "#1e0f22",
+      surface: "#2b1331",
+      border: "#5a2d63",
+      text: "#fdf4ff",
+      muted: "#f0abfc",
+      faint: "#87508f",
+    },
+  },
+  sand: {
+    light: {
+      bg: "#faf5ef",
+      surface: "#ffffff",
+      border: "#e7d8c5",
+      text: "#453126",
+      muted: "#8b6b52",
+      faint: "#c8ad91",
+    },
+    dark: {
+      bg: "#1a1510",
+      surface: "#231b15",
+      border: "#4a392a",
+      text: "#f8efe6",
+      muted: "#d1bca4",
+      faint: "#7e6754",
+    },
+  },
+  lagoon: {
+    light: {
+      bg: "#effcff",
+      surface: "#ffffff",
+      border: "#b7edf2",
+      text: "#134e4a",
+      muted: "#0f766e",
+      faint: "#67e8f9",
+    },
+    dark: {
+      bg: "#081618",
+      surface: "#0f2226",
+      border: "#23515b",
+      text: "#ecfeff",
+      muted: "#67e8f9",
+      faint: "#4d7f89",
+    },
+  },
+  aurora: {
+    light: {
+      bg: "#f4f3ff",
+      surface: "#ffffff",
+      border: "#d8d4fe",
+      text: "#312e81",
+      muted: "#6d28d9",
+      faint: "#a78bfa",
+    },
+    dark: {
+      bg: "#13142b",
+      surface: "#1a1f39",
+      border: "#3e4581",
+      text: "#f5f3ff",
+      muted: "#c4b5fd",
+      faint: "#6e73b2",
+    },
+  },
+  ink: {
+    light: {
+      bg: "#eef2ff",
+      surface: "#ffffff",
+      border: "#c7d2fe",
+      text: "#172554",
+      muted: "#4338ca",
+      faint: "#93c5fd",
+    },
+    dark: {
+      bg: "#070d19",
+      surface: "#0e1728",
+      border: "#24365a",
+      text: "#eff6ff",
+      muted: "#93c5fd",
+      faint: "#5874a8",
+    },
+  },
+  gold: {
+    light: {
+      bg: "#fffbea",
+      surface: "#ffffff",
+      border: "#fcd34d",
+      text: "#713f12",
+      muted: "#b45309",
+      faint: "#fbbf24",
+    },
+    dark: {
+      bg: "#191307",
+      surface: "#241b0a",
+      border: "#574213",
+      text: "#fffbeb",
+      muted: "#fcd34d",
+      faint: "#8d7424",
+    },
+  },
 };
 
 const BACKGROUND_CLASS_NAMES: Record<BioPage["backgroundStyle"], string> = {
@@ -543,6 +675,10 @@ const BACKGROUND_CLASS_NAMES: Record<BioPage["backgroundStyle"], string> = {
   mesh: styles.backgroundMesh,
   grain: styles.backgroundGrain,
   stripes: styles.backgroundStripes,
+  spotlight: styles.backgroundSpotlight,
+  waves: styles.backgroundWaves,
+  plaid: styles.backgroundPlaid,
+  halo: styles.backgroundHalo,
 };
 
 const BUTTON_SIZE_CLASS_NAMES: Record<BioPage["buttonSize"], string> = {
@@ -567,6 +703,62 @@ function getPageStyle(
   } as CSSProperties;
 }
 
+function getFontClassName(fontPreset: BioPage["fontPreset"]): string {
+  switch (fontPreset) {
+    case "sans":
+      return styles.fontSans;
+    case "editorial":
+      return styles.fontEditorial;
+    case "grotesk":
+      return styles.fontGrotesk;
+    case "mono":
+      return styles.fontMono;
+    case "sora":
+      return styles.fontSora;
+    case "fraunces":
+      return styles.fontFraunces;
+    case "outfit":
+      return styles.fontOutfit;
+    case "ibm":
+      return styles.fontIbm;
+    case "newsreader":
+      return styles.fontNewsreader;
+    case "syne":
+      return styles.fontSyne;
+    default: {
+      const [body, heading] = fontPreset.split("-");
+      return [
+        getModuleClassName("fontBody", body),
+        getModuleClassName("fontHeading", heading),
+      ]
+        .filter(Boolean)
+        .join(" ");
+    }
+  }
+}
+
+function getMotionClassName(animationPreset: BioPage["animationPreset"]): string {
+  switch (animationPreset) {
+    case "morph":
+      return `${styles.motionBaseMorph} ${styles.motionToneSmooth}`;
+    case "fade":
+      return `${styles.motionBaseFade} ${styles.motionToneSoft}`;
+    case "lift":
+      return `${styles.motionBaseLift} ${styles.motionToneCrisp}`;
+    case "drift":
+      return `${styles.motionBaseDrift} ${styles.motionToneCinematic}`;
+    default: {
+      const [tone, base] = animationPreset.split("-");
+      return [
+        getModuleClassName("motionBase", base),
+        getModuleClassName("motionTone", tone),
+      ]
+        .filter(Boolean)
+        .join(" ");
+    }
+  }
+}
+
 export default function PublicBioPage({
   page,
   preview = false,
@@ -576,8 +768,8 @@ export default function PublicBioPage({
 }) {
   const [colorMode, setColorMode] = useState<"dark" | "light">("light");
   const sections = groupLinks(page);
-  const fontClassName = FONT_CLASS_NAMES[page.fontPreset];
-  const motionClassName = MOTION_CLASS_NAMES[page.animationPreset];
+  const fontClassName = getFontClassName(page.fontPreset);
+  const motionClassName = getMotionClassName(page.animationPreset);
   const backgroundClassName = BACKGROUND_CLASS_NAMES[page.backgroundStyle];
   const buttonSizeClassName = BUTTON_SIZE_CLASS_NAMES[page.buttonSize];
   const pageStyle = useMemo(() => getPageStyle(page, colorMode), [colorMode, page]);

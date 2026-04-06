@@ -26,8 +26,17 @@ import {
   USERNAME_PATTERN,
 } from "@/lib/schemas";
 import {
+  ANIMATION_PRESETS,
+  BACKGROUND_STYLES,
   buildBioPageData,
+  BUTTON_STYLES,
+  FONT_PRESETS,
   getPublicBioPath,
+  getAnimationPresetLabel,
+  getAnimationPresetPreview,
+  getFontPresetLabel,
+  getFontPresetPreview,
+  THEME_PRESETS,
   type AnimationPreset,
   type BackgroundStyle,
   type BioPage,
@@ -73,76 +82,41 @@ type DashboardLink = {
   visible: boolean;
 };
 
-const STYLE_OPTIONS: ButtonStyle[] = [
-  "minimal",
-  "outline",
-  "outline-bold",
-  "filled",
-  "pill",
-  "soft",
-  "ghost",
-  "card",
-  "brutalist",
-  "glass",
-  "frame",
-  "elevated",
-  "underline",
-  "split",
-  "rail",
-  "sticker",
-  "blur",
-  "shadow",
-  "capsule",
-  "tint",
-  "grid",
-  "cutout",
-  "line",
-  "panel",
-  "slab",
-  "tab",
-  "notch",
-  "frost",
-  "mist",
-  "veil",
-  "aero",
-  "halo",
-  "glow",
-  "neon",
-  "quiet",
-  "bold",
-  "poster",
-  "lifted",
-  "inset",
-  "etched",
-  "mono",
-  "pixel",
-  "ribbon",
-  "window",
-  "tile",
-  "soft-outline",
-  "ring",
-  "trace",
-  "badge",
-  "stack",
-  "solid",
-  "duo",
-  "flare",
-  "paperclip",
-  "spring",
-  "float",
-];
+const STYLE_OPTIONS: readonly ButtonStyle[] = BUTTON_STYLES;
 
 const COLOR_PRESETS = [
   "#d97b4a",
-  "#3b82f6",
-  "#10b981",
-  "#8b5cf6",
-  "#f43f5e",
+  "#ef4444",
+  "#f97316",
   "#f59e0b",
+  "#eab308",
+  "#84cc16",
+  "#22c55e",
+  "#3b82f6",
+  "#14b8a6",
   "#06b6d4",
+  "#0ea5e9",
+  "#6366f1",
+  "#8b5cf6",
+  "#7c3aed",
+  "#a855f7",
+  "#d946ef",
+  "#f43f5e",
   "#ec4899",
+  "#be123c",
+  "#c2410c",
+  "#166534",
+  "#155e75",
+  "#1d4ed8",
+  "#4338ca",
+  "#581c87",
+  "#7f1d1d",
+  "#78350f",
   "#1c1916",
+  "#111827",
+  "#334155",
   "#6b7280",
+  "#0f172a",
 ];
 
 const THEME_OPTIONS: Array<{
@@ -223,35 +197,67 @@ const THEME_OPTIONS: Array<{
     accentColor: "#2563eb",
     description: "Cool clean white-blue system with sharp contrast.",
   },
+  {
+    id: "ember",
+    label: "Ember",
+    accentColor: "#ea580c",
+    description: "Smoky red-orange palette with warmer dark mode.",
+  },
+  {
+    id: "mint",
+    label: "Mint",
+    accentColor: "#10b981",
+    description: "Fresh green tones with a glassier feel.",
+  },
+  {
+    id: "berry",
+    label: "Berry",
+    accentColor: "#c026d3",
+    description: "Deep berry color with lighter pastel edges.",
+  },
+  {
+    id: "sand",
+    label: "Sand",
+    accentColor: "#b08968",
+    description: "Warm neutrals with softer contrast for calmer pages.",
+  },
+  {
+    id: "lagoon",
+    label: "Lagoon",
+    accentColor: "#0f766e",
+    description: "Tropical teal palette with a cleaner cyan dark mode.",
+  },
+  {
+    id: "aurora",
+    label: "Aurora",
+    accentColor: "#7c3aed",
+    description: "Luminous violet-blue tones with more atmosphere.",
+  },
+  {
+    id: "ink",
+    label: "Ink",
+    accentColor: "#1d4ed8",
+    description: "Sharper editorial navy palette for high contrast pages.",
+  },
+  {
+    id: "gold",
+    label: "Gold",
+    accentColor: "#d97706",
+    description: "Warm golden paper palette with richer shadows.",
+  },
 ];
 
-const FONT_OPTIONS: Array<{
-  id: FontPreset;
-  label: string;
-  preview: string;
-}> = [
-  { id: "sans", label: "Sans", preview: "Quiet and neutral" },
-  { id: "editorial", label: "Editorial", preview: "Serif-led and refined" },
-  { id: "grotesk", label: "Grotesk", preview: "Modern and airy" },
-  { id: "mono", label: "Mono", preview: "Code-like and crisp" },
-  { id: "sora", label: "Sora", preview: "Futuristic and smooth" },
-  { id: "fraunces", label: "Fraunces", preview: "Decorative serif contrast" },
-  { id: "outfit", label: "Outfit", preview: "Rounded modern UI tone" },
-  { id: "ibm", label: "IBM Plex", preview: "Utility-first and structured" },
-  { id: "newsreader", label: "Newsreader", preview: "Soft editorial book tone" },
-  { id: "syne", label: "Syne", preview: "Bold expressive headings" },
-];
+const FONT_OPTIONS = FONT_PRESETS.map((id) => ({
+  id,
+  label: getFontPresetLabel(id),
+  preview: getFontPresetPreview(id),
+}));
 
-const ANIMATION_OPTIONS: Array<{
-  id: AnimationPreset;
-  label: string;
-  preview: string;
-}> = [
-  { id: "morph", label: "Morph", preview: "Soft scale and fade" },
-  { id: "fade", label: "Fade", preview: "Minimal opacity only" },
-  { id: "lift", label: "Lift", preview: "Small upward reveal" },
-  { id: "drift", label: "Drift", preview: "Slower floating motion" },
-];
+const ANIMATION_OPTIONS = ANIMATION_PRESETS.map((id) => ({
+  id,
+  label: getAnimationPresetLabel(id),
+  preview: getAnimationPresetPreview(id),
+}));
 
 const BACKGROUND_OPTIONS: Array<{
   id: BackgroundStyle;
@@ -264,6 +270,10 @@ const BACKGROUND_OPTIONS: Array<{
   { id: "mesh", label: "Mesh", preview: "Blurred glow clusters" },
   { id: "grain", label: "Grain", preview: "Quiet textured wash" },
   { id: "stripes", label: "Stripes", preview: "Diagonal stripe rhythm" },
+  { id: "spotlight", label: "Spotlight", preview: "Soft halo behind the hero" },
+  { id: "waves", label: "Waves", preview: "Repeating curved rhythm" },
+  { id: "plaid", label: "Plaid", preview: "Crossed editorial lines" },
+  { id: "halo", label: "Halo", preview: "Corner glows and softer depth" },
 ];
 
 const BUTTON_SIZE_OPTIONS: Array<{
@@ -347,6 +357,13 @@ const ICON_COLOR_PRESETS = [
 
 function getSafeHexColor(value: string, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : fallback;
+}
+
+function formatStyleLabel(value: string): string {
+  return value
+    .split("-")
+    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function Spinner() {
@@ -974,6 +991,13 @@ export default function BioLinksDashboard({
                   Edit your public profile, manage links, and tune the button
                   style while the preview updates live.
                 </p>
+                <p>
+                  {BUTTON_STYLES.length} button styles, {THEME_PRESETS.length} themes,
+                  {" "}
+                  {FONT_OPTIONS.length} font presets, {ANIMATION_OPTIONS.length} motion presets,
+                  {" "}
+                  and {BACKGROUND_STYLES.length} backgrounds are ready to mix.
+                </p>
               </div>
               <div
                 className={`${styles.status} ${
@@ -1552,7 +1576,9 @@ export default function BioLinksDashboard({
                       >
                         Sample Link
                       </button>
-                      <div className={styles.styleCardName}>{style}</div>
+                      <div className={styles.styleCardName}>
+                        {formatStyleLabel(style)}
+                      </div>
                     </div>
                   ))}
                 </div>

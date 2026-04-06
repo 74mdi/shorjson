@@ -19,10 +19,17 @@
   --accent-soft-border: color-mix(in srgb, var(--accent) 26%, var(--page-border));
   --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --bio-heading-font: var(--font-instrument-serif), Georgia, serif;
-  --bio-avatar-animation: bioAvatarIn 400ms ease both;
-  --bio-text-animation: bioFadeUp 350ms ease both;
-  --bio-link-animation: bioLiftIn 340ms cubic-bezier(.22,1,.36,1) both;
-  --bio-hover-lift: -2px;
+  --bio-avatar-animation-name: bioAvatarIn;
+  --bio-text-animation-name: bioFadeUp;
+  --bio-link-animation-name: bioLiftIn;
+  --bio-avatar-duration: 400ms;
+  --bio-text-duration: 350ms;
+  --bio-link-duration: 340ms;
+  --bio-anim-ease: cubic-bezier(.22,1,.36,1);
+  --bio-hover-transform: translate3d(0, -2px, 0) scale(1.01);
+  --bio-hover-shadow: none;
+  --bio-hover-filter: none;
+  --bio-hover-letter-spacing: 0;
   min-height: 100dvh;
   display: flex;
   justify-content: center;
@@ -93,7 +100,11 @@
   object-fit: cover;
   border: 1px solid var(--page-border);
   background: var(--page-surface);
-  animation: var(--bio-avatar-animation);
+  animation:
+    var(--bio-avatar-animation-name)
+    var(--bio-avatar-duration)
+    var(--bio-anim-ease)
+    both;
 }
 
 .avatarFallback {
@@ -111,7 +122,11 @@
   font-weight: 700;
   color: var(--page-text);
   font-family: var(--bio-heading-font);
-  animation: var(--bio-text-animation);
+  animation:
+    var(--bio-text-animation-name)
+    var(--bio-text-duration)
+    var(--bio-anim-ease)
+    both;
   animation-delay: 50ms;
 }
 
@@ -119,7 +134,11 @@
   margin-top: 6px;
   font-size: 0.82rem;
   color: var(--page-muted);
-  animation: var(--bio-text-animation);
+  animation:
+    var(--bio-text-animation-name)
+    var(--bio-text-duration)
+    var(--bio-anim-ease)
+    both;
   animation-delay: 90ms;
 }
 
@@ -129,7 +148,11 @@
   font-size: 0.87rem;
   line-height: 1.75;
   color: var(--page-muted);
-  animation: var(--bio-text-animation);
+  animation:
+    var(--bio-text-animation-name)
+    var(--bio-text-duration)
+    var(--bio-anim-ease)
+    both;
   animation-delay: 130ms;
 }
 
@@ -166,7 +189,11 @@
 }
 
 .linkItem {
-  animation: var(--bio-link-animation);
+  animation:
+    var(--bio-link-animation-name)
+    var(--bio-link-duration)
+    var(--bio-anim-ease)
+    both;
 }
 
 .iconWrap {
@@ -191,11 +218,22 @@
 
 .linkAnchor {
   color: inherit;
+  will-change: transform, box-shadow, filter;
+  transition:
+    transform 220ms cubic-bezier(.22,1,.36,1),
+    box-shadow 220ms cubic-bezier(.22,1,.36,1),
+    filter 220ms cubic-bezier(.22,1,.36,1),
+    letter-spacing 220ms cubic-bezier(.22,1,.36,1),
+    border-color 180ms ease,
+    background 180ms ease;
 }
 
 .linkAnchor:hover,
 .linkAnchor:focus-visible {
-  transform: translateY(var(--bio-hover-lift));
+  transform: var(--bio-hover-transform);
+  box-shadow: var(--bio-hover-shadow);
+  filter: var(--bio-hover-filter);
+  letter-spacing: var(--bio-hover-letter-spacing);
 }
 
 .emptyText {
@@ -266,32 +304,208 @@
   --bio-heading-font: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
 }
 
-.motionMorph {
-  --bio-avatar-animation: bioAvatarIn 420ms ease both;
-  --bio-text-animation: bioMorphIn 380ms cubic-bezier(.22,1,.36,1) both;
-  --bio-link-animation: bioMorphIn 360ms cubic-bezier(.22,1,.36,1) both;
-  --bio-hover-lift: -2px;
+.fontBodyManrope {
+  --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
 }
 
-.motionFade {
-  --bio-avatar-animation: bioOpacityIn 320ms ease both;
-  --bio-text-animation: bioOpacityIn 320ms ease both;
-  --bio-link-animation: bioOpacityIn 280ms ease both;
-  --bio-hover-lift: -1px;
+.fontBodySora {
+  --bio-body-font: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
 }
 
-.motionLift {
-  --bio-avatar-animation: bioAvatarIn 360ms ease both;
-  --bio-text-animation: bioLiftIn 360ms cubic-bezier(.22,1,.36,1) both;
-  --bio-link-animation: bioLiftIn 320ms cubic-bezier(.22,1,.36,1) both;
-  --bio-hover-lift: -2px;
+.fontBodyOutfit {
+  --bio-body-font: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 }
 
-.motionDrift {
-  --bio-avatar-animation: bioAvatarIn 520ms ease both;
-  --bio-text-animation: bioDriftIn 520ms cubic-bezier(.16,1,.3,1) both;
-  --bio-link-animation: bioDriftIn 440ms cubic-bezier(.16,1,.3,1) both;
-  --bio-hover-lift: -2px;
+.fontBodyIbm {
+  --bio-body-font: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fontBodySpace {
+  --bio-body-font: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fontBodySystem {
+  --bio-body-font:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.fontBodyHumanist {
+  --bio-body-font:
+    "Segoe UI",
+    Candara,
+    "Trebuchet MS",
+    var(--font-ibm-plex-sans),
+    sans-serif;
+}
+
+.fontBodyRounded {
+  --bio-body-font:
+    var(--font-outfit),
+    "Avenir Next",
+    "Trebuchet MS",
+    var(--font-manrope),
+    sans-serif;
+}
+
+.fontBodyMono {
+  --bio-body-font:
+    var(--font-geist-mono),
+    "SFMono-Regular",
+    Menlo,
+    Consolas,
+    monospace;
+}
+
+.fontBodySyne {
+  --bio-body-font:
+    var(--font-syne),
+    var(--font-space-grotesk),
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+.fontHeadingManrope {
+  --bio-heading-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fontHeadingInstrument {
+  --bio-heading-font: var(--font-instrument-serif), Georgia, serif;
+}
+
+.fontHeadingFraunces {
+  --bio-heading-font: var(--font-fraunces), Georgia, serif;
+}
+
+.fontHeadingNewsreader {
+  --bio-heading-font: var(--font-newsreader), Georgia, serif;
+}
+
+.fontHeadingSyne {
+  --bio-heading-font: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+}
+
+.motionBaseMorph {
+  --bio-avatar-animation-name: bioAvatarIn;
+  --bio-text-animation-name: bioMorphIn;
+  --bio-link-animation-name: bioMorphIn;
+  --bio-hover-transform: translate3d(0, -2px, 0) scale(1.015);
+}
+
+.motionBaseFade {
+  --bio-avatar-animation-name: bioOpacityIn;
+  --bio-text-animation-name: bioOpacityIn;
+  --bio-link-animation-name: bioOpacityIn;
+  --bio-hover-transform: translate3d(0, -1px, 0);
+}
+
+.motionBaseLift {
+  --bio-avatar-animation-name: bioAvatarIn;
+  --bio-text-animation-name: bioLiftIn;
+  --bio-link-animation-name: bioLiftIn;
+  --bio-hover-transform: translate3d(0, -4px, 0);
+}
+
+.motionBaseDrift {
+  --bio-avatar-animation-name: bioAvatarIn;
+  --bio-text-animation-name: bioDriftIn;
+  --bio-link-animation-name: bioDriftIn;
+  --bio-hover-transform: translate3d(0, -3px, 0) rotate(-0.4deg);
+}
+
+.motionBaseGlide {
+  --bio-avatar-animation-name: bioGlideIn;
+  --bio-text-animation-name: bioGlideIn;
+  --bio-link-animation-name: bioGlideIn;
+  --bio-hover-transform: translate3d(7px, -1px, 0);
+}
+
+.motionBaseBloom {
+  --bio-avatar-animation-name: bioBloomIn;
+  --bio-text-animation-name: bioBloomIn;
+  --bio-link-animation-name: bioBloomIn;
+  --bio-hover-transform: translate3d(0, -2px, 0) scale(1.02);
+}
+
+.motionBasePulse {
+  --bio-avatar-animation-name: bioPulseIn;
+  --bio-text-animation-name: bioPulseIn;
+  --bio-link-animation-name: bioPulseIn;
+  --bio-hover-transform: translate3d(0, -2px, 0) scale(1.03);
+}
+
+.motionBaseBreeze {
+  --bio-avatar-animation-name: bioBreezeIn;
+  --bio-text-animation-name: bioBreezeIn;
+  --bio-link-animation-name: bioBreezeIn;
+  --bio-hover-transform: translate3d(0, -2px, 0) rotate(-0.7deg);
+}
+
+.motionBaseZoom {
+  --bio-avatar-animation-name: bioZoomIn;
+  --bio-text-animation-name: bioZoomIn;
+  --bio-link-animation-name: bioZoomIn;
+  --bio-hover-transform: translate3d(0, -2px, 0) scale(1.04);
+}
+
+.motionBaseRipple {
+  --bio-avatar-animation-name: bioRippleIn;
+  --bio-text-animation-name: bioRippleIn;
+  --bio-link-animation-name: bioRippleIn;
+  --bio-hover-transform: translate3d(0, -2px, 0) scale(1.012);
+}
+
+.motionToneSoft {
+  --bio-avatar-duration: 520ms;
+  --bio-text-duration: 430ms;
+  --bio-link-duration: 390ms;
+  --bio-anim-ease: ease;
+  --bio-hover-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 8%, transparent);
+  --bio-hover-filter: saturate(1.02);
+}
+
+.motionToneSmooth {
+  --bio-avatar-duration: 430ms;
+  --bio-text-duration: 360ms;
+  --bio-link-duration: 330ms;
+  --bio-anim-ease: cubic-bezier(.22,1,.36,1);
+  --bio-hover-shadow: 0 14px 24px color-mix(in srgb, var(--accent) 10%, transparent);
+  --bio-hover-filter: saturate(1.04);
+}
+
+.motionToneCrisp {
+  --bio-avatar-duration: 300ms;
+  --bio-text-duration: 260ms;
+  --bio-link-duration: 240ms;
+  --bio-anim-ease: cubic-bezier(.16,1,.3,1);
+  --bio-hover-shadow: 0 12px 20px color-mix(in srgb, var(--accent) 12%, transparent);
+  --bio-hover-filter: saturate(1.06);
+  --bio-hover-letter-spacing: 0.01em;
+}
+
+.motionToneBold {
+  --bio-avatar-duration: 360ms;
+  --bio-text-duration: 320ms;
+  --bio-link-duration: 300ms;
+  --bio-anim-ease: cubic-bezier(.2,1,.3,1);
+  --bio-hover-shadow: 0 18px 28px color-mix(in srgb, var(--accent) 16%, transparent);
+  --bio-hover-filter: saturate(1.09) contrast(1.01);
+  --bio-hover-letter-spacing: 0.012em;
+}
+
+.motionToneCinematic {
+  --bio-avatar-duration: 620ms;
+  --bio-text-duration: 560ms;
+  --bio-link-duration: 480ms;
+  --bio-anim-ease: cubic-bezier(.16,1,.3,1);
+  --bio-hover-shadow: 0 22px 36px color-mix(in srgb, var(--accent) 18%, transparent);
+  --bio-hover-filter: saturate(1.12) contrast(1.02);
+  --bio-hover-letter-spacing: 0.015em;
 }
 
 .backgroundPlain {
@@ -349,6 +563,49 @@
     transparent 10px,
     transparent 24px
   );
+}
+
+.backgroundSpotlight {
+  background-image:
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 34%),
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--page-surface) 60%, transparent), transparent 48%);
+}
+
+.backgroundWaves {
+  background-image:
+    repeating-radial-gradient(
+      circle at 0 100%,
+      color-mix(in srgb, var(--accent) 7%, transparent) 0,
+      color-mix(in srgb, var(--accent) 7%, transparent) 8px,
+      transparent 8px,
+      transparent 26px
+    );
+  background-size: 120px 120px;
+}
+
+.backgroundPlaid {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0,
+      color-mix(in srgb, var(--accent) 5%, transparent) 1px,
+      transparent 1px,
+      transparent 22px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--page-border) 48%, transparent) 0,
+      color-mix(in srgb, var(--page-border) 48%, transparent) 1px,
+      transparent 1px,
+      transparent 22px
+    );
+}
+
+.backgroundHalo {
+  background-image:
+    radial-gradient(circle at 15% 18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 28%),
+    radial-gradient(circle at 85% 12%, color-mix(in srgb, var(--page-border) 74%, transparent), transparent 26%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 38%);
 }
 
 @media (max-width: 640px) {
@@ -424,5 +681,75 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes bioGlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bioBloomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bioPulseIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bioBreezeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) rotate(-1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes bioZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bioRippleIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
