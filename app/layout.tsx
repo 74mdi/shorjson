@@ -4,10 +4,16 @@ import BottomBar from "@/components/BottomBar";
 import TopControls from "@/components/TopControls";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import {
+  fraunces,
   geistMono,
+  ibmPlexSans,
   instrumentSerif,
   manrope,
+  newsreader,
+  outfit,
+  sora,
   spaceGrotesk,
+  syne,
 } from "@/lib/fonts";
 import { getOptionalSession } from "@/lib/auth";
 
@@ -75,6 +81,12 @@ export default async function RootLayout({
           geistMono.variable,
           manrope.variable,
           spaceGrotesk.variable,
+          sora.variable,
+          fraunces.variable,
+          outfit.variable,
+          ibmPlexSans.variable,
+          newsreader.variable,
+          syne.variable,
         ].join(" ")}
       >
         <ServiceWorkerRegister />

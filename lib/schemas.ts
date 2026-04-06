@@ -10,6 +10,8 @@ import {
 import { sanitizeNoteHtml, stripNoteHtml } from "./note-html";
 
 export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
+export const MAX_AVATAR_FILE_BYTES = 1024 * 1024;
+const MAX_AVATAR_DATA_URL_LENGTH = 1_500_000;
 
 function normaliseInlineText(value: string): string {
   return value
@@ -268,8 +270,8 @@ export const bioProfileSchema = z.object({
     .union([
       z
         .string()
-        .refine((value) => value.length <= 250000, {
-          message: "Avatar is too large.",
+        .refine((value) => value.length <= MAX_AVATAR_DATA_URL_LENGTH, {
+          message: "Avatar must be 1MB or less.",
         })
         .refine(isAvatarValue, {
           message: "Avatar must be an image data URL or URL.",

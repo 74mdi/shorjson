@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest) {
     animationPreset: parsed.data.animationPreset,
     backgroundStyle: parsed.data.backgroundStyle,
     buttonSize: parsed.data.buttonSize,
-    watermarkText: parsed.data.watermarkText,
+    watermarkText: "made with shor",
     showThemeToggle: parsed.data.showThemeToggle,
     updatedAt: new Date().toISOString(),
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import styles from "./PublicBioPage.module.css";
 import type { BioPage } from "@/lib/bio-shared";
@@ -265,6 +265,13 @@ function renderIcon(value: string) {
   return <span aria-hidden="true">{value || "🔗"}</span>;
 }
 
+function getResolvedIconColor(value: string): string {
+  const normalizedValue = value.trim().toLowerCase();
+  return !normalizedValue || normalizedValue === "#1c1916"
+    ? "currentColor"
+    : value;
+}
+
 function groupLinks(page: BioPage) {
   const sections = new Map<string, BioPage["links"]>();
 
@@ -278,62 +285,234 @@ function groupLinks(page: BioPage) {
   return [...sections.entries()];
 }
 
-const PAGE_THEME_STYLES: Record<BioPage["themePreset"], Record<string, string>> = {
+type ThemeTokens = {
+  bg: string;
+  border: string;
+  faint: string;
+  muted: string;
+  surface: string;
+  text: string;
+};
+
+const PAGE_THEME_STYLES: Record<
+  BioPage["themePreset"],
+  { dark: ThemeTokens; light: ThemeTokens }
+> = {
   mono: {
-    "--page-bg": "#f5f5f4",
-    "--page-surface": "#ffffff",
-    "--page-border": "#e7e5e4",
-    "--page-text": "#111111",
-    "--page-muted": "#78716c",
-    "--page-faint": "#a8a29e",
+    light: {
+      bg: "#f5f5f4",
+      surface: "#ffffff",
+      border: "#e7e5e4",
+      text: "#111111",
+      muted: "#78716c",
+      faint: "#a8a29e",
+    },
+    dark: {
+      bg: "#080808",
+      surface: "#141414",
+      border: "#27272a",
+      text: "#fafafa",
+      muted: "#a1a1aa",
+      faint: "#52525b",
+    },
   },
   paper: {
-    "--page-bg": "#f5f0e8",
-    "--page-surface": "#faf8f4",
-    "--page-border": "#e8e2d8",
-    "--page-text": "#1c1916",
-    "--page-muted": "#9c9488",
-    "--page-faint": "#b8ae9e",
+    light: {
+      bg: "#f5f0e8",
+      surface: "#faf8f4",
+      border: "#e8e2d8",
+      text: "#1c1916",
+      muted: "#9c9488",
+      faint: "#b8ae9e",
+    },
+    dark: {
+      bg: "#16110d",
+      surface: "#221a14",
+      border: "#3a2f28",
+      text: "#f7efe4",
+      muted: "#c8b8a5",
+      faint: "#7a685b",
+    },
   },
   midnight: {
-    "--page-bg": "#09111f",
-    "--page-surface": "#0f1726",
-    "--page-border": "#213047",
-    "--page-text": "#f8fafc",
-    "--page-muted": "#94a3b8",
-    "--page-faint": "#64748b",
+    light: {
+      bg: "#eff4ff",
+      surface: "#ffffff",
+      border: "#d9e4ff",
+      text: "#0f172a",
+      muted: "#475569",
+      faint: "#94a3b8",
+    },
+    dark: {
+      bg: "#09111f",
+      surface: "#0f1726",
+      border: "#213047",
+      text: "#f8fafc",
+      muted: "#94a3b8",
+      faint: "#64748b",
+    },
   },
   ocean: {
-    "--page-bg": "#effcff",
-    "--page-surface": "#ffffff",
-    "--page-border": "#d7ecf1",
-    "--page-text": "#0f172a",
-    "--page-muted": "#4b5563",
-    "--page-faint": "#94a3b8",
+    light: {
+      bg: "#effcff",
+      surface: "#ffffff",
+      border: "#d7ecf1",
+      text: "#0f172a",
+      muted: "#4b5563",
+      faint: "#94a3b8",
+    },
+    dark: {
+      bg: "#071a20",
+      surface: "#0d252d",
+      border: "#1d414c",
+      text: "#ecfeff",
+      muted: "#9bd5df",
+      faint: "#4e7d89",
+    },
   },
   sunset: {
-    "--page-bg": "#fff7ed",
-    "--page-surface": "#ffffff",
-    "--page-border": "#fed7aa",
-    "--page-text": "#7c2d12",
-    "--page-muted": "#b45309",
-    "--page-faint": "#fdba74",
+    light: {
+      bg: "#fff7ed",
+      surface: "#ffffff",
+      border: "#fed7aa",
+      text: "#7c2d12",
+      muted: "#b45309",
+      faint: "#fdba74",
+    },
+    dark: {
+      bg: "#22110b",
+      surface: "#30160d",
+      border: "#66301b",
+      text: "#fff2e8",
+      muted: "#fdba74",
+      faint: "#8f5438",
+    },
   },
   forest: {
-    "--page-bg": "#eff6f0",
-    "--page-surface": "#f8fcf8",
-    "--page-border": "#d5e6d7",
-    "--page-text": "#15261a",
-    "--page-muted": "#5f7a67",
-    "--page-faint": "#9bb3a1",
+    light: {
+      bg: "#eff6f0",
+      surface: "#f8fcf8",
+      border: "#d5e6d7",
+      text: "#15261a",
+      muted: "#5f7a67",
+      faint: "#9bb3a1",
+    },
+    dark: {
+      bg: "#0b1510",
+      surface: "#112017",
+      border: "#213b29",
+      text: "#eefcf2",
+      muted: "#9ac6a4",
+      faint: "#53745c",
+    },
   },
   graphite: {
-    "--page-bg": "#eceef2",
-    "--page-surface": "#f8f9fb",
-    "--page-border": "#d5dae3",
-    "--page-text": "#171b24",
-    "--page-muted": "#677287",
-    "--page-faint": "#9ca3b2",
+    light: {
+      bg: "#eceef2",
+      surface: "#f8f9fb",
+      border: "#d5dae3",
+      text: "#171b24",
+      muted: "#677287",
+      faint: "#9ca3b2",
+    },
+    dark: {
+      bg: "#0f1218",
+      surface: "#161b23",
+      border: "#2a3340",
+      text: "#f5f7fb",
+      muted: "#a6b0c2",
+      faint: "#596375",
+    },
+  },
+  rose: {
+    light: {
+      bg: "#fff1f5",
+      surface: "#ffffff",
+      border: "#fecdd3",
+      text: "#831843",
+      muted: "#be185d",
+      faint: "#f9a8d4",
+    },
+    dark: {
+      bg: "#231017",
+      surface: "#31141f",
+      border: "#6b2742",
+      text: "#fff1f7",
+      muted: "#f9a8d4",
+      faint: "#9a4c69",
+    },
+  },
+  citrus: {
+    light: {
+      bg: "#fffbea",
+      surface: "#ffffff",
+      border: "#fde68a",
+      text: "#713f12",
+      muted: "#a16207",
+      faint: "#fcd34d",
+    },
+    dark: {
+      bg: "#1f1706",
+      surface: "#2c2209",
+      border: "#5d4c12",
+      text: "#fff8db",
+      muted: "#facc15",
+      faint: "#8d7424",
+    },
+  },
+  violet: {
+    light: {
+      bg: "#f5f3ff",
+      surface: "#ffffff",
+      border: "#ddd6fe",
+      text: "#4c1d95",
+      muted: "#7c3aed",
+      faint: "#c4b5fd",
+    },
+    dark: {
+      bg: "#160f2d",
+      surface: "#21163d",
+      border: "#4c2f79",
+      text: "#f5f3ff",
+      muted: "#c4b5fd",
+      faint: "#7f67ac",
+    },
+  },
+  terminal: {
+    light: {
+      bg: "#edfdf4",
+      surface: "#f9fffb",
+      border: "#bbf7d0",
+      text: "#14532d",
+      muted: "#15803d",
+      faint: "#86efac",
+    },
+    dark: {
+      bg: "#08110a",
+      surface: "#0d190f",
+      border: "#1f3f26",
+      text: "#dcfce7",
+      muted: "#86efac",
+      faint: "#4e7f59",
+    },
+  },
+  porcelain: {
+    light: {
+      bg: "#f8fafc",
+      surface: "#ffffff",
+      border: "#e2e8f0",
+      text: "#0f172a",
+      muted: "#64748b",
+      faint: "#cbd5e1",
+    },
+    dark: {
+      bg: "#111827",
+      surface: "#172033",
+      border: "#2f3a51",
+      text: "#f8fafc",
+      muted: "#cbd5e1",
+      faint: "#64748b",
+    },
   },
 };
 
@@ -342,6 +521,12 @@ const FONT_CLASS_NAMES: Record<BioPage["fontPreset"], string> = {
   editorial: styles.fontEditorial,
   grotesk: styles.fontGrotesk,
   mono: styles.fontMono,
+  sora: styles.fontSora,
+  fraunces: styles.fontFraunces,
+  outfit: styles.fontOutfit,
+  ibm: styles.fontIbm,
+  newsreader: styles.fontNewsreader,
+  syne: styles.fontSyne,
 };
 
 const MOTION_CLASS_NAMES: Record<BioPage["animationPreset"], string> = {
@@ -366,10 +551,19 @@ const BUTTON_SIZE_CLASS_NAMES: Record<BioPage["buttonSize"], string> = {
   roomy: "btn-size-roomy",
 };
 
-function getPageStyle(page: BioPage): CSSProperties {
+function getPageStyle(
+  page: BioPage,
+  mode: "dark" | "light",
+): CSSProperties {
+  const theme = PAGE_THEME_STYLES[page.themePreset][mode];
   return {
     ["--accent" as string]: page.accentColor,
-    ...PAGE_THEME_STYLES[page.themePreset],
+    ["--page-bg" as string]: theme.bg,
+    ["--page-surface" as string]: theme.surface,
+    ["--page-border" as string]: theme.border,
+    ["--page-text" as string]: theme.text,
+    ["--page-muted" as string]: theme.muted,
+    ["--page-faint" as string]: theme.faint,
   } as CSSProperties;
 }
 
@@ -380,13 +574,20 @@ export default function PublicBioPage({
   page: BioPage;
   preview?: boolean;
 }) {
-  const [manualDark, setManualDark] = useState(false);
+  const [colorMode, setColorMode] = useState<"dark" | "light">("light");
   const sections = groupLinks(page);
-  const pageStyle = getPageStyle(page);
   const fontClassName = FONT_CLASS_NAMES[page.fontPreset];
   const motionClassName = MOTION_CLASS_NAMES[page.animationPreset];
   const backgroundClassName = BACKGROUND_CLASS_NAMES[page.backgroundStyle];
   const buttonSizeClassName = BUTTON_SIZE_CLASS_NAMES[page.buttonSize];
+  const pageStyle = useMemo(() => getPageStyle(page, colorMode), [colorMode, page]);
+
+  useEffect(() => {
+    const nextMode = document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light";
+    setColorMode(nextMode);
+  }, []);
 
   return (
     <div
@@ -395,7 +596,6 @@ export default function PublicBioPage({
         fontClassName,
         motionClassName,
         backgroundClassName,
-        manualDark ? styles.manualDark : "",
         preview ? styles.previewMode : "",
       ].join(" ")}
       style={pageStyle}
@@ -406,9 +606,11 @@ export default function PublicBioPage({
             <button
               type="button"
               className={styles.themeToggle}
-              onClick={() => setManualDark((value) => !value)}
+              onClick={() =>
+                setColorMode((value) => (value === "dark" ? "light" : "dark"))
+              }
             >
-              {manualDark ? "Light" : "Dark"}
+              {colorMode === "dark" ? "Light" : "Dark"}
             </button>
           ) : null}
           {page.avatar ? (
@@ -455,7 +657,9 @@ export default function PublicBioPage({
                       >
                         <span
                           className={styles.iconWrap}
-                          style={{ color: link.iconColor || "currentColor" }}
+                          style={{
+                            color: getResolvedIconColor(link.iconColor),
+                          }}
                         >
                           {renderIcon(link.icon)}
                         </span>

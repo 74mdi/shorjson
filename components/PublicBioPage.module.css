@@ -5,6 +5,18 @@
   --page-text: var(--text);
   --page-muted: var(--text-muted);
   --page-faint: var(--text-faint);
+  --bg: var(--page-bg);
+  --surface: var(--page-surface);
+  --surface-raised: color-mix(in srgb, var(--page-surface) 90%, var(--page-text) 10%);
+  --border: var(--page-border);
+  --border2: color-mix(in srgb, var(--page-border) 76%, var(--page-text) 24%);
+  --text: var(--page-text);
+  --text-muted: var(--page-muted);
+  --text-faint: var(--page-faint);
+  --accent-hover: color-mix(in srgb, var(--accent) 82%, var(--page-text) 18%);
+  --accent-glow: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-soft-border: color-mix(in srgb, var(--accent) 26%, var(--page-border));
   --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --bio-heading-font: var(--font-instrument-serif), Georgia, serif;
   --bio-avatar-animation: bioAvatarIn 400ms ease both;
@@ -55,11 +67,13 @@
   right: 0;
   border: 1px solid var(--page-border);
   border-radius: 999px;
-  background: var(--page-surface);
+  background: color-mix(in srgb, var(--page-surface) 72%, transparent);
   color: var(--page-muted);
   padding: 7px 10px;
   font-size: 0.68rem;
   cursor: pointer;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
   transition:
     border-color 180ms ease,
     color 180ms ease,
@@ -202,15 +216,6 @@
   text-align: center;
 }
 
-.manualDark {
-  --page-bg: #070b12;
-  --page-surface: #101826;
-  --page-border: #243244;
-  --page-text: #f8fafc;
-  --page-muted: #94a3b8;
-  --page-faint: #64748b;
-}
-
 .fontSans {
   --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --bio-heading-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
@@ -229,6 +234,36 @@
 .fontMono {
   --bio-body-font: var(--font-geist-mono), ui-monospace, monospace;
   --bio-heading-font: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+.fontSora {
+  --bio-body-font: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+  --bio-heading-font: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fontFraunces {
+  --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --bio-heading-font: var(--font-fraunces), Georgia, serif;
+}
+
+.fontOutfit {
+  --bio-body-font: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  --bio-heading-font: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fontIbm {
+  --bio-body-font: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --bio-heading-font: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.fontNewsreader {
+  --bio-body-font: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+  --bio-heading-font: var(--font-newsreader), Georgia, serif;
+}
+
+.fontSyne {
+  --bio-body-font: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
+  --bio-heading-font: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
 }
 
 .motionMorph {

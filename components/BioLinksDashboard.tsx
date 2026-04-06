@@ -76,6 +76,7 @@ type DashboardLink = {
 const STYLE_OPTIONS: ButtonStyle[] = [
   "minimal",
   "outline",
+  "outline-bold",
   "filled",
   "pill",
   "soft",
@@ -95,6 +96,40 @@ const STYLE_OPTIONS: ButtonStyle[] = [
   "tint",
   "grid",
   "cutout",
+  "line",
+  "panel",
+  "slab",
+  "tab",
+  "notch",
+  "frost",
+  "mist",
+  "veil",
+  "aero",
+  "halo",
+  "glow",
+  "neon",
+  "quiet",
+  "bold",
+  "poster",
+  "lifted",
+  "inset",
+  "etched",
+  "mono",
+  "pixel",
+  "ribbon",
+  "window",
+  "tile",
+  "soft-outline",
+  "ring",
+  "trace",
+  "badge",
+  "stack",
+  "solid",
+  "duo",
+  "flare",
+  "paperclip",
+  "spring",
+  "float",
 ];
 
 const COLOR_PRESETS = [
@@ -158,6 +193,36 @@ const THEME_OPTIONS: Array<{
     accentColor: "#334155",
     description: "Cool editorial gray with sharper contrast.",
   },
+  {
+    id: "rose",
+    label: "Rose",
+    accentColor: "#e11d48",
+    description: "Soft pink editorial palette with stronger highlights.",
+  },
+  {
+    id: "citrus",
+    label: "Citrus",
+    accentColor: "#d97706",
+    description: "Bright lemon-paper tones with warm contrast.",
+  },
+  {
+    id: "violet",
+    label: "Violet",
+    accentColor: "#7c3aed",
+    description: "Rich purple palette that stays readable in both modes.",
+  },
+  {
+    id: "terminal",
+    label: "Terminal",
+    accentColor: "#22c55e",
+    description: "Green-leaning interface with a crisp dark version.",
+  },
+  {
+    id: "porcelain",
+    label: "Porcelain",
+    accentColor: "#2563eb",
+    description: "Cool clean white-blue system with sharp contrast.",
+  },
 ];
 
 const FONT_OPTIONS: Array<{
@@ -169,6 +234,12 @@ const FONT_OPTIONS: Array<{
   { id: "editorial", label: "Editorial", preview: "Serif-led and refined" },
   { id: "grotesk", label: "Grotesk", preview: "Modern and airy" },
   { id: "mono", label: "Mono", preview: "Code-like and crisp" },
+  { id: "sora", label: "Sora", preview: "Futuristic and smooth" },
+  { id: "fraunces", label: "Fraunces", preview: "Decorative serif contrast" },
+  { id: "outfit", label: "Outfit", preview: "Rounded modern UI tone" },
+  { id: "ibm", label: "IBM Plex", preview: "Utility-first and structured" },
+  { id: "newsreader", label: "Newsreader", preview: "Soft editorial book tone" },
+  { id: "syne", label: "Syne", preview: "Bold expressive headings" },
 ];
 
 const ANIMATION_OPTIONS: Array<{
@@ -630,7 +701,7 @@ export default function BioLinksDashboard({
       buttonSize: nextProfile.buttonSize,
       fontPreset: nextProfile.fontPreset,
       themePreset: nextProfile.themePreset,
-      watermarkText: nextProfile.watermarkText.trim() || "made with shor",
+      watermarkText: "made with shor",
       showThemeToggle: nextProfile.showThemeToggle,
     };
   }
@@ -1681,29 +1752,16 @@ export default function BioLinksDashboard({
                   </div>
                 </div>
 
-                <label className={styles.fieldGroup}>
+                <div className={styles.fieldGroup}>
                   <span className={styles.label}>Watermark</span>
-                  <input
-                    className={styles.input}
-                    value={profile.watermarkText}
-                    maxLength={48}
-                    onChange={(event) => {
-                      setProfile((current) => ({
-                        ...current,
-                        watermarkText: event.target.value,
-                      }));
-                    }}
-                    onBlur={() => {
-                      const nextWatermark = profile.watermarkText.trim() || "made with shor";
-                      const nextProfile = {
-                        ...profile,
-                        watermarkText: nextWatermark,
-                      };
-                      setProfile(nextProfile);
-                      queueStyleSave(buildStylePayload(nextProfile));
-                    }}
-                  />
-                </label>
+                  <div className={styles.profileCard}>
+                    <div className={styles.profileCardTitle}>made with shor</div>
+                    <div className={styles.profileCardText}>
+                      The watermark now stays visible on every public page and
+                      cannot be removed.
+                    </div>
+                  </div>
+                </div>
 
                 <div className={styles.fieldGroup}>
                   <span className={styles.label}>Public theme toggle</span>

@@ -1,6 +1,7 @@
 export type ButtonStyle =
   | "minimal"
   | "outline"
+  | "outline-bold"
   | "filled"
   | "pill"
   | "soft"
@@ -19,7 +20,41 @@ export type ButtonStyle =
   | "capsule"
   | "tint"
   | "grid"
-  | "cutout";
+  | "cutout"
+  | "line"
+  | "panel"
+  | "slab"
+  | "tab"
+  | "notch"
+  | "frost"
+  | "mist"
+  | "veil"
+  | "aero"
+  | "halo"
+  | "glow"
+  | "neon"
+  | "quiet"
+  | "bold"
+  | "poster"
+  | "lifted"
+  | "inset"
+  | "etched"
+  | "mono"
+  | "pixel"
+  | "ribbon"
+  | "window"
+  | "tile"
+  | "soft-outline"
+  | "ring"
+  | "trace"
+  | "badge"
+  | "stack"
+  | "solid"
+  | "duo"
+  | "flare"
+  | "paperclip"
+  | "spring"
+  | "float";
 
 export type ThemePreset =
   | "mono"
@@ -28,13 +63,24 @@ export type ThemePreset =
   | "ocean"
   | "sunset"
   | "forest"
-  | "graphite";
+  | "graphite"
+  | "rose"
+  | "citrus"
+  | "violet"
+  | "terminal"
+  | "porcelain";
 
 export type FontPreset =
   | "sans"
   | "editorial"
   | "grotesk"
-  | "mono";
+  | "mono"
+  | "sora"
+  | "fraunces"
+  | "outfit"
+  | "ibm"
+  | "newsreader"
+  | "syne";
 
 export type AnimationPreset =
   | "morph"
@@ -58,6 +104,7 @@ export type ButtonSize =
 const BUTTON_STYLES: ButtonStyle[] = [
   "minimal",
   "outline",
+  "outline-bold",
   "filled",
   "pill",
   "soft",
@@ -77,6 +124,40 @@ const BUTTON_STYLES: ButtonStyle[] = [
   "tint",
   "grid",
   "cutout",
+  "line",
+  "panel",
+  "slab",
+  "tab",
+  "notch",
+  "frost",
+  "mist",
+  "veil",
+  "aero",
+  "halo",
+  "glow",
+  "neon",
+  "quiet",
+  "bold",
+  "poster",
+  "lifted",
+  "inset",
+  "etched",
+  "mono",
+  "pixel",
+  "ribbon",
+  "window",
+  "tile",
+  "soft-outline",
+  "ring",
+  "trace",
+  "badge",
+  "stack",
+  "solid",
+  "duo",
+  "flare",
+  "paperclip",
+  "spring",
+  "float",
 ];
 
 const THEME_PRESETS: ThemePreset[] = [
@@ -87,6 +168,11 @@ const THEME_PRESETS: ThemePreset[] = [
   "sunset",
   "forest",
   "graphite",
+  "rose",
+  "citrus",
+  "violet",
+  "terminal",
+  "porcelain",
 ];
 
 const FONT_PRESETS: FontPreset[] = [
@@ -94,6 +180,12 @@ const FONT_PRESETS: FontPreset[] = [
   "editorial",
   "grotesk",
   "mono",
+  "sora",
+  "fraunces",
+  "outfit",
+  "ibm",
+  "newsreader",
+  "syne",
 ];
 
 const ANIMATION_PRESETS: AnimationPreset[] = [
@@ -216,7 +308,7 @@ export function buildBioPageData(
     animationPreset: profile.animationPreset,
     backgroundStyle: profile.backgroundStyle,
     buttonSize: profile.buttonSize,
-    watermarkText: profile.watermarkText || "made with shor",
+    watermarkText: "made with shor",
     showThemeToggle: profile.showThemeToggle,
     links: links
       .filter((link) => link.visible)

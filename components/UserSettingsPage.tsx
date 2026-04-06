@@ -15,6 +15,7 @@ import type { BioProfile } from "@/lib/account-types";
 import { getPublicBioPath } from "@/lib/bio-shared";
 import {
   bioProfileSchema,
+  MAX_AVATAR_FILE_BYTES,
   passwordChangeSchema,
   USERNAME_PATTERN,
 } from "@/lib/schemas";
@@ -238,6 +239,15 @@ export default function UserSettingsPage({
   function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_AVATAR_FILE_BYTES) {
+      setProfileErrors((current) => ({
+        ...current,
+        avatar: ["Avatar must be 1MB or less."],
+      }));
+      event.target.value = "";
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
