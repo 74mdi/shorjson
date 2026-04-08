@@ -1,14 +1,11 @@
 // app/api/shorten/route.ts
 // POST /api/shorten
-// If a remote server is configured (lib/config.ts), proxies the request there.
-// Otherwise falls back to local JSON file storage.
-// Each link is stored as a LinkEntry { originalUrl, createdAt, clicks }.
+// Stores each short link directly in PostgreSQL.
 
 import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { getLinks, setLink } from "@/lib/adapter-utils";
+import { getLink, listLinksByUserId, setLink } from "@/lib/adapter-utils";
 import { applySessionRefresh, getRequestSession } from "@/lib/auth";
-import { getRemoteServerUrl } from "@/lib/config";
 import {
   getOptionalPassword,
   hashLinkPassword,
@@ -17,7 +14,7 @@ import {
   verifyLinkPassword,
 } from "@/lib/link-protection";
 import { getClientIp, verifySameOrigin } from "@/lib/security";
-import type { LinkEntry } from "@/lib/storage";
+import type { LinkEntry } from "@/lib/link-types";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -224,61 +221,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: sc.reason }, { status: 422 });
   }
 
-  // 4. If remote server configured, proxy there
-  const remoteUrl = getRemoteServerUrl();
-  if (remoteUrl) {
-    if (password) {
-      return NextResponse.json(
-        {
-          error:
-            "Password-protected links are only available when koki is storing links locally or in a configured database.",
-        },
-        { status: 400 },
-      );
-    }
-    if (clickLimit !== undefined) {
-      return NextResponse.json(
-        {
-          error:
-            "Click limits are only available when koki is storing links locally or in a configured database.",
-        },
-        { status: 400 },
-      );
-    }
-
-    try {
-      const upstream = await fetch(`${remoteUrl}/api/links`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: originalUrl, slug: customSlug }),
-        signal: AbortSignal.timeout(5000),
-      });
-      const data = await upstream.json().catch(() => ({}));
-      if (!upstream.ok) {
-        return NextResponse.json(
-          {
-            error: (data as { error?: string }).error ?? "Remote server error.",
-          },
-          { status: upstream.status },
-        );
-      }
-      const { shortId } = data as { shortId: string };
-      const response = NextResponse.json(
-        { shortId, shortUrl: `${getBaseUrl(req)}/${shortId}`, hasPassword: false },
-        { status: upstream.status === 201 ? 201 : 200 },
-      );
-      applySessionRefresh(response, refreshedToken);
-      return response;
-    } catch {
-      return NextResponse.json(
-        { error: "Could not reach remote server. Is it running?" },
-        { status: 503 },
-      );
-    }
-  }
-
-  // 5. Local storage path
-  const links = await getLinks();
+  // 4. Database path
   const now = new Date().toISOString();
 
   async function matchesProtection(entry: LinkEntry) {
@@ -299,10 +242,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (customSlug !== undefined) {
-    const existingEntry = links[customSlug];
+    const existingEntry = await getLink(customSlug);
     // Slug taken by a different URL → conflict
     if (
       existingEntry !== undefined &&
+      existingEntry !== null &&
       (existingEntry.originalUrl !== originalUrl ||
         existingEntry.userId !== activeSession.userId)
     ) {
@@ -312,7 +256,7 @@ export async function POST(req: NextRequest) {
       );
     }
     // Slug already points to the same URL → return existing metadata
-    if (existingEntry !== undefined) {
+    if (existingEntry) {
       if (!(await matchesProtection(existingEntry))) {
         return NextResponse.json(
           {
@@ -333,12 +277,23 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if ((existingEntry.expiresAt ?? null) !== (expiresAt ?? null)) {
+        return NextResponse.json(
+          {
+            error:
+              "That slug already exists with a different expiration configuration.",
+          },
+          { status: 409 },
+        );
+      }
+
       const response = NextResponse.json({
         shortId: customSlug,
         shortUrl: `${getBaseUrl(req)}/${customSlug}`,
         createdAt: existingEntry.createdAt,
         clicks: existingEntry.clicks,
         clickLimit: existingEntry.clickLimit ?? null,
+        expiresAt: existingEntry.expiresAt ?? null,
         hasPassword: isPasswordProtected(existingEntry),
       });
       applySessionRefresh(response, refreshedToken);
@@ -361,18 +316,19 @@ export async function POST(req: NextRequest) {
   }
 
   // Deduplication: same URL + same protection config → return existing metadata
-  for (const [existingId, existingMeta] of Object.entries(links)) {
-    if (existingMeta.userId !== activeSession.userId) continue;
+  for (const existingMeta of await listLinksByUserId(activeSession.userId)) {
     if (existingMeta.originalUrl !== originalUrl) continue;
     if (!(await matchesProtection(existingMeta))) continue;
     if ((existingMeta.clickLimit ?? null) !== (clickLimit ?? null)) continue;
+    if ((existingMeta.expiresAt ?? null) !== (expiresAt ?? null)) continue;
 
     const response = NextResponse.json({
-      shortId: existingId,
-      shortUrl: `${getBaseUrl(req)}/${existingId}`,
+      shortId: existingMeta.shortId,
+      shortUrl: `${getBaseUrl(req)}/${existingMeta.shortId}`,
       createdAt: existingMeta.createdAt,
       clicks: existingMeta.clicks,
       clickLimit: existingMeta.clickLimit ?? null,
+      expiresAt: existingMeta.expiresAt ?? null,
       hasPassword: isPasswordProtected(existingMeta),
     });
     applySessionRefresh(response, refreshedToken);
@@ -381,8 +337,8 @@ export async function POST(req: NextRequest) {
 
   let shortId = nanoid(7);
   let attempts = 0;
-  while (links[shortId] && attempts++ < 5) shortId = nanoid(7);
-  if (links[shortId]) {
+  while ((await getLink(shortId)) && attempts++ < 5) shortId = nanoid(7);
+  if (await getLink(shortId)) {
     return NextResponse.json(
       { error: "Unable to generate a unique short ID. Please try again." },
       { status: 500 },

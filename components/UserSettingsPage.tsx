@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   useEffect,
@@ -27,22 +26,6 @@ import {
   USERNAME_PATTERN,
 } from "@/lib/schemas";
 import { applyTheme, getCurrentThemeIsDark, subscribeToTheme } from "@/lib/theme-client";
-
-const DbPanel = dynamic(() => import("./DbPanel"), {
-  ssr: false,
-  loading: () => (
-    <div
-      className="rounded-2xl border px-4 py-5 text-sm"
-      style={{
-        borderColor: "var(--border)",
-        background: "var(--surface)",
-        color: "var(--text-muted)",
-      }}
-    >
-      Loading settings...
-    </div>
-  ),
-});
 
 type ProfileFieldErrors = Partial<
   Record<"avatar" | "bio" | "displayName" | "username", string[]>
@@ -99,7 +82,6 @@ export default function UserSettingsPage({
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [siteOrigin, setSiteOrigin] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
 
@@ -1055,9 +1037,9 @@ export default function UserSettingsPage({
                   <div
                     className="pt-1 text-xs leading-6"
                     style={{ color: "var(--text-muted)" }}
-                  >
-                    Toggle the app theme for this device.
-                  </div>
+                >
+                  Toggle the app theme for this device.
+                </div>
                 </button>
 
                 <div
@@ -1068,9 +1050,8 @@ export default function UserSettingsPage({
                     color: "var(--text-muted)",
                   }}
                 >
-                  The profile screen now includes your settings directly. Only
-                  data tools stay behind a separate button so the page stays
-                  cleaner.
+                  Your profile, notes, links, and public page settings now save
+                  directly to your Neon-backed workspace.
                 </div>
               </div>
             </section>
@@ -1080,34 +1061,15 @@ export default function UserSettingsPage({
                 className="text-[11px] uppercase tracking-[0.18em]"
                 style={{ color: "var(--text-faint)" }}
               >
-                Utilities
+                Session
               </p>
               <h2
                 className="pt-2 text-xl font-semibold"
                 style={{ color: "var(--text)" }}
               >
-                Data and session
+                Sign out
               </h2>
               <div className="grid gap-3 pt-5">
-                <button
-                  type="button"
-                  onClick={() => setSettingsOpen(true)}
-                  className={actionButtonClassName}
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg)",
-                    color: "var(--text)",
-                  }}
-                >
-                  <div className="text-sm font-medium">Open data tools</div>
-                  <div
-                    className="pt-1 text-xs leading-6"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    Database connections, import/export, and remote sync live here.
-                  </div>
-                </button>
-
                 <button
                   type="button"
                   onClick={() => void handleSignOut()}
@@ -1134,10 +1096,6 @@ export default function UserSettingsPage({
           </div>
         </div>
       </div>
-
-      {settingsOpen ? (
-        <DbPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      ) : null}
     </main>
   );
 }

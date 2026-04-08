@@ -1,14 +1,4 @@
 import { getActiveAdapter } from "./db-adapter";
-import {
-  readBioLinksFile,
-  readBioProfilesFile,
-  readPrivateNotesFile,
-  readUsersFile,
-  writeBioLinksFile,
-  writeBioProfilesFile,
-  writePrivateNotesFile,
-  writeUsersFile,
-} from "./account-file-storage";
 import type {
   AccountUser,
   BioLink,
@@ -178,98 +168,40 @@ function sortPrivateNotes(items: PrivateNote[]): PrivateNote[] {
 }
 
 export async function getUserById(userId: string): Promise<AccountUser | null> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getAccountUserById(userId);
-  }
-
-  return readUsersFile()[userId] ?? null;
+  return (await getActiveAdapter()).getAccountUserById(userId);
 }
 
 export async function getUserByUsername(
   username: string,
 ): Promise<AccountUser | null> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getAccountUserByUsername(username);
-  }
-
-  return (
-    Object.values(readUsersFile()).find((user) => user.username === username) ??
-    null
-  );
+  return (await getActiveAdapter()).getAccountUserByUsername(username);
 }
 
 export async function createUser(user: AccountUser): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.createAccountUser(user);
-    return;
-  }
-
-  const users = readUsersFile();
-  users[user.id] = user;
-  writeUsersFile(users);
+  await (await getActiveAdapter()).createAccountUser(user);
 }
 
 export async function updateUser(user: AccountUser): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.updateAccountUser(user);
-    return;
-  }
-
-  const users = readUsersFile();
-  users[user.id] = user;
-  writeUsersFile(users);
+  await (await getActiveAdapter()).updateAccountUser(user);
 }
 
 export async function getBioProfileByUserId(
   userId: string,
 ): Promise<BioProfile | null> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getBioProfileByUserId(userId);
-  }
-
-  const user = await getUserById(userId);
-  const profile = Object.values(readBioProfilesFile()).find(
-    (value) => value.userId === userId,
-  );
-  if (!profile) return null;
-
-  return normaliseBioProfile(profile, user?.username ?? "");
+  return (await getActiveAdapter()).getBioProfileByUserId(userId);
 }
 
 export async function getBioProfileByUsername(
   username: string,
 ): Promise<BioProfile | null> {
   const normalizedUsername = username.trim().toLowerCase();
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getBioProfileByUsername(normalizedUsername);
-  }
-
-  const profile = Object.values(readBioProfilesFile()).find(
-    (value) =>
-      typeof value.username === "string" &&
-      value.username.toLowerCase() === normalizedUsername,
-  );
-  if (!profile) return null;
-
-  return normaliseBioProfile(profile, normalizedUsername);
+  return (await getActiveAdapter()).getBioProfileByUsername(normalizedUsername);
 }
 
 export async function saveBioProfile(profile: BioProfile): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.writeBioProfile(profile);
-    return;
-  }
-
-  const profiles = readBioProfilesFile();
-  profiles[profile.id] = normaliseBioProfile(profile, profile.username);
-  writeBioProfilesFile(profiles);
+  await (await getActiveAdapter()).writeBioProfile(
+    normaliseBioProfile(profile, profile.username),
+  );
 }
 
 export async function ensureBioProfileForUser(
@@ -330,127 +262,53 @@ export async function isBioUsernameAvailable(
 }
 
 export async function listBioLinks(userId: string): Promise<BioLink[]> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.readBioLinks(userId);
-  }
-
-  const profile = await ensureBioProfileForUser(userId);
-
-  return sortBioLinks(
-    Object.values(readBioLinksFile())
-      .map((link) => normaliseBioLink(link, userId, profile?.id ?? ""))
-      .filter((link) => link.userId === userId),
-  );
+  return sortBioLinks(await (await getActiveAdapter()).readBioLinks(userId));
 }
 
 export async function getBioLinkById(
   userId: string,
   id: string,
 ): Promise<BioLink | null> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getBioLinkById(userId, id);
-  }
-
-  const profile = await ensureBioProfileForUser(userId);
-  const link = readBioLinksFile()[id];
-  if (!link || link.userId !== userId) return null;
-  return normaliseBioLink(link, userId, profile?.id ?? "");
+  return (await getActiveAdapter()).getBioLinkById(userId, id);
 }
 
 export async function saveBioLink(link: BioLink): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.writeBioLink(link);
-    return;
-  }
-
-  const links = readBioLinksFile();
-  links[link.id] = normaliseBioLink(link, link.userId, link.profileId);
-  writeBioLinksFile(links);
+  await (await getActiveAdapter()).writeBioLink(
+    normaliseBioLink(link, link.userId, link.profileId),
+  );
 }
 
 export async function deleteBioLink(
   userId: string,
   id: string,
 ): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.deleteBioLink(userId, id);
-    return;
-  }
-
-  const links = readBioLinksFile();
-  if (links[id]?.userId === userId) {
-    delete links[id];
-    writeBioLinksFile(links);
-  }
+  await (await getActiveAdapter()).deleteBioLink(userId, id);
 }
 
 export async function listPrivateNotes(userId: string): Promise<PrivateNote[]> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.readPrivateNotes(userId);
-  }
-
-  return sortPrivateNotes(
-    Object.values(readPrivateNotesFile())
-      .map((note) => normalisePrivateNote(note))
-      .filter((note) => note.userId === userId),
-  );
+  return sortPrivateNotes(await (await getActiveAdapter()).readPrivateNotes(userId));
 }
 
 export async function getPrivateNoteById(
   userId: string,
   id: string,
 ): Promise<PrivateNote | null> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getPrivateNoteById(userId, id);
-  }
-
-  const note = readPrivateNotesFile()[id];
-  if (!note || note.userId !== userId) return null;
-  return normalisePrivateNote(note);
+  return (await getActiveAdapter()).getPrivateNoteById(userId, id);
 }
 
 export async function getPrivateNoteBySlug(slug: string): Promise<PrivateNote | null> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    return adapter.getPrivateNoteBySlug(slug);
-  }
-
-  const note = Object.values(readPrivateNotesFile()).find(n => n.slug === slug);
-  if (!note) return null;
-  return normalisePrivateNote(note);
+  return (await getActiveAdapter()).getPrivateNoteBySlug(slug);
 }
 
 export async function savePrivateNote(note: PrivateNote): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.writePrivateNote(note);
-    return;
-  }
-
-  const notes = readPrivateNotesFile();
-  notes[note.id] = note;
-  writePrivateNotesFile(notes);
+  await (await getActiveAdapter()).writePrivateNote(
+    normalisePrivateNote(note),
+  );
 }
 
 export async function deletePrivateNote(
   userId: string,
   id: string,
 ): Promise<void> {
-  const adapter = await getActiveAdapter().catch(() => null);
-  if (adapter) {
-    await adapter.deletePrivateNote(userId, id);
-    return;
-  }
-
-  const notes = readPrivateNotesFile();
-  if (notes[id]?.userId === userId) {
-    delete notes[id];
-    writePrivateNotesFile(notes);
-  }
+  await (await getActiveAdapter()).deletePrivateNote(userId, id);
 }

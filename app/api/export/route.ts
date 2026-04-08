@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuthenticatedRequest } from "@/lib/api-auth";
 import { applySessionRefresh } from "@/lib/auth";
-import { getLinks } from "@/lib/adapter-utils";
+import { listLinksByUserId } from "@/lib/adapter-utils";
 import { listBioLinks, listPrivateNotes } from "@/lib/account-data";
 import { signExportPayload } from "@/lib/auth";
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const [links, notes, shortLinks] = await Promise.all([
     listBioLinks(auth.session.userId),
     listPrivateNotes(auth.session.userId),
-    getLinks(),
+    listLinksByUserId(auth.session.userId),
   ]);
 
   const payload = {
@@ -24,12 +24,7 @@ export async function GET(request: NextRequest) {
       username: auth.session.username,
     },
     bioLinks: links,
-    shortLinks: Object.entries(shortLinks)
-      .filter(([, entry]) => entry.userId === auth.session.userId)
-      .map(([shortId, entry]) => ({
-        shortId,
-        ...entry,
-      })),
+    shortLinks,
     notes,
   };
 

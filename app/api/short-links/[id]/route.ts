@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAuthenticatedRequest, jsonWithOptionalRefresh } from "@/lib/api-auth";
-import { getLinks, removeLink } from "@/lib/adapter-utils";
+import { getLink, removeLink } from "@/lib/adapter-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +12,7 @@ export async function DELETE(
   if ("response" in auth) return auth.response;
 
   const { id } = await params;
-  const links = await getLinks();
-  const entry = links[id];
+  const entry = await getLink(id);
 
   if (!entry) {
     return jsonWithOptionalRefresh(

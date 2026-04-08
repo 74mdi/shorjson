@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireAuthenticatedRequest, jsonWithOptionalRefresh } from "@/lib/api-auth";
-import { getLinks } from "@/lib/adapter-utils";
+import { listLinksByUserId } from "@/lib/adapter-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -8,11 +8,9 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuthenticatedRequest(request);
   if ("response" in auth) return auth.response;
 
-  const links = await getLinks();
-  const recentLinks = Object.entries(links)
-    .filter(([, entry]) => entry.userId === auth.session.userId)
-    .map(([shortId, entry]) => ({
-      shortId,
+  const recentLinks = (await listLinksByUserId(auth.session.userId))
+    .map((entry) => ({
+      shortId: entry.shortId,
       originalUrl: entry.originalUrl,
       createdAt: entry.createdAt,
       clicks: entry.clicks,

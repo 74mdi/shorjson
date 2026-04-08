@@ -1,6 +1,6 @@
 import { createHash, randomBytes, scrypt as scryptCallback, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import type { LinkEntry } from "./storage";
+import type { LinkEntry } from "./link-types";
 
 const scrypt = promisify(scryptCallback);
 

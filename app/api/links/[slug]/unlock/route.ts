@@ -1,6 +1,6 @@
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { NextRequest, NextResponse } from "next/server";
-import { getLinks } from "@/lib/adapter-utils";
+import { getLink } from "@/lib/adapter-utils";
 import {
   createUnlockCookieValue,
   getOptionalPassword,
@@ -56,8 +56,7 @@ export async function POST(
     );
   }
 
-  const links = await getLinks();
-  const entry = links[slug];
+  const entry = await getLink(slug);
 
   if (!entry) {
     return NextResponse.json({ error: "Link not found." }, { status: 404 });
@@ -91,4 +90,3 @@ export async function POST(
 
   return response;
 }
-

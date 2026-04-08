@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { clickLink, getLinks } from "@/lib/adapter-utils";
+import { clickLink } from "@/lib/adapter-utils";
 import { getLinkBySlug } from "@/lib/links";
 import {
   getUnlockCookieName,
@@ -136,10 +136,7 @@ export default async function SlugPage({
     }
   }
 
-  const localLinks = await getLinks();
-  if (localLinks[slug]) {
-    await clickLink(slug, localLinks);
-  }
+  await clickLink(slug);
 
   redirect(entry.originalUrl);
 }
