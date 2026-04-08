@@ -34,7 +34,6 @@ import {
 } from "@/lib/schemas";
 import {
   ANIMATION_PRESETS,
-  BACKGROUND_STYLES,
   buildBioPageData,
   getAccessibleTextColorForBackground,
   getButtonBlurValue,
@@ -47,7 +46,6 @@ import {
   getAnimationPresetPreview,
   getFontPresetLabel,
   getFontPresetPreview,
-  THEME_PRESETS,
   type AnimationPreset,
   type BackgroundStyle,
   type BioPage,
@@ -97,6 +95,25 @@ type DashboardLink = {
   url: string;
   userId: string;
   visible: boolean;
+};
+
+type StyleTemplate = {
+  id: string;
+  label: string;
+  description: string;
+  accentColor: string;
+  settings: Pick<
+    DashboardProfile,
+    | "animationPreset"
+    | "backgroundStyle"
+    | "buttonBlur"
+    | "buttonLabelStyle"
+    | "buttonSize"
+    | "buttonStyle"
+    | "fontPreset"
+    | "pageWidth"
+    | "themePreset"
+  >;
 };
 
 const STYLE_OPTIONS: readonly ButtonStyle[] = BUTTON_STYLES;
@@ -354,6 +371,94 @@ const BUTTON_LABEL_STYLE_OPTIONS: Array<{
   { id: "spaced", label: "Spaced", preview: "More tracking without forcing all-caps." },
 ];
 
+const STYLE_TEMPLATES: StyleTemplate[] = [
+  {
+    id: "minimal-studio",
+    label: "Minimal Studio",
+    description: "Quiet monochrome with clean spacing and almost no noise.",
+    accentColor: "#0a0a0a",
+    settings: {
+      animationPreset: "fade",
+      backgroundStyle: "plain",
+      buttonBlur: "none",
+      buttonLabelStyle: "normal",
+      buttonSize: "balanced",
+      buttonStyle: "quiet",
+      fontPreset: "sans",
+      pageWidth: "standard",
+      themePreset: "mono",
+    },
+  },
+  {
+    id: "paper-journal",
+    label: "Paper Journal",
+    description: "Soft editorial warmth with calmer cards and serif energy.",
+    accentColor: "#9a6b42",
+    settings: {
+      animationPreset: "soft-lift",
+      backgroundStyle: "linen",
+      buttonBlur: "none",
+      buttonLabelStyle: "normal",
+      buttonSize: "balanced",
+      buttonStyle: "outline-pill",
+      fontPreset: "editorial",
+      pageWidth: "standard",
+      themePreset: "paper",
+    },
+  },
+  {
+    id: "midnight-glass",
+    label: "Midnight Glass",
+    description: "Darker glassy surface with a cleaner tech-leaning tone.",
+    accentColor: "#93c5fd",
+    settings: {
+      animationPreset: "smooth-glide",
+      backgroundStyle: "halo",
+      buttonBlur: "strong",
+      buttonLabelStyle: "normal",
+      buttonSize: "balanced",
+      buttonStyle: "glass",
+      fontPreset: "sora",
+      pageWidth: "standard",
+      themePreset: "midnight",
+    },
+  },
+  {
+    id: "mono-poster",
+    label: "Mono Poster",
+    description: "Tighter layout with sharper type and stronger structure.",
+    accentColor: "#334155",
+    settings: {
+      animationPreset: "crisp-lift",
+      backgroundStyle: "grid",
+      buttonBlur: "none",
+      buttonLabelStyle: "uppercase",
+      buttonSize: "compact",
+      buttonStyle: "mono",
+      fontPreset: "mono",
+      pageWidth: "narrow",
+      themePreset: "graphite",
+    },
+  },
+  {
+    id: "warm-creator",
+    label: "Warm Creator",
+    description: "Brighter, roomier, and a little more expressive without feeling busy.",
+    accentColor: "#f97316",
+    settings: {
+      animationPreset: "soft-breeze",
+      backgroundStyle: "radial",
+      buttonBlur: "soft",
+      buttonLabelStyle: "normal",
+      buttonSize: "roomy",
+      buttonStyle: "soft",
+      fontPreset: "outfit",
+      pageWidth: "wide",
+      themePreset: "sunset",
+    },
+  },
+];
+
 const COMMON_EMOJIS = [
   "🔗",
   "✨",
@@ -521,6 +626,25 @@ function TrashIcon() {
   );
 }
 
+function DuplicateIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
 function SortableLinkItem({
   children,
   id,
@@ -599,6 +723,8 @@ export default function BioLinksDashboard({
   const [newLinkErrors, setNewLinkErrors] = useState<Record<string, string[]>>({});
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
+  const [linkSearch, setLinkSearch] = useState("");
+  const [activeSectionFilter, setActiveSectionFilter] = useState("all");
 
   const emojiPopoverRef = useRef<HTMLDivElement>(null);
   const profileSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -687,6 +813,7 @@ export default function BioLinksDashboard({
 
   const deferredProfile = useDeferredValue(profile);
   const deferredLinks = useDeferredValue(links);
+  const deferredLinkSearch = useDeferredValue(linkSearch);
   const previewPage = useMemo<BioPage>(() => {
     return buildBioPageData(deferredProfile, deferredLinks);
   }, [deferredLinks, deferredProfile]);
@@ -721,6 +848,63 @@ export default function BioLinksDashboard({
   ]);
   const publicPath = getPublicBioPath(profile.username || "username");
   const publicUrl = siteOrigin ? `${siteOrigin}${publicPath}` : publicPath;
+  const sectionOptions = useMemo(() => {
+    return [...new Set(links.map((link) => link.section.trim() || "main"))].sort(
+      (left, right) => {
+        if (left === "main") return -1;
+        if (right === "main") return 1;
+        return left.localeCompare(right);
+      },
+    );
+  }, [links]);
+  const totalLinks = links.length;
+  const visibleLinksCount = useMemo(
+    () => links.filter((link) => link.visible).length,
+    [links],
+  );
+  const hiddenLinksCount = totalLinks - visibleLinksCount;
+  const filteredLinks = useMemo(() => {
+    const search = deferredLinkSearch.trim().toLowerCase();
+
+    return links.filter((link) => {
+      const section = link.section.trim() || "main";
+      if (activeSectionFilter !== "all" && section !== activeSectionFilter) {
+        return false;
+      }
+
+      if (!search) return true;
+
+      return [link.title, link.url, section, link.icon].some((value) =>
+        value.toLowerCase().includes(search),
+      );
+    });
+  }, [activeSectionFilter, deferredLinkSearch, links]);
+  const hasLinkFilters =
+    activeSectionFilter !== "all" || deferredLinkSearch.trim().length > 0;
+  const currentTheme = THEME_OPTIONS.find(
+    (theme) => theme.id === profile.themePreset,
+  );
+  const currentTemplateId =
+    STYLE_TEMPLATES.find((template) => {
+      return (
+        profile.accentColor === template.accentColor &&
+        profile.animationPreset === template.settings.animationPreset &&
+        profile.backgroundStyle === template.settings.backgroundStyle &&
+        profile.buttonBlur === template.settings.buttonBlur &&
+        profile.buttonLabelStyle === template.settings.buttonLabelStyle &&
+        profile.buttonSize === template.settings.buttonSize &&
+        profile.buttonStyle === template.settings.buttonStyle &&
+        profile.fontPreset === template.settings.fontPreset &&
+        profile.pageWidth === template.settings.pageWidth &&
+        profile.themePreset === template.settings.themePreset
+      );
+    })?.id ?? null;
+
+  useEffect(() => {
+    if (activeSectionFilter === "all") return;
+    if (sectionOptions.includes(activeSectionFilter)) return;
+    setActiveSectionFilter("all");
+  }, [activeSectionFilter, sectionOptions]);
 
   function markSaved(setter: (value: SaveState) => void, timerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) {
     setter("saved");
@@ -1036,6 +1220,279 @@ export default function BioLinksDashboard({
     }, 1800);
   }
 
+  function handleSetAllLinksVisible(visible: boolean) {
+    const linkIdsToUpdate = links
+      .filter((link) => link.visible !== visible)
+      .map((link) => link.id);
+
+    if (linkIdsToUpdate.length === 0) return;
+
+    setLinks((current) =>
+      current.map((link) =>
+        linkIdsToUpdate.includes(link.id)
+          ? {
+              ...link,
+              visible,
+            }
+          : link,
+      ),
+    );
+    setLinksError("");
+    setLinksSaveState("saving");
+    linkIdsToUpdate.forEach((linkId) => {
+      queueLinkPatch(linkId, { visible });
+    });
+  }
+
+  async function handleDuplicateLink(link: DashboardLink) {
+    const parsed = bioLinkCreateSchema.safeParse({
+      icon: link.icon,
+      iconColor: link.iconColor,
+      section: link.section,
+      title: `${link.title} copy`,
+      url: link.url,
+      visible: link.visible,
+    });
+
+    if (!parsed.success) {
+      setLinksError("Unable to duplicate link.");
+      setLinksSaveState("error");
+      return;
+    }
+
+    setLinksError("");
+    setLinksSaveState("saving");
+
+    try {
+      const response = await fetch("/api/links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify(parsed.data),
+      });
+      const data = (await response.json().catch(() => ({}))) as
+        | DashboardLink
+        | { error?: string };
+
+      if (!response.ok) {
+        setLinksError(("error" in data && data.error) || "Unable to duplicate link.");
+        setLinksSaveState("error");
+        return;
+      }
+
+      setLinks((current) =>
+        [...current, data as DashboardLink].sort(
+          (left, right) => left.order - right.order,
+        ),
+      );
+      markSaved(setLinksSaveState, { current: null });
+    } catch {
+      setLinksError("Unable to duplicate link.");
+      setLinksSaveState("error");
+    }
+  }
+
+  function applyStyleTemplate(template: StyleTemplate) {
+    const nextProfile = {
+      ...profile,
+      ...template.settings,
+      accentColor: template.accentColor,
+    };
+    setProfile(nextProfile);
+    queueStyleSave(buildStylePayload(nextProfile));
+  }
+
+  const saveStatusTone =
+    profileSaveState === "error" ||
+    linksSaveState === "error" ||
+    styleSaveState === "error"
+      ? "error"
+      : profileSaveState === "saving" ||
+          linksSaveState === "saving" ||
+          styleSaveState === "saving"
+        ? "saving"
+        : profileSaveState === "saved" ||
+            linksSaveState === "saved" ||
+            styleSaveState === "saved"
+          ? "saved"
+          : "idle";
+
+  const saveStatusLabel =
+    saveStatusTone === "error"
+      ? "Save failed"
+      : saveStatusTone === "saving"
+        ? "Saving changes"
+        : saveStatusTone === "saved"
+          ? "All changes saved"
+          : "Autosave on";
+
+  function renderLinkCard(link: DashboardLink, sortable: boolean) {
+    const content = (
+      <>
+        {!sortable ? <div className={styles.dragPlaceholder}>·</div> : null}
+
+        <div className={styles.iconEditor}>
+          <input
+            className={styles.inlineInput}
+            value={link.icon}
+            maxLength={20}
+            onChange={(event) =>
+              updateLinkLocally(link.id, {
+                icon: event.target.value || "🔗",
+              })
+            }
+          />
+          <select
+            className={styles.selectInput}
+            value={
+              ICON_CHOICES.some((option) => option.value === link.icon)
+                ? link.icon
+                : "custom"
+            }
+            onChange={(event) => {
+              if (event.target.value === "custom") return;
+              updateLinkLocally(link.id, {
+                icon: event.target.value,
+              });
+            }}
+          >
+            {ICON_CHOICES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+            <option value="custom">Custom emoji</option>
+          </select>
+        </div>
+
+        <div className={styles.linkFields}>
+          <div className={styles.linkTopRow}>
+            <input
+              className={styles.inlineInput}
+              value={link.title}
+              onChange={(event) =>
+                updateLinkLocally(link.id, {
+                  title: event.target.value,
+                })
+              }
+            />
+            <input
+              className={styles.chipInput}
+              value={link.section}
+              onChange={(event) =>
+                updateLinkLocally(link.id, {
+                  section: event.target.value || "main",
+                })
+              }
+            />
+          </div>
+
+          <div className={styles.linkBottomRow}>
+            <input
+              className={styles.inlineInput}
+              value={link.url}
+              onChange={(event) =>
+                updateLinkLocally(link.id, {
+                  url: event.target.value,
+                })
+              }
+            />
+            <div className={styles.urlPreview}>
+              {link.visible ? "Visible on page" : "Hidden from page"}
+            </div>
+          </div>
+
+          <div className={styles.colorPickerRow}>
+            <div className={styles.linkColorsRow}>
+              {ICON_COLOR_PRESETS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`${styles.colorDot} ${
+                    link.iconColor === color ? styles.colorDotActive : ""
+                  }`}
+                  style={{ background: color }}
+                  onClick={() =>
+                    updateLinkLocally(link.id, {
+                      iconColor: color,
+                    })
+                  }
+                />
+              ))}
+            </div>
+            <input
+              type="color"
+              aria-label="Choose link icon color"
+              className={styles.nativeColorInput}
+              value={getSafeHexColor(link.iconColor, "#1c1916")}
+              onChange={(event) =>
+                updateLinkLocally(link.id, {
+                  iconColor: event.target.value.toLowerCase(),
+                })
+              }
+            />
+          </div>
+        </div>
+
+        <div className={styles.linkActions}>
+          <button
+            type="button"
+            className={styles.actionIconButton}
+            onClick={() => void handleDuplicateLink(link)}
+            aria-label="Duplicate link"
+          >
+            <DuplicateIcon />
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.toggleButton} ${
+              link.visible ? styles.toggleButtonActive : ""
+            }`}
+            onClick={() =>
+              updateLinkLocally(link.id, {
+                visible: !link.visible,
+              })
+            }
+            aria-label={link.visible ? "Hide link" : "Show link"}
+          >
+            <EyeIcon open={link.visible} />
+          </button>
+
+          <button
+            type="button"
+            className={styles.deleteButton}
+            onClick={() => void handleDeleteLink(link.id)}
+            aria-label="Delete link"
+          >
+            <TrashIcon />
+          </button>
+        </div>
+      </>
+    );
+
+    if (sortable) {
+      return (
+        <div key={link.id} className={link.visible ? "" : styles.linkItemHidden}>
+          <SortableLinkItem id={link.id}>{content}</SortableLinkItem>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={link.id}
+        className={`${styles.linkItem} ${link.visible ? "" : styles.linkItemHidden}`}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  const currentThemeLabel =
+    currentTheme?.label ?? formatStyleLabel(profile.themePreset);
   const compactPreviewLabel = compactPreviewMode === "edit" ? "Preview" : "Edit";
 
   return (
@@ -1072,44 +1529,88 @@ export default function BioLinksDashboard({
           ].join(" ")}
         >
           <header className={styles.editorHeader}>
-            <div className={styles.eyebrow}>Dashboard / Links</div>
-            <div className={styles.titleRow}>
+            <div className={styles.heroTop}>
               <div className={styles.titleGroup}>
-                <h1>Build your page</h1>
+                <div className={styles.eyebrow}>Dashboard / Bio editor</div>
+                <h1>Shape your page</h1>
                 <p>
-                  Edit your public profile, manage links, and tune the button
-                  style while the preview updates live.
-                </p>
-                <p>
-                  {BUTTON_STYLES.length} button styles, {THEME_PRESETS.length} themes,
-                  {" "}
-                  {FONT_OPTIONS.length} font presets, {ANIMATION_OPTIONS.length} motion presets,
-                  {" "}
-                  and {BACKGROUND_STYLES.length} backgrounds are ready to mix.
+                  A simpler editing space for your profile, links, and style.
+                  Every change saves automatically while the preview stays live.
                 </p>
               </div>
-              <div
-                className={`${styles.status} ${
-                  profileSaveState === "saving" ||
-                  linksSaveState === "saving" ||
-                  styleSaveState === "saving"
-                    ? styles.statusSaving
-                    : ""
-                }`}
-              >
-                {profileSaveState === "saving" ||
-                linksSaveState === "saving" ||
-                styleSaveState === "saving"
-                  ? "saving..."
-                  : profileSaveState === "saved" ||
-                      linksSaveState === "saved" ||
-                      styleSaveState === "saved"
-                    ? "saved"
-                    : profileSaveState === "error" ||
-                        linksSaveState === "error" ||
-                        styleSaveState === "error"
-                      ? "save failed"
-                      : ""}
+              <div className={styles.heroActions}>
+                <div
+                  className={`${styles.statusPill} ${
+                    saveStatusTone === "saving"
+                      ? styles.statusPillSaving
+                      : saveStatusTone === "saved"
+                        ? styles.statusPillSaved
+                        : saveStatusTone === "error"
+                          ? styles.statusPillError
+                          : ""
+                  } ${
+                    saveStatusTone === "saving" ? styles.statusSaving : ""
+                  }`}
+                >
+                  {saveStatusLabel}
+                </div>
+                <div className={styles.headerActions}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => setActiveTab("links")}
+                  >
+                    Add links
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => void handleCopyPublicLink()}
+                  >
+                    {copiedPublicLink ? "Copied" : "Copy link"}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() =>
+                      window.open(publicPath, "_blank", "noopener,noreferrer")
+                    }
+                  >
+                    Open page
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Links</span>
+                <strong className={styles.statValue}>{totalLinks}</strong>
+                <span className={styles.statMeta}>
+                  {visibleLinksCount} live, {hiddenLinksCount} hidden
+                </span>
+              </div>
+
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Sections</span>
+                <strong className={styles.statValue}>{sectionOptions.length}</strong>
+                <span className={styles.statMeta}>
+                  Filter and organize your stack faster
+                </span>
+              </div>
+
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Theme</span>
+                <strong className={styles.statValue}>{currentThemeLabel}</strong>
+                <span className={styles.statMeta}>
+                  {formatStyleLabel(profile.buttonStyle)} buttons
+                </span>
+              </div>
+
+              <div className={styles.statCard}>
+                <span className={styles.statLabel}>Public URL</span>
+                <strong className={styles.statValue}>@{profile.username}</strong>
+                <span className={styles.statMeta}>{publicPath}</span>
               </div>
             </div>
 
@@ -1123,7 +1624,7 @@ export default function BioLinksDashboard({
                   }`}
                   onClick={() => setActiveTab(tab)}
                 >
-                  {tab}
+                  {tab === "links" ? `links (${totalLinks})` : tab}
                 </button>
               ))}
             </div>
@@ -1131,512 +1632,609 @@ export default function BioLinksDashboard({
 
           <div className={styles.editorBody}>
             {activeTab === "profile" ? (
-              <div className={styles.sectionBlock}>
-                <div className={styles.fieldRow}>
-                  <label className={styles.fieldGroup}>
-                    <span className={styles.label}>Display name</span>
-                    <input
-                      className={styles.input}
-                      maxLength={60}
-                      value={profile.displayName}
-                      onChange={(event) =>
-                        setProfile((current) => ({
-                          ...current,
-                          displayName: event.target.value,
-                        }))
-                      }
-                      onBlur={() => queueProfileSave()}
-                    />
-                    <span className={styles.fieldError}>
-                      {profileErrors.displayName?.[0] ?? ""}
-                    </span>
-                  </label>
-
-                  <label className={styles.fieldGroup}>
-                    <span className={styles.label}>Username</span>
-                    <input
-                      className={styles.input}
-                      maxLength={20}
-                      value={profile.username}
-                      onChange={(event) =>
-                        setProfile((current) => ({
-                          ...current,
-                          username: event.target.value.toLowerCase(),
-                        }))
-                      }
-                      onBlur={() => queueProfileSave()}
-                    />
-                    <div className={styles.fieldMeta}>
-                      <span className={styles.fieldHint}>
-                        {siteOrigin
-                          ? `${siteOrigin}${getPublicBioPath(profile.username || "username")}`
-                          : getPublicBioPath(profile.username || "username")}
-                      </span>
-                      <span className={styles.fieldHint}>
-                        {checkingUsername
-                          ? "checking..."
-                          : usernameAvailable
-                            ? "available"
-                            : "taken"}
-                      </span>
-                    </div>
-                    <span className={styles.fieldError}>
-                      {profileErrors.username?.[0] ??
-                        (!usernameAvailable ? "That username is already taken." : "")}
-                    </span>
-                  </label>
-                </div>
-
-                <label className={styles.fieldGroup}>
-                  <span className={styles.label}>Bio</span>
-                  <textarea
-                    className={styles.textarea}
-                    maxLength={160}
-                    value={profile.bio}
-                    onChange={(event) =>
-                      setProfile((current) => ({
-                        ...current,
-                        bio: event.target.value,
-                      }))
-                    }
-                    onBlur={() => queueProfileSave()}
-                  />
-                  <div className={styles.fieldMeta}>
-                    <span className={styles.fieldError}>
-                      {profileErrors.bio?.[0] ?? ""}
-                    </span>
-                    <span className={styles.fieldHint}>
-                      {profile.bio.length}/160
-                    </span>
-                  </div>
-                </label>
-
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Avatar</span>
-                  <div className={styles.avatarRow}>
-                    {profile.avatar ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={profile.avatar}
-                        alt="Current avatar"
-                        className={styles.avatarPreview}
-                      />
-                    ) : (
-                      <div
-                        className={`${styles.avatarPreview} ${styles.avatarFallback}`}
-                      >
-                        {profile.displayName.slice(0, 1).toUpperCase() ||
-                          profile.username.slice(0, 1).toUpperCase() ||
-                          "@"}
+              <div className={styles.sectionStack}>
+                <div className={styles.contentGrid}>
+                  <section className={styles.surfaceCard}>
+                    <div className={styles.surfaceHeader}>
+                      <div>
+                        <div className={styles.surfaceEyebrow}>Profile</div>
+                        <h2>Identity and intro</h2>
+                        <p>
+                          Keep this part tight and readable so the public page feels
+                          polished immediately.
+                        </p>
                       </div>
-                    )}
+                    </div>
 
-                    <div className={styles.avatarControls}>
-                      <label className={styles.secondaryButton}>
-                        Upload image
+                    <div className={styles.fieldRow}>
+                      <label className={styles.fieldGroup}>
+                        <span className={styles.label}>Display name</span>
                         <input
-                          hidden
-                          type="file"
-                          accept="image/*"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (!file) return;
-
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const value =
-                                typeof reader.result === "string"
-                                  ? reader.result
-                                  : null;
-                              if (!value) return;
-
-                              setProfile((current) => ({
-                                ...current,
-                                avatar: value,
-                              }));
-                              queueProfileSave({
-                                ...profile,
-                                avatar: value,
-                              });
-                            };
-                            reader.readAsDataURL(file);
-                          }}
+                          className={styles.input}
+                          maxLength={60}
+                          value={profile.displayName}
+                          onChange={(event) =>
+                            setProfile((current) => ({
+                              ...current,
+                              displayName: event.target.value,
+                            }))
+                          }
+                          onBlur={() => queueProfileSave()}
                         />
+                        <span className={styles.fieldError}>
+                          {profileErrors.displayName?.[0] ?? ""}
+                        </span>
                       </label>
 
-                      {profile.avatar ? (
+                      <label className={styles.fieldGroup}>
+                        <span className={styles.label}>Username</span>
+                        <input
+                          className={styles.input}
+                          maxLength={20}
+                          value={profile.username}
+                          onChange={(event) =>
+                            setProfile((current) => ({
+                              ...current,
+                              username: event.target.value.toLowerCase(),
+                            }))
+                          }
+                          onBlur={() => queueProfileSave()}
+                        />
+                        <div className={styles.fieldMeta}>
+                          <span className={styles.fieldHint}>
+                            {siteOrigin
+                              ? `${siteOrigin}${getPublicBioPath(profile.username || "username")}`
+                              : getPublicBioPath(profile.username || "username")}
+                          </span>
+                          <span className={styles.fieldHint}>
+                            {checkingUsername
+                              ? "checking..."
+                              : usernameAvailable
+                                ? "available"
+                                : "taken"}
+                          </span>
+                        </div>
+                        <span className={styles.fieldError}>
+                          {profileErrors.username?.[0] ??
+                            (!usernameAvailable
+                              ? "That username is already taken."
+                              : "")}
+                        </span>
+                      </label>
+                    </div>
+
+                    <label className={styles.fieldGroup}>
+                      <span className={styles.label}>Bio</span>
+                      <textarea
+                        className={styles.textarea}
+                        maxLength={160}
+                        value={profile.bio}
+                        onChange={(event) =>
+                          setProfile((current) => ({
+                            ...current,
+                            bio: event.target.value,
+                          }))
+                        }
+                        onBlur={() => queueProfileSave()}
+                      />
+                      <div className={styles.fieldMeta}>
+                        <span className={styles.fieldError}>
+                          {profileErrors.bio?.[0] ?? ""}
+                        </span>
+                        <span className={styles.fieldHint}>
+                          {profile.bio.length}/160
+                        </span>
+                      </div>
+                    </label>
+                  </section>
+
+                  <div className={styles.sidebarStack}>
+                    <section className={styles.surfaceCard}>
+                      <div className={styles.surfaceHeader}>
+                        <div>
+                          <div className={styles.surfaceEyebrow}>Avatar</div>
+                          <h2>Profile image</h2>
+                          <p>
+                            A clean headshot or mark makes the page feel finished
+                            fast.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className={styles.avatarRow}>
+                        {profile.avatar ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={profile.avatar}
+                            alt="Current avatar"
+                            className={styles.avatarPreview}
+                          />
+                        ) : (
+                          <div
+                            className={`${styles.avatarPreview} ${styles.avatarFallback}`}
+                          >
+                            {profile.displayName.slice(0, 1).toUpperCase() ||
+                              profile.username.slice(0, 1).toUpperCase() ||
+                              "@"}
+                          </div>
+                        )}
+
+                        <div className={styles.avatarControls}>
+                          <label className={styles.secondaryButton}>
+                            Upload image
+                            <input
+                              hidden
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (!file) return;
+
+                                const reader = new FileReader();
+                                reader.onload = () => {
+                                  const value =
+                                    typeof reader.result === "string"
+                                      ? reader.result
+                                      : null;
+                                  if (!value) return;
+
+                                  const nextProfile = {
+                                    ...profile,
+                                    avatar: value,
+                                  };
+                                  setProfile(nextProfile);
+                                  queueProfileSave(nextProfile);
+                                };
+                                reader.readAsDataURL(file);
+                              }}
+                            />
+                          </label>
+
+                          {profile.avatar ? (
+                            <button
+                              type="button"
+                              className={styles.dangerButton}
+                              onClick={() => {
+                                const nextProfile = {
+                                  ...profile,
+                                  avatar: null,
+                                };
+                                setProfile(nextProfile);
+                                queueProfileSave(nextProfile);
+                              }}
+                            >
+                              Remove
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                      <span className={styles.fieldError}>
+                        {profileErrors.avatar?.[0] ?? ""}
+                      </span>
+                    </section>
+
+                    <section className={styles.surfaceCard}>
+                      <div className={styles.surfaceHeader}>
+                        <div>
+                          <div className={styles.surfaceEyebrow}>Sharing</div>
+                          <h2>Public page</h2>
+                          <p>
+                            Jump to your live page, copy the link, or switch into
+                            link and style editing quickly.
+                          </p>
+                        </div>
+                        <span className={styles.profileChip}>@{profile.username}</span>
+                      </div>
+
+                      <div className={styles.publicUrlCard}>
+                        <span className={styles.publicUrlValue}>{publicUrl}</span>
                         <button
                           type="button"
-                          className={styles.dangerButton}
-                          onClick={() => {
-                            const nextProfile = {
-                              ...profile,
-                              avatar: null,
-                            };
-                            setProfile(nextProfile);
-                            queueProfileSave(nextProfile);
-                          }}
+                          className={styles.secondaryButton}
+                          onClick={() => void handleCopyPublicLink()}
                         >
-                          Remove
+                          {copiedPublicLink ? "Copied" : "Copy link"}
                         </button>
-                      ) : null}
-                    </div>
-                  </div>
-                  <span className={styles.fieldError}>
-                    {profileErrors.avatar?.[0] ?? ""}
-                  </span>
-                </div>
+                      </div>
 
-                <div className={styles.profileCard}>
-                  <div className={styles.profileCardHeader}>
-                    <div>
-                      <div className={styles.profileCardTitle}>Public page</div>
-                      <p className={styles.profileCardText}>
-                        Share your bio page, jump to styles, or manage storage
-                        and sync from here.
-                      </p>
-                    </div>
-                    <span className={styles.profileChip}>@{profile.username}</span>
-                  </div>
+                      <div className={styles.inlineMetaChips}>
+                        <span className={styles.metaChip}>{currentThemeLabel}</span>
+                        <span className={styles.metaChip}>
+                          {formatStyleLabel(profile.buttonStyle)}
+                        </span>
+                        <span className={styles.metaChip}>
+                          {profile.showThemeToggle ? "Theme switch on" : "Theme switch off"}
+                        </span>
+                      </div>
 
-                  <div className={styles.publicUrlCard}>
-                    <span className={styles.publicUrlValue}>{publicUrl}</span>
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={() => void handleCopyPublicLink()}
-                    >
-                      {copiedPublicLink ? "Copied" : "Copy link"}
-                    </button>
-                  </div>
-
-                  <div className={styles.profileActions}>
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={() => window.open(publicPath, "_blank", "noopener,noreferrer")}
-                    >
-                      Open page
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={() => setActiveTab("links")}
-                    >
-                      Edit links
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.secondaryButton}
-                      onClick={() => setActiveTab("style")}
-                    >
-                      Button styles
-                    </button>
-                    <Link href="/user" className={styles.secondaryButton}>
-                      User page
-                    </Link>
+                      <div className={styles.profileActions}>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() =>
+                            window.open(publicPath, "_blank", "noopener,noreferrer")
+                          }
+                        >
+                          Open page
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => setActiveTab("links")}
+                        >
+                          Edit links
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => setActiveTab("style")}
+                        >
+                          Style page
+                        </button>
+                        <Link href="/user" className={styles.secondaryButton}>
+                          User page
+                        </Link>
+                      </div>
+                    </section>
                   </div>
                 </div>
               </div>
             ) : null}
 
             {activeTab === "links" ? (
-              <div className={styles.sectionBlock}>
-                <form className={styles.addCard} onSubmit={(event) => void handleAddLink(event)}>
-                  <div className={styles.addGrid}>
-                    <div className={styles.emojiWrap} ref={emojiPopoverRef}>
-                      <button
-                        type="button"
-                        className={styles.iconTrigger}
-                        onClick={() => setShowEmojiPicker((value) => !value)}
-                        aria-label="Choose link emoji"
-                      >
-                        {newLink.icon}
-                      </button>
-                      {showEmojiPicker ? (
-                        <div className={styles.emojiPopover}>
-                          {COMMON_EMOJIS.map((emoji) => (
-                            <button
-                              key={emoji}
-                              type="button"
-                              className={styles.emojiButton}
-                              onClick={() => {
-                                setNewLink((current) => ({
-                                  ...current,
-                                  icon: emoji,
-                                }));
-                                setShowEmojiPicker(false);
-                              }}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
+              <div className={styles.sectionStack}>
+                <section className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeader}>
+                    <div>
+                      <div className={styles.surfaceEyebrow}>Composer</div>
+                      <h2>Add a new link</h2>
+                      <p>
+                        Drop in the next destination, label it clearly, and slot it
+                        into the right section from the start.
+                      </p>
                     </div>
-
-                    <select
-                      className={styles.selectInput}
-                      value={
-                        ICON_CHOICES.some((option) => option.value === newLink.icon)
-                          ? newLink.icon
-                          : "custom"
-                      }
-                      onChange={(event) => {
-                        if (event.target.value === "custom") return;
-                        setNewLink((current) => ({
-                          ...current,
-                          icon: event.target.value,
-                        }));
-                      }}
-                    >
-                      {ICON_CHOICES.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                      <option value="custom">Custom emoji</option>
-                    </select>
-
-                    <input
-                      className={styles.input}
-                      placeholder="Title"
-                      value={newLink.title}
-                      onChange={(event) =>
-                        setNewLink((current) => ({
-                          ...current,
-                          title: event.target.value,
-                        }))
-                      }
-                    />
-
-                    <input
-                      className={styles.input}
-                      placeholder="https://example.com"
-                      value={newLink.url}
-                      onChange={(event) =>
-                        setNewLink((current) => ({
-                          ...current,
-                          url: event.target.value,
-                        }))
-                      }
-                    />
-
-                    <button type="submit" className={styles.addButton}>
-                      + Add
-                    </button>
                   </div>
-                  <div className={styles.colorPickerRow}>
-                    <div className={styles.linkColorsRow}>
-                      {ICON_COLOR_PRESETS.map((color) => (
+
+                  <form onSubmit={(event) => void handleAddLink(event)}>
+                    <div className={styles.addGrid}>
+                      <div className={styles.emojiWrap} ref={emojiPopoverRef}>
                         <button
-                          key={color}
                           type="button"
-                          className={`${styles.colorDot} ${
-                            newLink.iconColor === color ? styles.colorDotActive : ""
-                          }`}
-                          style={{ background: color }}
-                          onClick={() =>
-                            setNewLink((current) => ({
-                              ...current,
-                              iconColor: color,
-                            }))
-                          }
-                        />
-                      ))}
-                    </div>
-                    <input
-                      type="color"
-                      aria-label="Choose icon color"
-                      className={styles.nativeColorInput}
-                      value={getSafeHexColor(newLink.iconColor, "#1c1916")}
-                      onChange={(event) =>
-                        setNewLink((current) => ({
-                          ...current,
-                          iconColor: event.target.value.toLowerCase(),
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className={styles.fieldMeta} style={{ paddingTop: "8px" }}>
-                    <span className={styles.fieldError}>
-                      {newLinkErrors.title?.[0] ||
-                        newLinkErrors.url?.[0] ||
-                        newLinkErrors.icon?.[0] ||
-                        newLinkErrors.iconColor?.[0] ||
-                        ""}
-                    </span>
-                    <span className={styles.fieldHint}>{links.length} links</span>
-                  </div>
-                </form>
-
-                <div className={styles.listCard}>
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={(event) => void handleDragEnd(event)}
-                  >
-                    <SortableContext
-                      items={links.map((link) => link.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {links.map((link) => (
-                        <div
-                          key={link.id}
-                          className={link.visible ? "" : styles.linkItemHidden}
+                          className={styles.iconTrigger}
+                          onClick={() => setShowEmojiPicker((value) => !value)}
+                          aria-label="Choose link emoji"
                         >
-                          <SortableLinkItem id={link.id}>
-                            <div className={styles.iconEditor}>
-                              <input
-                                className={styles.inlineInput}
-                                value={link.icon}
-                                maxLength={20}
-                                onChange={(event) =>
-                                  updateLinkLocally(link.id, {
-                                    icon: event.target.value || "🔗",
-                                  })
-                                }
-                              />
-                              <select
-                                className={styles.selectInput}
-                                value={
-                                  ICON_CHOICES.some((option) => option.value === link.icon)
-                                    ? link.icon
-                                    : "custom"
-                                }
-                                onChange={(event) => {
-                                  if (event.target.value === "custom") return;
-                                  updateLinkLocally(link.id, {
-                                    icon: event.target.value,
-                                  });
+                          {newLink.icon}
+                        </button>
+                        {showEmojiPicker ? (
+                          <div className={styles.emojiPopover}>
+                            {COMMON_EMOJIS.map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                className={styles.emojiButton}
+                                onClick={() => {
+                                  setNewLink((current) => ({
+                                    ...current,
+                                    icon: emoji,
+                                  }));
+                                  setShowEmojiPicker(false);
                                 }}
                               >
-                                {ICON_CHOICES.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                                <option value="custom">Custom emoji</option>
-                              </select>
-                            </div>
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
 
-                            <div className={styles.linkFields}>
-                              <div className={styles.linkTopRow}>
-                                <input
-                                  className={styles.inlineInput}
-                                  value={link.title}
-                                  onChange={(event) =>
-                                    updateLinkLocally(link.id, {
-                                      title: event.target.value,
-                                    })
-                                  }
-                                />
-                                <input
-                                  className={styles.chipInput}
-                                  value={link.section}
-                                  onChange={(event) =>
-                                    updateLinkLocally(link.id, {
-                                      section: event.target.value || "main",
-                                    })
-                                  }
-                                />
-                              </div>
+                      <select
+                        className={styles.selectInput}
+                        value={
+                          ICON_CHOICES.some((option) => option.value === newLink.icon)
+                            ? newLink.icon
+                            : "custom"
+                        }
+                        onChange={(event) => {
+                          if (event.target.value === "custom") return;
+                          setNewLink((current) => ({
+                            ...current,
+                            icon: event.target.value,
+                          }));
+                        }}
+                      >
+                        {ICON_CHOICES.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                        <option value="custom">Custom emoji</option>
+                      </select>
 
-                              <div className={styles.linkBottomRow}>
-                                <input
-                                  className={styles.inlineInput}
-                                  value={link.url}
-                                  onChange={(event) =>
-                                    updateLinkLocally(link.id, {
-                                      url: event.target.value,
-                                    })
-                                  }
-                                />
-                                <div className={styles.urlPreview}>
-                                  {link.visible ? "Visible" : "Hidden"}
-                                </div>
-                              </div>
-                              <div className={styles.colorPickerRow}>
-                                <div className={styles.linkColorsRow}>
-                                  {ICON_COLOR_PRESETS.map((color) => (
-                                    <button
-                                      key={color}
-                                      type="button"
-                                      className={`${styles.colorDot} ${
-                                        link.iconColor === color ? styles.colorDotActive : ""
-                                      }`}
-                                      style={{ background: color }}
-                                      onClick={() =>
-                                        updateLinkLocally(link.id, {
-                                          iconColor: color,
-                                        })
-                                      }
-                                    />
-                                  ))}
-                                </div>
-                                <input
-                                  type="color"
-                                  aria-label="Choose link icon color"
-                                  className={styles.nativeColorInput}
-                                  value={getSafeHexColor(link.iconColor, "#1c1916")}
-                                  onChange={(event) =>
-                                    updateLinkLocally(link.id, {
-                                      iconColor: event.target.value.toLowerCase(),
-                                    })
-                                  }
-                                />
-                              </div>
-                            </div>
+                      <input
+                        className={styles.input}
+                        placeholder="Title"
+                        value={newLink.title}
+                        onChange={(event) =>
+                          setNewLink((current) => ({
+                            ...current,
+                            title: event.target.value,
+                          }))
+                        }
+                      />
 
-                            <button
-                              type="button"
-                              className={`${styles.toggleButton} ${
-                                link.visible ? styles.toggleButtonActive : ""
-                              }`}
-                              onClick={() =>
-                                updateLinkLocally(link.id, {
-                                  visible: !link.visible,
-                                })
-                              }
-                              aria-label={
-                                link.visible ? "Hide link" : "Show link"
-                              }
-                            >
-                              <EyeIcon open={link.visible} />
-                            </button>
+                      <input
+                        className={styles.input}
+                        placeholder="Section"
+                        value={newLink.section}
+                        onChange={(event) =>
+                          setNewLink((current) => ({
+                            ...current,
+                            section: event.target.value,
+                          }))
+                        }
+                      />
 
-                            <button
-                              type="button"
-                              className={styles.deleteButton}
-                              onClick={() => void handleDeleteLink(link.id)}
-                              aria-label="Delete link"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </SortableLinkItem>
-                        </div>
-                      ))}
-                    </SortableContext>
-                  </DndContext>
-                </div>
+                      <input
+                        className={styles.input}
+                        placeholder="https://example.com"
+                        value={newLink.url}
+                        onChange={(event) =>
+                          setNewLink((current) => ({
+                            ...current,
+                            url: event.target.value,
+                          }))
+                        }
+                      />
 
-                {linksError ? (
-                  <div className={styles.fieldError}>{linksError}</div>
-                ) : null}
+                      <button type="submit" className={styles.addButton}>
+                        + Add
+                      </button>
+                    </div>
+
+                    <div className={styles.colorPickerRow}>
+                      <div className={styles.linkColorsRow}>
+                        {ICON_COLOR_PRESETS.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            className={`${styles.colorDot} ${
+                              newLink.iconColor === color ? styles.colorDotActive : ""
+                            }`}
+                            style={{ background: color }}
+                            onClick={() =>
+                              setNewLink((current) => ({
+                                ...current,
+                                iconColor: color,
+                              }))
+                            }
+                          />
+                        ))}
+                      </div>
+                      <input
+                        type="color"
+                        aria-label="Choose icon color"
+                        className={styles.nativeColorInput}
+                        value={getSafeHexColor(newLink.iconColor, "#1c1916")}
+                        onChange={(event) =>
+                          setNewLink((current) => ({
+                            ...current,
+                            iconColor: event.target.value.toLowerCase(),
+                          }))
+                        }
+                      />
+                    </div>
+
+                    <div className={styles.fieldMeta}>
+                      <span className={styles.fieldError}>
+                        {newLinkErrors.title?.[0] ||
+                          newLinkErrors.url?.[0] ||
+                          newLinkErrors.icon?.[0] ||
+                          newLinkErrors.iconColor?.[0] ||
+                          newLinkErrors.section?.[0] ||
+                          ""}
+                      </span>
+                      <span className={styles.fieldHint}>
+                        Starts in {newLink.section.trim() || "main"}
+                      </span>
+                    </div>
+                  </form>
+                </section>
+
+                <section className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeader}>
+                    <div>
+                      <div className={styles.surfaceEyebrow}>Manager</div>
+                      <h2>Edit, filter, and reorder</h2>
+                      <p>
+                        Search links, filter by section, duplicate fast, and bulk
+                        hide or reveal the whole stack.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.toolbarRow}>
+                    <label className={styles.searchField}>
+                      <span className={styles.label}>Search links</span>
+                      <input
+                        className={styles.input}
+                        placeholder="Search by title, URL, section, or icon"
+                        value={linkSearch}
+                        onChange={(event) => setLinkSearch(event.target.value)}
+                      />
+                    </label>
+
+                    <div className={styles.toolbarActions}>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => handleSetAllLinksVisible(true)}
+                        disabled={hiddenLinksCount === 0}
+                      >
+                        Show all
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => handleSetAllLinksVisible(false)}
+                        disabled={visibleLinksCount === 0}
+                      >
+                        Hide all
+                      </button>
+                      {hasLinkFilters ? (
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => {
+                            setLinkSearch("");
+                            setActiveSectionFilter("all");
+                          }}
+                        >
+                          Clear filters
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className={styles.filterRow}>
+                    <button
+                      type="button"
+                      className={`${styles.filterChip} ${
+                        activeSectionFilter === "all" ? styles.filterChipActive : ""
+                      }`}
+                      onClick={() => setActiveSectionFilter("all")}
+                    >
+                      All sections
+                    </button>
+                    {sectionOptions.map((section) => (
+                      <button
+                        key={section}
+                        type="button"
+                        className={`${styles.filterChip} ${
+                          activeSectionFilter === section
+                            ? styles.filterChipActive
+                            : ""
+                        }`}
+                        onClick={() => setActiveSectionFilter(section)}
+                      >
+                        {section}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className={styles.panelNote}>
+                    {hasLinkFilters
+                      ? `${filteredLinks.length} matching links. Reordering is paused while filters are active.`
+                      : "Drag links to reorder them. Duplicate any item when you want a fast variation."}
+                  </div>
+
+                  <div className={styles.listCard}>
+                    {filteredLinks.length === 0 ? (
+                      <div className={styles.emptyState}>
+                        <h3>No matching links</h3>
+                        <p>
+                          Clear the search or switch sections to see the rest of
+                          your stack again.
+                        </p>
+                      </div>
+                    ) : hasLinkFilters ? (
+                      filteredLinks.map((link) => renderLinkCard(link, false))
+                    ) : (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event) => void handleDragEnd(event)}
+                      >
+                        <SortableContext
+                          items={links.map((link) => link.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {links.map((link) => renderLinkCard(link, true))}
+                        </SortableContext>
+                      </DndContext>
+                    )}
+                  </div>
+
+                  {linksError ? (
+                    <div className={styles.fieldError}>{linksError}</div>
+                  ) : null}
+                </section>
               </div>
             ) : null}
 
             {activeTab === "style" ? (
-              <div className={styles.sectionBlock}>
-                <div className={styles.styleGrid}>
-                  {STYLE_OPTIONS.map((style) => (
-                    <div
-                      key={style}
-                      role="button"
-                      tabIndex={0}
-                      className={`${styles.styleCard} ${
-                        profile.buttonStyle === style ? styles.styleCardActive : ""
-                      }`}
+              <div className={styles.sectionStack}>
+                <section className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeader}>
+                    <div>
+                      <div className={styles.surfaceEyebrow}>Presets</div>
+                      <h2>Start from a style direction</h2>
+                      <p>
+                        Pick a base look, then fine-tune the details below without
+                        losing the calm minimal feel.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.templateGrid}>
+                    {STYLE_TEMPLATES.map((template) => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        className={`${styles.templateCard} ${
+                          currentTemplateId === template.id
+                            ? styles.templateCardActive
+                            : ""
+                        }`}
+                        onClick={() => applyStyleTemplate(template)}
+                      >
+                        <div className={styles.templateTopRow}>
+                          <span
+                            className={styles.templateAccent}
+                            style={{ background: template.accentColor }}
+                          />
+                          <span className={styles.templateName}>{template.label}</span>
+                        </div>
+                        <p className={styles.templateDescription}>
+                          {template.description}
+                        </p>
+                        <div className={styles.inlineMetaChips}>
+                          <span className={styles.metaChip}>
+                            {formatStyleLabel(template.settings.buttonStyle)}
+                          </span>
+                          <span className={styles.metaChip}>
+                            {template.settings.themePreset}
+                          </span>
+                          <span className={styles.metaChip}>
+                            {template.settings.fontPreset}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeader}>
+                    <div>
+                      <div className={styles.surfaceEyebrow}>Buttons</div>
+                      <h2>Link style and spacing</h2>
+                      <p>
+                        Tune the shape, density, and label treatment of the main
+                        call-to-action stack.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={styles.styleGrid}>
+                    {STYLE_OPTIONS.map((style) => (
+                      <div
+                        key={style}
+                        role="button"
+                        tabIndex={0}
+                        className={`${styles.styleCard} ${
+                          profile.buttonStyle === style ? styles.styleCardActive : ""
+                        }`}
                         onClick={() => {
                           const nextProfile = {
                             ...profile,
@@ -1645,344 +2243,422 @@ export default function BioLinksDashboard({
                           setProfile(nextProfile);
                           queueStyleSave(buildStylePayload(nextProfile));
                         }}
-                      onKeyDown={(event) => {
-                        if (event.key !== "Enter" && event.key !== " ") {
-                          return;
-                        }
+                        onKeyDown={(event) => {
+                          if (event.key !== "Enter" && event.key !== " ") {
+                            return;
+                          }
 
-                        event.preventDefault();
-                        const nextProfile = {
-                          ...profile,
-                          buttonStyle: style,
-                        };
-                        setProfile(nextProfile);
-                        queueStyleSave(buildStylePayload(nextProfile));
-                      }}
-                    >
-                      <button
-                        className={`btn-base btn-size-${profile.buttonSize} btn-${style} preview-btn`}
-                        type="button"
-                        tabIndex={-1}
-                        style={stylePreviewVariables}
+                          event.preventDefault();
+                          const nextProfile = {
+                            ...profile,
+                            buttonStyle: style,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
                       >
-                        Sample Link
-                      </button>
-                      <div className={styles.styleCardName}>
-                        {formatStyleLabel(style)}
+                        <button
+                          className={`btn-base btn-size-${profile.buttonSize} btn-${style} preview-btn`}
+                          type="button"
+                          tabIndex={-1}
+                          style={stylePreviewVariables}
+                        >
+                          Sample Link
+                        </button>
+                        <div className={styles.styleCardName}>
+                          {formatStyleLabel(style)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className={styles.settingsStack}>
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Button size</span>
+                      <div className={styles.optionGrid}>
+                        {BUTTON_SIZE_OPTIONS.map((buttonSize) => (
+                          <button
+                            key={buttonSize.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.buttonSize === buttonSize.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                buttonSize: buttonSize.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {buttonSize.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {buttonSize.preview}
+                            </div>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Button size</span>
-                  <div className={styles.optionGrid}>
-                    {BUTTON_SIZE_OPTIONS.map((buttonSize) => (
-                      <button
-                        key={buttonSize.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.buttonSize === buttonSize.id
-                            ? styles.optionCardActive
-                            : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            buttonSize: buttonSize.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{buttonSize.label}</div>
-                        <div className={styles.optionCardText}>{buttonSize.preview}</div>
-                      </button>
-                    ))}
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Button labels</span>
+                      <div className={styles.optionGrid}>
+                        {BUTTON_LABEL_STYLE_OPTIONS.map((labelStyle) => (
+                          <button
+                            key={labelStyle.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.buttonLabelStyle === labelStyle.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                buttonLabelStyle: labelStyle.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {labelStyle.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {labelStyle.preview}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Glass blur</span>
+                      <div className={styles.optionGrid}>
+                        {BUTTON_BLUR_OPTIONS.map((buttonBlur) => (
+                          <button
+                            key={buttonBlur.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.buttonBlur === buttonBlur.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                buttonBlur: buttonBlur.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {buttonBlur.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {buttonBlur.preview}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </section>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Page width</span>
-                  <div className={styles.optionGrid}>
-                    {PAGE_WIDTH_OPTIONS.map((pageWidth) => (
-                      <button
-                        key={pageWidth.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.pageWidth === pageWidth.id
-                            ? styles.optionCardActive
-                            : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            pageWidth: pageWidth.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{pageWidth.label}</div>
-                        <div className={styles.optionCardText}>{pageWidth.preview}</div>
-                      </button>
-                    ))}
+                <section className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeader}>
+                    <div>
+                      <div className={styles.surfaceEyebrow}>Canvas</div>
+                      <h2>Page width, theme, and color</h2>
+                      <p>
+                        Control the page frame, choose a palette, and set the
+                        accent that holds everything together.
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Button labels</span>
-                  <div className={styles.optionGrid}>
-                    {BUTTON_LABEL_STYLE_OPTIONS.map((labelStyle) => (
-                      <button
-                        key={labelStyle.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.buttonLabelStyle === labelStyle.id
-                            ? styles.optionCardActive
-                            : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            buttonLabelStyle: labelStyle.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{labelStyle.label}</div>
-                        <div className={styles.optionCardText}>{labelStyle.preview}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                  <div className={styles.settingsStack}>
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Page width</span>
+                      <div className={styles.optionGrid}>
+                        {PAGE_WIDTH_OPTIONS.map((pageWidth) => (
+                          <button
+                            key={pageWidth.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.pageWidth === pageWidth.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                pageWidth: pageWidth.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {pageWidth.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {pageWidth.preview}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Glass blur</span>
-                  <div className={styles.optionGrid}>
-                    {BUTTON_BLUR_OPTIONS.map((buttonBlur) => (
-                      <button
-                        key={buttonBlur.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.buttonBlur === buttonBlur.id
-                            ? styles.optionCardActive
-                            : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            buttonBlur: buttonBlur.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{buttonBlur.label}</div>
-                        <div className={styles.optionCardText}>{buttonBlur.preview}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Ready themes</span>
+                      <div className={styles.optionGrid}>
+                        {THEME_OPTIONS.map((theme) => (
+                          <button
+                            key={theme.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.themePreset === theme.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                themePreset: theme.id,
+                                accentColor: theme.accentColor,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {theme.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {theme.description}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Ready themes</span>
-                  <div className={styles.optionGrid}>
-                    {THEME_OPTIONS.map((theme) => (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.themePreset === theme.id ? styles.optionCardActive : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            themePreset: theme.id,
-                            accentColor: theme.accentColor,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{theme.label}</div>
-                        <div className={styles.optionCardText}>{theme.description}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Background</span>
+                      <div className={styles.optionGrid}>
+                        {BACKGROUND_OPTIONS.map((background) => (
+                          <button
+                            key={background.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.backgroundStyle === background.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                backgroundStyle: background.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {background.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {background.preview}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Background</span>
-                  <div className={styles.optionGrid}>
-                    {BACKGROUND_OPTIONS.map((background) => (
-                      <button
-                        key={background.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.backgroundStyle === background.id
-                            ? styles.optionCardActive
-                            : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            backgroundStyle: background.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{background.label}</div>
-                        <div className={styles.optionCardText}>{background.preview}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Accent color</span>
-                  <div className={styles.colorPickerRow}>
-                    <div className={styles.swatches}>
-                      {COLOR_PRESETS.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          className={`${styles.swatch} ${
-                            profile.accentColor === color ? styles.swatchActive : ""
-                          }`}
-                          style={{ background: color }}
-                          onClick={() => {
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Accent color</span>
+                      <div className={styles.colorPickerRow}>
+                        <div className={styles.swatches}>
+                          {COLOR_PRESETS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              className={`${styles.swatch} ${
+                                profile.accentColor === color
+                                  ? styles.swatchActive
+                                  : ""
+                              }`}
+                              style={{ background: color }}
+                              onClick={() => {
+                                const nextProfile = {
+                                  ...profile,
+                                  accentColor: color,
+                                };
+                                setProfile(nextProfile);
+                                queueStyleSave(buildStylePayload(nextProfile));
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <input
+                          type="color"
+                          aria-label="Choose accent color"
+                          className={styles.nativeColorInput}
+                          value={getSafeHexColor(profile.accentColor, "#d97b4a")}
+                          onChange={(event) => {
                             const nextProfile = {
                               ...profile,
-                              accentColor: color,
+                              accentColor: event.target.value.toLowerCase(),
                             };
                             setProfile(nextProfile);
                             queueStyleSave(buildStylePayload(nextProfile));
                           }}
                         />
-                      ))}
+                      </div>
                     </div>
-                    <input
-                      type="color"
-                      aria-label="Choose accent color"
-                      className={styles.nativeColorInput}
-                      value={getSafeHexColor(profile.accentColor, "#d97b4a")}
-                      onChange={(event) => {
-                        const nextProfile = {
-                          ...profile,
-                          accentColor: event.target.value.toLowerCase(),
-                        };
-                        setProfile(nextProfile);
-                        queueStyleSave(buildStylePayload(nextProfile));
-                      }}
-                    />
-                  </div>
-                </div>
 
-                <label className={styles.fieldGroup}>
-                  <span className={styles.label}>Custom hex</span>
-                  <input
-                    className={styles.hexInput}
-                    value={profile.accentColor}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setProfile((current) => ({
-                        ...current,
-                        accentColor: value,
-                      }));
-                    }}
-                    onBlur={() =>
-                      queueStyleSave(buildStylePayload(profile))
-                    }
-                  />
-                </label>
-
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Fonts</span>
-                  <div className={styles.optionGrid}>
-                    {FONT_OPTIONS.map((font) => (
-                      <button
-                        key={font.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.fontPreset === font.id ? styles.optionCardActive : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            fontPreset: font.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
+                    <label className={styles.fieldGroup}>
+                      <span className={styles.label}>Custom hex</span>
+                      <input
+                        className={styles.hexInput}
+                        value={profile.accentColor}
+                        onChange={(event) => {
+                          const value = event.target.value;
+                          setProfile((current) => ({
+                            ...current,
+                            accentColor: value,
+                          }));
                         }}
-                      >
-                        <div className={styles.optionCardTitle}>{font.label}</div>
-                        <div className={styles.optionCardText}>{font.preview}</div>
-                      </button>
-                    ))}
+                        onBlur={() => queueStyleSave(buildStylePayload(profile))}
+                      />
+                    </label>
                   </div>
-                </div>
+                </section>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Animations</span>
-                  <div className={styles.optionGrid}>
-                    {ANIMATION_OPTIONS.map((animation) => (
-                      <button
-                        key={animation.id}
-                        type="button"
-                        className={`${styles.optionCard} ${
-                          profile.animationPreset === animation.id
-                            ? styles.optionCardActive
-                            : ""
-                        }`}
-                        onClick={() => {
-                          const nextProfile = {
-                            ...profile,
-                            animationPreset: animation.id,
-                          };
-                          setProfile(nextProfile);
-                          queueStyleSave(buildStylePayload(nextProfile));
-                        }}
-                      >
-                        <div className={styles.optionCardTitle}>{animation.label}</div>
-                        <div className={styles.optionCardText}>{animation.preview}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Watermark</span>
-                  <div className={styles.profileCard}>
-                    <div className={styles.profileCardTitle}>made with koki</div>
-                    <div className={styles.profileCardText}>
-                      The watermark now stays visible on every public page and
-                      cannot be removed.
+                <section className={styles.surfaceCard}>
+                  <div className={styles.surfaceHeader}>
+                    <div>
+                      <div className={styles.surfaceEyebrow}>Finishing</div>
+                      <h2>Type, motion, and polish</h2>
+                      <p>
+                        Set the font pair, animation tone, and a couple of final
+                        public-page details.
+                      </p>
                     </div>
                   </div>
-                </div>
 
-                <div className={styles.fieldGroup}>
-                  <span className={styles.label}>Public theme toggle</span>
-                  <button
-                    type="button"
-                    className={`${styles.secondaryButton} ${
-                      profile.showThemeToggle ? styles.toggleButtonActive : ""
-                    }`}
-                    onClick={() => {
-                      const nextProfile = {
-                        ...profile,
-                        showThemeToggle: !profile.showThemeToggle,
-                      };
-                      setProfile(nextProfile);
-                      queueStyleSave(buildStylePayload(nextProfile));
-                    }}
-                  >
-                    {profile.showThemeToggle ? "Theme toggle visible" : "Theme toggle hidden"}
-                  </button>
-                </div>
+                  <div className={styles.settingsStack}>
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Fonts</span>
+                      <div className={styles.optionGrid}>
+                        {FONT_OPTIONS.map((font) => (
+                          <button
+                            key={font.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.fontPreset === font.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                fontPreset: font.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {font.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {font.preview}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.fieldGroup}>
+                      <span className={styles.label}>Animations</span>
+                      <div className={styles.optionGrid}>
+                        {ANIMATION_OPTIONS.map((animation) => (
+                          <button
+                            key={animation.id}
+                            type="button"
+                            className={`${styles.optionCard} ${
+                              profile.animationPreset === animation.id
+                                ? styles.optionCardActive
+                                : ""
+                            }`}
+                            onClick={() => {
+                              const nextProfile = {
+                                ...profile,
+                                animationPreset: animation.id,
+                              };
+                              setProfile(nextProfile);
+                              queueStyleSave(buildStylePayload(nextProfile));
+                            }}
+                          >
+                            <div className={styles.optionCardTitle}>
+                              {animation.label}
+                            </div>
+                            <div className={styles.optionCardText}>
+                              {animation.preview}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.inlineSettings}>
+                      <div className={styles.profileCard}>
+                        <div className={styles.profileCardTitle}>Watermark</div>
+                        <div className={styles.profileCardText}>
+                          The “made with koki” watermark stays visible on every
+                          public page.
+                        </div>
+                      </div>
+
+                      <div className={styles.profileCard}>
+                        <div className={styles.profileCardTitle}>
+                          Public theme toggle
+                        </div>
+                        <div className={styles.profileCardText}>
+                          Let visitors switch between light and dark modes on the
+                          public page.
+                        </div>
+                        <button
+                          type="button"
+                          className={`${styles.secondaryButton} ${
+                            profile.showThemeToggle
+                              ? styles.toggleButtonActive
+                              : ""
+                          }`}
+                          onClick={() => {
+                            const nextProfile = {
+                              ...profile,
+                              showThemeToggle: !profile.showThemeToggle,
+                            };
+                            setProfile(nextProfile);
+                            queueStyleSave(buildStylePayload(nextProfile));
+                          }}
+                        >
+                          {profile.showThemeToggle
+                            ? "Theme toggle visible"
+                            : "Theme toggle hidden"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
               </div>
             ) : null}
           </div>
@@ -1999,12 +2675,54 @@ export default function BioLinksDashboard({
         >
           <div className={styles.previewShell}>
             <div className={styles.previewHeader}>
-              <h2>Live preview</h2>
-              <p>
-                This is the public page that will render at
-                {" "}
-                {siteOrigin ? `${siteOrigin}${publicPath}` : publicPath}.
-              </p>
+              <div className={styles.previewHeaderTop}>
+                <div>
+                  <h2>Live preview</h2>
+                  <p>{siteOrigin ? `${siteOrigin}${publicPath}` : publicPath}</p>
+                </div>
+                <div
+                  className={`${styles.statusPill} ${
+                    saveStatusTone === "saving"
+                      ? styles.statusPillSaving
+                      : saveStatusTone === "saved"
+                        ? styles.statusPillSaved
+                        : saveStatusTone === "error"
+                          ? styles.statusPillError
+                          : ""
+                  }`}
+                >
+                  {saveStatusTone === "error" ? "Check changes" : "Live"}
+                </div>
+              </div>
+
+              <div className={styles.inlineMetaChips}>
+                <span className={styles.metaChip}>{currentThemeLabel}</span>
+                <span className={styles.metaChip}>
+                  {formatStyleLabel(profile.buttonStyle)}
+                </span>
+                <span className={styles.metaChip}>
+                  {profile.fontPreset}
+                </span>
+              </div>
+
+              <div className={styles.previewActions}>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => void handleCopyPublicLink()}
+                >
+                  {copiedPublicLink ? "Copied" : "Copy link"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() =>
+                    window.open(publicPath, "_blank", "noopener,noreferrer")
+                  }
+                >
+                  Open page
+                </button>
+              </div>
             </div>
             <PublicBioPage page={previewPage} preview />
           </div>

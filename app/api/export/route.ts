@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuthenticatedRequest } from "@/lib/api-auth";
 import { applySessionRefresh } from "@/lib/auth";
 import { listLinksByUserId } from "@/lib/adapter-utils";
-import { listBioLinks, listPrivateNotes } from "@/lib/account-data";
+import {
+  getBioProfileByUserId,
+  listBioLinks,
+  listPrivateNotes,
+} from "@/lib/account-data";
 import { signExportPayload } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +15,8 @@ export async function GET(request: NextRequest) {
   const auth = await requireAuthenticatedRequest(request);
   if ("response" in auth) return auth.response;
 
-  const [links, notes, shortLinks] = await Promise.all([
+  const [bioProfile, links, notes, shortLinks] = await Promise.all([
+    getBioProfileByUserId(auth.session.userId),
     listBioLinks(auth.session.userId),
     listPrivateNotes(auth.session.userId),
     listLinksByUserId(auth.session.userId),
@@ -23,6 +28,7 @@ export async function GET(request: NextRequest) {
       id: auth.session.userId,
       username: auth.session.username,
     },
+    bioProfile,
     bioLinks: links,
     shortLinks,
     notes,

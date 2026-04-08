@@ -31,6 +31,20 @@ type PasswordFieldErrors = Partial<
   Record<"confirmPassword" | "currentPassword" | "newPassword", string[]>
 >;
 
+type DeleteAccountFieldErrors = Partial<
+  Record<"currentPassword" | "username", string[]>
+>;
+
+type ImportSummary = {
+  bioLinksImported: number;
+  bioLinksSkipped: number;
+  notesImported: number;
+  notesSkipped: number;
+  profileImported: boolean;
+  shortLinksImported: number;
+  shortLinksSkipped: number;
+};
+
 type SaveState = "error" | "idle" | "saved" | "saving";
 
 function formatAccountDate(value: string): string {
@@ -49,6 +63,45 @@ function getAvatarInitial(profile: BioProfile): string {
   );
 }
 
+function formatImportMessage(summary: ImportSummary): string {
+  const importedParts: string[] = [];
+
+  if (summary.profileImported) {
+    importedParts.push("profile settings");
+  }
+  if (summary.bioLinksImported > 0) {
+    importedParts.push(
+      `${summary.bioLinksImported} bio link${
+        summary.bioLinksImported === 1 ? "" : "s"
+      }`,
+    );
+  }
+  if (summary.shortLinksImported > 0) {
+    importedParts.push(
+      `${summary.shortLinksImported} short link${
+        summary.shortLinksImported === 1 ? "" : "s"
+      }`,
+    );
+  }
+  if (summary.notesImported > 0) {
+    importedParts.push(
+      `${summary.notesImported} note${summary.notesImported === 1 ? "" : "s"}`,
+    );
+  }
+
+  const skippedCount =
+    summary.bioLinksSkipped + summary.notesSkipped + summary.shortLinksSkipped;
+  const importedMessage = importedParts.length
+    ? `Imported ${importedParts.join(", ")}.`
+    : "Nothing was imported.";
+
+  return skippedCount > 0
+    ? `${importedMessage} Skipped ${skippedCount} invalid or conflicting item${
+        skippedCount === 1 ? "" : "s"
+      }.`
+    : importedMessage;
+}
+
 export default function UserSettingsPage({
   csrfToken,
   initialProfile,
@@ -59,6 +112,7 @@ export default function UserSettingsPage({
   username: string;
 }) {
   const router = useRouter();
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
   const profileResetTimerRef = useRef<number | null>(null);
   const lastSavedUsernameRef = useRef(initialProfile.username);
 
@@ -80,6 +134,17 @@ export default function UserSettingsPage({
   const [siteOrigin, setSiteOrigin] = useState("");
   const [signingOut, setSigningOut] = useState(false);
   const [copiedPublicLink, setCopiedPublicLink] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importMessage, setImportMessage] = useState("");
+  const [importSubmitting, setImportSubmitting] = useState(false);
+  const [deleteAccountForm, setDeleteAccountForm] = useState({
+    currentPassword: "",
+    username: "",
+  });
+  const [deleteAccountErrors, setDeleteAccountErrors] =
+    useState<DeleteAccountFieldErrors>({});
+  const [deleteAccountMessage, setDeleteAccountMessage] = useState("");
+  const [deleteAccountSubmitting, setDeleteAccountSubmitting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -172,6 +237,10 @@ export default function UserSettingsPage({
     } finally {
       setSigningOut(false);
     }
+  }
+
+  function handleExport() {
+    window.location.assign("/api/export");
   }
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
@@ -307,6 +376,114 @@ export default function UserSettingsPage({
     } catch {
       setPasswordMessage("Unable to update password.");
       setPasswordSubmitting(false);
+    }
+  }
+
+  function handleImportFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const nextFile = event.target.files?.[0] ?? null;
+    setImportFile(nextFile);
+    setImportMessage("");
+  }
+
+  async function handleImportSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (importSubmitting) return;
+
+    if (!importFile) {
+      setImportMessage("Choose a JSON export file first.");
+      return;
+    }
+
+    setImportSubmitting(true);
+    setImportMessage("");
+
+    try {
+      const text = await importFile.text();
+      const payload = JSON.parse(text) as unknown;
+      const response = await fetch("/api/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        profile?: BioProfile;
+        summary?: ImportSummary;
+      };
+
+      if (!response.ok) {
+        setImportMessage(data.error ?? "Unable to import that file.");
+        setImportSubmitting(false);
+        return;
+      }
+
+      if (data.profile) {
+        setProfile(data.profile);
+        lastSavedUsernameRef.current = data.profile.username;
+        setUsernameAvailable(true);
+        markProfileSaved();
+      }
+
+      setImportMessage(
+        data.summary ? formatImportMessage(data.summary) : "Import complete.",
+      );
+      setImportFile(null);
+      if (importFileInputRef.current) {
+        importFileInputRef.current.value = "";
+      }
+      router.refresh();
+      setImportSubmitting(false);
+    } catch (error) {
+      setImportMessage(
+        error instanceof SyntaxError
+          ? "Import file must be valid JSON."
+          : "Unable to import that file.",
+      );
+      setImportSubmitting(false);
+    }
+  }
+
+  async function handleDeleteAccountSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (deleteAccountSubmitting) return;
+
+    const confirmed = window.confirm(
+      "Delete your account permanently? This cannot be undone.",
+    );
+    if (!confirmed) return;
+
+    setDeleteAccountSubmitting(true);
+    setDeleteAccountErrors({});
+    setDeleteAccountMessage("");
+
+    try {
+      const response = await fetch("/api/account", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify(deleteAccountForm),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        fieldErrors?: DeleteAccountFieldErrors;
+      };
+
+      if (!response.ok) {
+        setDeleteAccountErrors(data.fieldErrors ?? {});
+        setDeleteAccountMessage(data.error ?? "Unable to delete account.");
+        setDeleteAccountSubmitting(false);
+        return;
+      }
+
+      window.location.assign("/sign-up");
+    } catch {
+      setDeleteAccountMessage("Unable to delete account.");
+      setDeleteAccountSubmitting(false);
     }
   }
 
@@ -881,6 +1058,223 @@ export default function UserSettingsPage({
                 {signingOut ? "Signing out..." : "Sign out"}
               </button>
             </div>
+          </section>
+
+          <section
+            className={cardClassName}
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div
+              className="flex flex-col gap-2 border-b pb-5"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <p
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: "var(--text-faint)" }}
+              >
+                Data
+              </p>
+              <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
+                Import / Export
+              </h2>
+              <p className="text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+                Download your workspace as JSON or restore it from a previous
+                export.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+              <div
+                className="rounded-3xl border p-4"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                }}
+              >
+                <div className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                  Export data
+                </div>
+                <p
+                  className="pt-2 text-xs leading-6"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Download your profile settings, bio links, short links, and
+                  notes in one file.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  className={`mt-4 ${primaryButtonClassName}`}
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--bg)",
+                  }}
+                >
+                  Export JSON
+                </button>
+              </div>
+
+              <form
+                onSubmit={handleImportSubmit}
+                className="rounded-3xl border p-4"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                }}
+              >
+                <div className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                  Import data
+                </div>
+                <p
+                  className="pt-2 text-xs leading-6"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  Restore from a previous export file. Existing items with the
+                  same IDs will be updated when possible.
+                </p>
+                <input
+                  ref={importFileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  onChange={handleImportFileChange}
+                  className="mt-4 block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[var(--surface)] file:px-4 file:py-2 file:text-sm file:text-[var(--text)]"
+                  style={{ color: "var(--text-muted)" }}
+                />
+                <div
+                  className="pt-3 text-xs"
+                  style={{ color: importFile ? "var(--text-muted)" : "var(--text-faint)" }}
+                >
+                  {importFile ? importFile.name : "Choose a JSON export file."}
+                </div>
+                {importMessage ? (
+                  <p
+                    className="pt-3 text-sm"
+                    style={{
+                      color: importMessage.startsWith("Imported")
+                        ? "var(--text-muted)"
+                        : "#c0392b",
+                    }}
+                  >
+                    {importMessage}
+                  </p>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={importSubmitting}
+                  className={`mt-4 ${primaryButtonClassName}`}
+                  style={{
+                    background: "var(--accent)",
+                    color: "var(--bg)",
+                  }}
+                >
+                  {importSubmitting ? "Importing..." : "Import JSON"}
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <section
+            className={cardClassName}
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div
+              className="flex flex-col gap-2 border-b pb-5"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <p
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: "#c0392b" }}
+              >
+                Danger zone
+              </p>
+              <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
+                Delete account
+              </h2>
+              <p className="text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+                Permanently remove your account and all of its saved data.
+              </p>
+            </div>
+
+            <form onSubmit={handleDeleteAccountSubmit} className="mt-6 grid gap-4">
+              <label className="flex flex-col gap-1.5">
+                <span
+                  className="text-[11px] font-medium uppercase tracking-[0.18em]"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  Confirm username
+                </span>
+                <input
+                  type="text"
+                  value={deleteAccountForm.username}
+                  onChange={(event) =>
+                    setDeleteAccountForm((current) => ({
+                      ...current,
+                      username: event.target.value.toLowerCase(),
+                    }))
+                  }
+                  className={fieldClassName}
+                  style={{ borderColor: "var(--border)" }}
+                  placeholder={lastSavedUsernameRef.current}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <span className="min-h-[16px] text-[11px]" style={{ color: "#c0392b" }}>
+                  {deleteAccountErrors.username?.[0] ?? ""}
+                </span>
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span
+                  className="text-[11px] font-medium uppercase tracking-[0.18em]"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  Current password
+                </span>
+                <input
+                  type="password"
+                  value={deleteAccountForm.currentPassword}
+                  onChange={(event) =>
+                    setDeleteAccountForm((current) => ({
+                      ...current,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                  className={fieldClassName}
+                  style={{ borderColor: "var(--border)" }}
+                  autoComplete="current-password"
+                />
+                <span className="min-h-[16px] text-[11px]" style={{ color: "#c0392b" }}>
+                  {deleteAccountErrors.currentPassword?.[0] ?? ""}
+                </span>
+              </label>
+
+              <div
+                className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <p
+                  className="text-sm"
+                  style={{
+                    color: deleteAccountMessage ? "#c0392b" : "var(--text-muted)",
+                  }}
+                >
+                  {deleteAccountMessage ||
+                    `Type ${lastSavedUsernameRef.current} and your current password to continue.`}
+                </p>
+
+                <button
+                  type="submit"
+                  disabled={deleteAccountSubmitting}
+                  className="inline-flex items-center justify-center rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:border-[#c0392b55] hover:bg-[color-mix(in_srgb,#c0392b_8%,transparent)] disabled:opacity-60"
+                  style={{
+                    borderColor: "#c0392b55",
+                    color: "#c0392b",
+                  }}
+                >
+                  {deleteAccountSubmitting ? "Deleting..." : "Delete account"}
+                </button>
+              </div>
+            </form>
           </section>
         </div>
       </div>

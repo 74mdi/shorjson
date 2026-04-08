@@ -99,6 +99,16 @@ export const passwordChangeSchema = z
     path: ["newPassword"],
   });
 
+export const accountDeleteSchema = z.object({
+  username: z
+    .string()
+    .transform((value) => value.trim().toLowerCase())
+    .refine((value) => value.length > 0, {
+      message: "Username is required.",
+    }),
+  currentPassword: z.string().min(1, "Current password is required."),
+});
+
 export const bioLinkCreateSchema = z.object({
   title: z
     .string()
@@ -248,6 +258,7 @@ export const noteUpdateSchema = z
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;
+export type AccountDeleteInput = z.infer<typeof accountDeleteSchema>;
 export type BioLinkCreateInput = z.infer<typeof bioLinkCreateSchema>;
 export type BioLinkUpdateInput = z.infer<typeof bioLinkUpdateSchema>;
 export type NoteCreateInput = z.infer<typeof noteCreateSchema>;

@@ -185,6 +185,10 @@ export async function updateUser(user: AccountUser): Promise<void> {
   await (await getActiveAdapter()).updateAccountUser(user);
 }
 
+export async function deleteUserAccount(userId: string): Promise<void> {
+  await (await getActiveAdapter()).deleteAccountUser(userId);
+}
+
 export async function getBioProfileByUserId(
   userId: string,
 ): Promise<BioProfile | null> {

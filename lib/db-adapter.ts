@@ -13,6 +13,7 @@ export interface DataAdapter {
   getAccountUserByUsername(username: string): Promise<AccountUser | null>;
   createAccountUser(user: AccountUser): Promise<void>;
   updateAccountUser(user: AccountUser): Promise<void>;
+  deleteAccountUser(userId: string): Promise<void>;
 
   getBioProfileByUserId(userId: string): Promise<BioProfile | null>;
   getBioProfileByUsername(username: string): Promise<BioProfile | null>;
@@ -389,6 +390,21 @@ async function createPostgresAdapter(connectionString: string): Promise<DataAdap
           user.updatedAt,
         ],
       );
+    },
+
+    async deleteAccountUser(userId) {
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        await client.query("DELETE FROM shor_links WHERE user_id=$1", [userId]);
+        await client.query("DELETE FROM shor_users WHERE id=$1", [userId]);
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
     },
 
     async getBioProfileByUserId(userId) {
