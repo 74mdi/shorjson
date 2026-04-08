@@ -355,7 +355,7 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         buttonBlur: String(profile.buttonBlur ?? "soft") as BioProfile["buttonBlur"],
         pageWidth: String(profile.pageWidth ?? "standard") as BioProfile["pageWidth"],
         buttonLabelStyle: String(profile.buttonLabelStyle ?? "normal") as BioProfile["buttonLabelStyle"],
-        watermarkText: String(profile.watermarkText ?? "made with shor"),
+        watermarkText: String(profile.watermarkText ?? "made with koki"),
         showThemeToggle: Boolean(profile.showThemeToggle ?? false),
         createdAt: String(profile.createdAt),
         updatedAt: String(profile.updatedAt),
@@ -386,7 +386,7 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         buttonBlur: String(profile.buttonBlur ?? "soft") as BioProfile["buttonBlur"],
         pageWidth: String(profile.pageWidth ?? "standard") as BioProfile["pageWidth"],
         buttonLabelStyle: String(profile.buttonLabelStyle ?? "normal") as BioProfile["buttonLabelStyle"],
-        watermarkText: String(profile.watermarkText ?? "made with shor"),
+        watermarkText: String(profile.watermarkText ?? "made with koki"),
         showThemeToggle: Boolean(profile.showThemeToggle ?? false),
         createdAt: String(profile.createdAt),
         updatedAt: String(profile.updatedAt),
@@ -595,7 +595,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       button_blur TEXT         NOT NULL DEFAULT 'soft',
       page_width TEXT          NOT NULL DEFAULT 'standard',
       button_label_style TEXT  NOT NULL DEFAULT 'normal',
-      watermark_text TEXT      NOT NULL DEFAULT 'made with shor',
+      watermark_text TEXT      NOT NULL DEFAULT 'made with koki',
       show_theme_toggle BOOLEAN NOT NULL DEFAULT false,
       created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -666,7 +666,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
     ALTER TABLE shor_bio_profiles
       ADD COLUMN IF NOT EXISTS button_label_style TEXT NOT NULL DEFAULT 'normal';
     ALTER TABLE shor_bio_profiles
-      ADD COLUMN IF NOT EXISTS watermark_text TEXT NOT NULL DEFAULT 'made with shor';
+      ADD COLUMN IF NOT EXISTS watermark_text TEXT NOT NULL DEFAULT 'made with koki';
     ALTER TABLE shor_bio_profiles
       ADD COLUMN IF NOT EXISTS show_theme_toggle BOOLEAN NOT NULL DEFAULT false;
     CREATE INDEX IF NOT EXISTS shor_links_user_created_idx

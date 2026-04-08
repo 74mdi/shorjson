@@ -111,7 +111,7 @@ function normaliseBioProfile(
     watermarkText:
       typeof profile.watermarkText === "string" && profile.watermarkText.trim()
         ? profile.watermarkText.trim()
-        : "made with shor",
+        : "made with koki",
     showThemeToggle:
       typeof profile.showThemeToggle === "boolean"
         ? profile.showThemeToggle
@@ -301,7 +301,7 @@ export async function ensureBioProfileForUser(
     buttonBlur: "soft",
     pageWidth: "standard",
     buttonLabelStyle: "normal",
-    watermarkText: "made with shor",
+    watermarkText: "made with koki",
     showThemeToggle: false,
     createdAt: now,
     updatedAt: now,

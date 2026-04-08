@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 const LOCAL_DEV_URL = "http://localhost:5000";
+export const SITE_NAME = "koki";
 
 function normalizeSiteUrl(value: string): string {
   const trimmed = value.trim();
@@ -86,7 +87,7 @@ type PageMetadataOptions = {
 export function createPageMetadata({
   badge,
   description,
-  eyebrow = "Shor",
+  eyebrow = SITE_NAME,
   ogDescription,
   ogTitle,
   path = "/",
@@ -111,7 +112,7 @@ export function createPageMetadata({
       title: socialTitle,
       description: socialDescription,
       url: path,
-      siteName: "Shor",
+      siteName: SITE_NAME,
       type: "website",
       images: [
         {

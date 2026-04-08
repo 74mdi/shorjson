@@ -5,8 +5,8 @@ import { geistMono, instrumentSerif } from "@/lib/fonts";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Notes - Shor",
-  description: "Private notes workspace inside Shor.",
+  title: "Notes - koki",
+  description: "Private notes workspace inside koki.",
   path: "/notes",
   eyebrow: "Workspace",
   badge: "Private",

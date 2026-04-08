@@ -5,7 +5,7 @@ import { requirePageSession } from "@/lib/auth";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Account - Shor",
+  title: "Account - koki",
   description: "Manage your profile, password, preferences, and workspace.",
   path: "/user",
   eyebrow: "Account",

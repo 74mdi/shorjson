@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Password-protected links are only available when Shor is storing links locally or in a configured database.",
+            "Password-protected links are only available when koki is storing links locally or in a configured database.",
         },
         { status: 400 },
       );
@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Click limits are only available when Shor is storing links locally or in a configured database.",
+            "Click limits are only available when koki is storing links locally or in a configured database.",
         },
         { status: 400 },
       );

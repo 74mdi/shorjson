@@ -19,7 +19,7 @@ export async function generateMetadata({
 
   if (bioPage) {
     return createPageMetadata({
-      title: `${bioPage.displayName} (@${bioPage.username}) - Shor`,
+      title: `${bioPage.displayName} (@${bioPage.username}) - koki`,
       description: bioPage.bio || `Links from @${bioPage.username}`,
       path: publicPath,
       eyebrow: "Public profile",
@@ -29,7 +29,7 @@ export async function generateMetadata({
   }
 
   return createPageMetadata({
-    title: "Invalid profile - Shor",
+    title: "Invalid profile - koki",
     description: `The profile @${username} does not exist or is not available.`,
     path: publicPath,
     eyebrow: "Public profile",

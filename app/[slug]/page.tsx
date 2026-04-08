@@ -28,7 +28,7 @@ export async function generateMetadata({
   if (!entry) {
     return {
       ...createPageMetadata({
-        title: `/${slug} - Shor`,
+        title: `/${slug} - koki`,
         description: "This short link is not available.",
         path,
         eyebrow: "Short link",
@@ -42,8 +42,8 @@ export async function generateMetadata({
   if (isPasswordProtected(entry)) {
     return {
       ...createPageMetadata({
-        title: `/${slug} - Protected Link - Shor`,
-        description: "Password-protected short link hosted on Shor.",
+        title: `/${slug} - Protected Link - koki`,
+        description: "Password-protected short link hosted on koki.",
         path,
         eyebrow: "Protected link",
         badge: "Locked",
@@ -59,8 +59,8 @@ export async function generateMetadata({
       : "Live";
 
   return createPageMetadata({
-    title: `/${slug} - Shor`,
-    description: "Short link hosted on Shor.",
+    title: `/${slug} - koki`,
+    description: "Short link hosted on koki.",
     path,
     eyebrow: "Short link",
     badge: clickLabel,

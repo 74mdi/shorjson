@@ -4,8 +4,8 @@ import { redirectAuthenticatedUser } from "@/lib/auth";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Sign Up - Shor",
-  description: "Create a private Shor account for links, notes, and your public bio page.",
+  title: "Sign Up - koki",
+  description: "Create a private koki account for links, notes, and your public bio page.",
   path: "/sign-up",
   eyebrow: "Create account",
   badge: "Sign up",

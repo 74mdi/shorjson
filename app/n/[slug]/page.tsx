@@ -40,7 +40,7 @@ export async function generateMetadata({
   if (!note || !note.isPublic) {
     return {
       ...createPageMetadata({
-        title: `Note Not Found - Shor`,
+        title: `Note Not Found - koki`,
         description: "This note is not available.",
         path,
         eyebrow: "Private Note",
@@ -54,8 +54,8 @@ export async function generateMetadata({
   if (note.passwordHash) {
     return {
       ...createPageMetadata({
-        title: `Protected Note - Shor`,
-        description: "Password-protected note hosted on Shor.",
+        title: `Protected Note - koki`,
+        description: "Password-protected note hosted on koki.",
         path,
         eyebrow: "Protected Note",
         badge: "Locked",
@@ -66,8 +66,8 @@ export async function generateMetadata({
   }
 
   return createPageMetadata({
-    title: `${note.title || "Untitled Note"} - Shor`,
-    description: "Shared note hosted on Shor.",
+    title: `${note.title || "Untitled Note"} - koki`,
+    description: "Shared note hosted on koki.",
     path,
     eyebrow: "Shared Note",
     badge: "Public",

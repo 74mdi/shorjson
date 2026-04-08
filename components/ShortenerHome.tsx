@@ -21,7 +21,7 @@ export default function ShortenerHome({
           className="text-2xl font-bold tracking-tight"
           style={{ color: "var(--text)" }}
         >
-          Shor
+          koki
         </h1>
         <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
           Shorten any link with optional slugs and passwords.

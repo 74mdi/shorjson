@@ -807,7 +807,7 @@ export default function BioLinksDashboard({
       buttonLabelStyle: nextProfile.buttonLabelStyle,
       fontPreset: nextProfile.fontPreset,
       themePreset: nextProfile.themePreset,
-      watermarkText: "made with shor",
+      watermarkText: "made with koki",
       showThemeToggle: nextProfile.showThemeToggle,
     };
   }
@@ -1956,7 +1956,7 @@ export default function BioLinksDashboard({
                 <div className={styles.fieldGroup}>
                   <span className={styles.label}>Watermark</span>
                   <div className={styles.profileCard}>
-                    <div className={styles.profileCardTitle}>made with shor</div>
+                    <div className={styles.profileCardTitle}>made with koki</div>
                     <div className={styles.profileCardText}>
                       The watermark now stays visible on every public page and
                       cannot be removed.

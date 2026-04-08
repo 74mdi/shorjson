@@ -621,7 +621,7 @@ export default function NotesPage({ csrfToken }: { csrfToken: string }) {
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <header className="flex-none w-full max-w-sm mx-auto pt-12 pb-6 animate-morph-in">
         <h1 className="text-2xl font-bold tracking-tight" style={{ color: "var(--text)" }}>
-          Shor
+          koki
         </h1>
         <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
           Save and manage your notes.

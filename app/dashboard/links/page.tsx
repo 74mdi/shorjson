@@ -6,7 +6,7 @@ import { geistMono, instrumentSerif } from "@/lib/fonts";
 import { createPageMetadata } from "@/lib/metadata";
 
 export const metadata: Metadata = createPageMetadata({
-  title: "Links Dashboard - Shor",
+  title: "Links Dashboard - koki",
   description: "Edit your public bio page, customize its style, and manage your links.",
   path: "/dashboard/links",
   eyebrow: "Dashboard",

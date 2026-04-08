@@ -29,7 +29,7 @@ function getAuthSecret(): string {
   if (!secret) {
     if (process.env.NODE_ENV === "production") {
       console.error(
-        "[Shor] AUTH_SECRET is not set. Using insecure fallback. Set AUTH_SECRET before deploying to production!",
+        "[koki] AUTH_SECRET is not set. Using insecure fallback. Set AUTH_SECRET before deploying to production!",
       );
     }
     return "development-only-auth-secret-change-this-before-production";

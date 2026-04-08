@@ -15,23 +15,23 @@ import {
   spaceGrotesk,
   syne,
 } from "@/lib/fonts";
-import { createPageMetadata, getSiteUrl } from "@/lib/metadata";
+import { createPageMetadata, getSiteUrl, SITE_NAME } from "@/lib/metadata";
 import { getOptionalSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   metadataBase: getSiteUrl(),
   ...createPageMetadata({
-    title: "Shor",
+    title: SITE_NAME,
     description: "A minimal private links and notes workspace.",
     path: "/",
-    eyebrow: "Shor",
+    eyebrow: SITE_NAME,
     badge: "Links + notes",
-    ogTitle: "Shor",
+    ogTitle: SITE_NAME,
   }),
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Shor",
+    title: SITE_NAME,
     startupImage: [],
   },
   robots: {

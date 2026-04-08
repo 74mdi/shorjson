@@ -174,7 +174,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
                   color: "var(--text-muted)",
                 }}
               >
-                Shor
+                koki
               </span>
               <span style={{ color: "var(--text-faint)" }}>
                 {isSignUp ? "Create account" : "Account access"}

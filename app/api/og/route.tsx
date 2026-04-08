@@ -12,13 +12,13 @@ function clampText(value: string | null, fallback: string, maxLength: number): s
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
 
-  const title = clampText(searchParams.get("title"), "Shor", 72);
+  const title = clampText(searchParams.get("title"), "koki", 72);
   const description = clampText(
     searchParams.get("description"),
     "A minimal private links and notes workspace.",
     180,
   );
-  const eyebrow = clampText(searchParams.get("eyebrow"), "Shor", 32);
+  const eyebrow = clampText(searchParams.get("eyebrow"), "koki", 32);
   const path = clampText(searchParams.get("path"), "/", 48);
   const badge = searchParams.get("badge")
     ? clampText(searchParams.get("badge"), "", 28)
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
                 fontWeight: 800,
               }}
             >
-              S
+              K
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <div
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
                   letterSpacing: "-0.04em",
                 }}
               >
-                Shor
+                koki
               </div>
             </div>
           </div>
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
               color: "#94a3b8",
             }}
           >
-            Shared from Shor
+            Shared from koki
           </div>
           <div
             style={{

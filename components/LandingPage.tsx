@@ -15,7 +15,7 @@ export default function LandingPage() {
               color: "var(--text-muted)",
             }}
           >
-            <span>Shor</span>
+            <span>koki</span>
             <span>Private workspace</span>
           </div>
           <h1

@@ -619,7 +619,7 @@ export function buildBioPageData(
     buttonBlur: profile.buttonBlur,
     pageWidth: profile.pageWidth,
     buttonLabelStyle: profile.buttonLabelStyle,
-    watermarkText: "made with shor",
+    watermarkText: "made with koki",
     showThemeToggle: profile.showThemeToggle,
     links: links
       .filter((link) => link.visible)

@@ -849,7 +849,7 @@ export default function UserSettingsPage({
               >
                 Hover motion now changes with the selected animation preset, the
                 public page can switch between light and dark palettes, and the
-                Shor watermark always stays visible.
+                koki watermark always stays visible.
               </div>
             </section>
 

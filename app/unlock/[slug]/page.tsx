@@ -23,7 +23,7 @@ export async function generateMetadata({
 
   if (!entry) {
     return createPageMetadata({
-      title: "Protected Link - Shor",
+      title: "Protected Link - koki",
       description: "This protected short link is not available.",
       path,
       eyebrow: "Protected link",
@@ -33,7 +33,7 @@ export async function generateMetadata({
   }
 
   return createPageMetadata({
-    title: `Unlock /${slug} - Shor`,
+    title: `Unlock /${slug} - koki`,
     description: "Enter the password to continue to this protected short link.",
     path,
     eyebrow: "Protected link",

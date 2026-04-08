@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Shor",
-    short_name: "Shor",
+    name: "koki",
+    short_name: "koki",
     description: "Shorten any link, instantly.",
     start_url: "/",
     display: "standalone",

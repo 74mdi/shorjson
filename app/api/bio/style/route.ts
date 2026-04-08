@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest) {
     pageWidth: parsed.data.pageWidth ?? existingProfile.pageWidth,
     buttonLabelStyle:
       parsed.data.buttonLabelStyle ?? existingProfile.buttonLabelStyle,
-    watermarkText: "made with shor",
+    watermarkText: "made with koki",
     showThemeToggle: parsed.data.showThemeToggle,
     updatedAt: new Date().toISOString(),
   };

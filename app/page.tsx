@@ -1,15 +1,15 @@
 import LandingPage from "@/components/LandingPage";
 import ShortenerHome from "@/components/ShortenerHome";
 import { getOptionalSession } from "@/lib/auth";
-import { createPageMetadata } from "@/lib/metadata";
+import { createPageMetadata, SITE_NAME } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = createPageMetadata({
-  title: "Shor",
+  title: SITE_NAME,
   description: "A minimal workspace for short links, bio pages, and private notes.",
   path: "/",
-  eyebrow: "Shor",
+  eyebrow: SITE_NAME,
   badge: "Links + notes",
 });
 

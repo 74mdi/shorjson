@@ -57,6 +57,8 @@ export default function TopControls({
   const [menuOpen, setMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const hideOnPublicBioPage =
+    pathname.startsWith("/bio/") || /^\/@[^/]+$/.test(pathname);
   const showGuestLinks =
     !auth &&
     (pathname === "/" || pathname === "/sign-in" || pathname === "/sign-up");
@@ -188,6 +190,10 @@ export default function TopControls({
     "transparent",
     "var(--surface-raised)",
   );
+
+  if (hideOnPublicBioPage) {
+    return null;
+  }
 
   return (
     <div
