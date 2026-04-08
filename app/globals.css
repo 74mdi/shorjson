@@ -84,6 +84,8 @@
 }
 
 .btn-base {
+    --accent-contrast: var(--bg);
+    --bio-button-blur: 14px;
     width: 100%;
     display: flex;
     align-items: center;
@@ -137,14 +139,14 @@
 
 .btn-outline:hover {
     background: var(--accent);
-    color: var(--bg);
+    color: var(--accent-contrast);
 }
 
 .btn-filled {
     background: var(--accent);
     border: none;
     border-radius: 10px;
-    color: var(--bg);
+    color: var(--accent-contrast);
 }
 
 .btn-filled:hover {
@@ -156,7 +158,7 @@
     background: var(--accent);
     border: none;
     border-radius: 999px;
-    color: var(--bg);
+    color: var(--accent-contrast);
 }
 
 .btn-pill:hover {
@@ -217,7 +219,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
     border-radius: 14px;
     color: var(--text);
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(var(--bio-button-blur, 14px));
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px));
 }
 
 .btn-glass:hover {
@@ -311,7 +314,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
     border-radius: 18px;
     color: var(--text);
-    backdrop-filter: blur(18px);
+    backdrop-filter: blur(var(--bio-button-blur, 14px));
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px));
 }
 
 .btn-blur:hover {
@@ -401,7 +405,7 @@
 
 .btn-outline-bold:hover {
     background: var(--accent);
-    color: var(--bg);
+    color: var(--accent-contrast);
     transform: translateY(-1px);
 }
 
@@ -434,7 +438,7 @@
     background: var(--accent);
     border: 1px solid var(--accent);
     border-radius: 6px;
-    color: var(--bg);
+    color: var(--accent-contrast);
     letter-spacing: 0.02em;
 }
 
@@ -474,8 +478,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
     border-radius: 18px;
     color: var(--text);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(140%);
 }
 
 .btn-frost:hover {
@@ -488,8 +492,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
     border-radius: 999px;
     color: var(--text);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(var(--bio-button-blur, 14px));
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px));
 }
 
 .btn-mist:hover {
@@ -502,8 +506,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
     border-radius: 20px;
     color: var(--text);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(var(--bio-button-blur, 14px));
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px));
 }
 
 .btn-veil:hover {
@@ -520,8 +524,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
     border-radius: 18px;
     color: var(--text);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(150%);
     box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
@@ -548,7 +552,7 @@
     background: var(--accent);
     border: 1px solid var(--accent);
     border-radius: 14px;
-    color: var(--bg);
+    color: var(--accent-contrast);
     box-shadow: 0 12px 28px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
@@ -604,7 +608,7 @@
     );
     border: none;
     border-radius: 18px;
-    color: var(--bg);
+    color: var(--accent-contrast);
     letter-spacing: 0.03em;
 }
 
@@ -828,7 +832,7 @@
     );
     border: none;
     border-radius: 999px;
-    color: var(--bg);
+    color: var(--accent-contrast);
     box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
@@ -975,8 +979,8 @@
     border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
     border-radius: 20px;
     color: var(--text);
-    backdrop-filter: blur(10px) saturate(120%);
-    -webkit-backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(120%);
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(120%);
     box-shadow: inset 0 1px 0 color-mix(in srgb, white 42%, transparent);
 }
 
@@ -1006,7 +1010,7 @@
     );
     border: none;
     border-radius: 999px 14px 999px 14px;
-    color: var(--bg);
+    color: var(--accent-contrast);
 }
 
 .btn-banner:hover {
@@ -1021,8 +1025,8 @@
     box-shadow:
         0 10px 24px color-mix(in srgb, var(--accent) 8%, transparent),
         inset 0 1px 0 color-mix(in srgb, white 46%, transparent);
-    backdrop-filter: blur(14px) saturate(120%);
-    -webkit-backdrop-filter: blur(14px) saturate(120%);
+    backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(120%);
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(120%);
 }
 
 .btn-cloud:hover {
@@ -1052,7 +1056,7 @@
     background: var(--accent);
     border: 1px solid var(--accent);
     border-radius: 16px;
-    color: var(--bg);
+    color: var(--accent-contrast);
     box-shadow:
         0 0 0 1px color-mix(in srgb, var(--accent) 14%, transparent),
         0 16px 30px color-mix(in srgb, var(--accent) 30%, transparent);
@@ -1063,9 +1067,91 @@
     transform: translateY(-2px);
 }
 
+.btn-crystal {
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, white 18%, transparent),
+        color-mix(in srgb, var(--surface) 70%, transparent)
+    );
+    border: 1px solid color-mix(in srgb, white 28%, var(--accent));
+    border-radius: 20px;
+    color: var(--text);
+    box-shadow:
+        inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+        0 14px 28px color-mix(in srgb, var(--accent) 12%, transparent);
+    backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(155%);
+    -webkit-backdrop-filter: blur(var(--bio-button-blur, 14px)) saturate(155%);
+}
+
+.btn-crystal:hover {
+    border-color: color-mix(in srgb, var(--accent) 44%, var(--border2));
+    transform: translateY(-2px);
+}
+
+.btn-ticket {
+    background: var(--surface);
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 42%, var(--border));
+    border-radius: 18px 18px 18px 10px;
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.btn-ticket:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.btn-sunken {
+    background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+    border-radius: 18px;
+    color: var(--text);
+    box-shadow:
+        inset 0 3px 10px color-mix(in srgb, black 10%, transparent),
+        inset 0 -1px 0 color-mix(in srgb, white 28%, transparent);
+}
+
+.btn-sunken:hover {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--border2));
+    transform: translateY(-1px);
+}
+
+.btn-outline-pill {
+    background: transparent;
+    border: 1.5px solid color-mix(in srgb, var(--accent) 68%, var(--border));
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--accent) 88%, var(--text));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.btn-outline-pill:hover {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    transform: translateY(-1px);
+}
+
+.btn-shimmer {
+    background: linear-gradient(
+        120deg,
+        color-mix(in srgb, var(--accent) 12%, transparent) 0%,
+        color-mix(in srgb, white 36%, transparent) 16%,
+        color-mix(in srgb, var(--accent) 6%, transparent) 34%,
+        var(--surface) 70%
+    );
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+    border-radius: 18px;
+    color: var(--text);
+}
+
+.btn-shimmer:hover {
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--border2));
+    transform: translateY(-1px);
+}
+
 .preview-btn {
     justify-content: center;
     padding: 10px 14px;
+    text-transform: var(--bio-button-text-transform, none);
+    letter-spacing: var(--bio-button-letter-spacing, 0);
 }
 
 /* ── Keyframes ────────────────────────────────────────────────────────────── */
@@ -1249,6 +1335,55 @@
     *::after {
         animation-duration: 0.01ms !important;
         transition-duration: 0.01ms !important;
+    }
+}
+
+@media print {
+    html,
+    body {
+        background: #fff !important;
+    }
+
+    body {
+        background-image: none !important;
+        color: #000 !important;
+    }
+
+    [data-print-hidden="true"],
+    .note-share-actions {
+        display: none !important;
+    }
+
+    .note-share-page {
+        min-height: auto !important;
+        padding: 0 !important;
+    }
+
+    .note-share-shell {
+        border: none !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
+    }
+
+    .note-share-header {
+        padding: 0 0 1rem !important;
+        border-bottom: 1px solid #ddd !important;
+    }
+
+    .note-share-content {
+        padding: 1rem 0 0 !important;
+    }
+
+    .note-share-page .md-preview {
+        color: #000 !important;
+        font-size: 12pt !important;
+        line-height: 1.6 !important;
+    }
+
+    .note-share-page .md-preview a {
+        color: #000 !important;
+        text-decoration: underline !important;
     }
 }
 

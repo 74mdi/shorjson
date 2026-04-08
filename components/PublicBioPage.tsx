@@ -1,9 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
 import styles from "./PublicBioPage.module.css";
-import type { BioPage } from "@/lib/bio-shared";
+import {
+  getAccessibleTextColorForBackground,
+  getButtonBlurValue,
+  getButtonLabelStyleTokens,
+  getPageWidthValue,
+  type BioPage,
+} from "@/lib/bio-shared";
+import {
+  getCurrentThemeMode,
+  subscribeToThemeStore,
+} from "@/lib/theme-client";
 
 function GlobeIcon() {
   return (
@@ -666,19 +676,60 @@ const PAGE_THEME_STYLES: Record<
       faint: "#8d7424",
     },
   },
-};
-
-const BACKGROUND_CLASS_NAMES: Record<BioPage["backgroundStyle"], string> = {
-  plain: styles.backgroundPlain,
-  grid: styles.backgroundGrid,
-  dots: styles.backgroundDots,
-  mesh: styles.backgroundMesh,
-  grain: styles.backgroundGrain,
-  stripes: styles.backgroundStripes,
-  spotlight: styles.backgroundSpotlight,
-  waves: styles.backgroundWaves,
-  plaid: styles.backgroundPlaid,
-  halo: styles.backgroundHalo,
+  pearl: {
+    light: {
+      bg: "#f8f8ff",
+      surface: "#ffffff",
+      border: "#dfe1ff",
+      text: "#202248",
+      muted: "#6366f1",
+      faint: "#a5abff",
+    },
+    dark: {
+      bg: "#121424",
+      surface: "#191c31",
+      border: "#343a63",
+      text: "#f7f7ff",
+      muted: "#b7bcff",
+      faint: "#666da6",
+    },
+  },
+  spruce: {
+    light: {
+      bg: "#eef7f3",
+      surface: "#fbfffd",
+      border: "#cde5dc",
+      text: "#17342f",
+      muted: "#0f766e",
+      faint: "#84b7a7",
+    },
+    dark: {
+      bg: "#0c1613",
+      surface: "#10211d",
+      border: "#245148",
+      text: "#ecfdf8",
+      muted: "#7dd3c7",
+      faint: "#4a7e71",
+    },
+  },
+  coral: {
+    light: {
+      bg: "#fff4f1",
+      surface: "#ffffff",
+      border: "#ffd2c7",
+      text: "#7c2d12",
+      muted: "#ea580c",
+      faint: "#f7a68c",
+    },
+    dark: {
+      bg: "#231310",
+      surface: "#321814",
+      border: "#6f3527",
+      text: "#fff2ed",
+      muted: "#fdba74",
+      faint: "#a86553",
+    },
+  },
 };
 
 const BUTTON_SIZE_CLASS_NAMES: Record<BioPage["buttonSize"], string> = {
@@ -691,15 +742,26 @@ function getPageStyle(
   page: BioPage,
   mode: "dark" | "light",
 ): CSSProperties {
+  const accentColor = /^#[0-9a-f]{6}$/i.test(page.accentColor)
+    ? page.accentColor
+    : "#d97b4a";
   const theme = PAGE_THEME_STYLES[page.themePreset][mode];
+  const labelTokens = getButtonLabelStyleTokens(page.buttonLabelStyle);
+
   return {
-    ["--accent" as string]: page.accentColor,
+    ["--accent" as string]: accentColor,
+    ["--accent-contrast" as string]:
+      getAccessibleTextColorForBackground(accentColor),
     ["--page-bg" as string]: theme.bg,
     ["--page-surface" as string]: theme.surface,
     ["--page-border" as string]: theme.border,
     ["--page-text" as string]: theme.text,
     ["--page-muted" as string]: theme.muted,
     ["--page-faint" as string]: theme.faint,
+    ["--bio-button-blur" as string]: getButtonBlurValue(page.buttonBlur),
+    ["--bio-page-width" as string]: getPageWidthValue(page.pageWidth),
+    ["--bio-button-text-transform" as string]: labelTokens.textTransform,
+    ["--bio-button-letter-spacing" as string]: labelTokens.letterSpacing,
   } as CSSProperties;
 }
 
@@ -766,20 +828,24 @@ export default function PublicBioPage({
   page: BioPage;
   preview?: boolean;
 }) {
-  const [colorMode, setColorMode] = useState<"dark" | "light">("light");
+  const documentColorMode = useSyncExternalStore<"dark" | "light">(
+    subscribeToThemeStore,
+    getCurrentThemeMode,
+    () => "light",
+  );
+  const [colorModeOverride, setColorModeOverride] = useState<
+    "dark" | "light" | null
+  >(null);
+  const colorMode = colorModeOverride ?? documentColorMode;
   const sections = groupLinks(page);
   const fontClassName = getFontClassName(page.fontPreset);
   const motionClassName = getMotionClassName(page.animationPreset);
-  const backgroundClassName = BACKGROUND_CLASS_NAMES[page.backgroundStyle];
+  const backgroundClassName = getModuleClassName(
+    "background",
+    page.backgroundStyle,
+  );
   const buttonSizeClassName = BUTTON_SIZE_CLASS_NAMES[page.buttonSize];
   const pageStyle = useMemo(() => getPageStyle(page, colorMode), [colorMode, page]);
-
-  useEffect(() => {
-    const nextMode = document.documentElement.classList.contains("dark")
-      ? "dark"
-      : "light";
-    setColorMode(nextMode);
-  }, []);
 
   return (
     <div
@@ -799,13 +865,16 @@ export default function PublicBioPage({
               type="button"
               className={styles.themeToggle}
               onClick={() =>
-                setColorMode((value) => (value === "dark" ? "light" : "dark"))
+                setColorModeOverride((value): "dark" | "light" =>
+                  (value ?? documentColorMode) === "dark" ? "light" : "dark",
+                )
               }
             >
               {colorMode === "dark" ? "Light" : "Dark"}
             </button>
           ) : null}
           {page.avatar ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={page.avatar}
               alt={`${page.displayName} avatar`}
@@ -855,7 +924,7 @@ export default function PublicBioPage({
                         >
                           {renderIcon(link.icon)}
                         </span>
-                        <span>{link.title}</span>
+                        <span className={styles.linkLabel}>{link.title}</span>
                         <span className={styles.arrow} aria-hidden="true">
                           →
                         </span>

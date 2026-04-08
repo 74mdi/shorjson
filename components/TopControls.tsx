@@ -191,6 +191,7 @@ export default function TopControls({
 
   return (
     <div
+      data-print-hidden="true"
       className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-end"
       style={{
         paddingTop: "max(14px, calc(env(safe-area-inset-top) + 10px))",

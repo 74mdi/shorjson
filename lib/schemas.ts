@@ -2,9 +2,12 @@ import { z } from "zod";
 import {
   isAnimationPreset,
   isBackgroundStyle,
+  isButtonBlur,
+  isButtonLabelStyle,
   isButtonStyle,
   isButtonSize,
   isFontPreset,
+  isPageWidth,
   isThemePreset,
 } from "./bio-shared";
 import { sanitizeNoteHtml, stripNoteHtml } from "./note-html";
@@ -19,14 +22,6 @@ function normaliseInlineText(value: string): string {
     .replace(/[\u0000-\u001f\u007f]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function normaliseMultilineText(value: string): string {
-  return value
-    .normalize("NFKC")
-    .replace(/\r\n/g, "\n")
-    .replace(/\u0000/g, "")
-    .slice(0, 2000);
 }
 
 function isHttpUrl(value: string): boolean {
@@ -335,6 +330,27 @@ export const bioStyleSchema = z.object({
       message: "Invalid button size.",
     })
     .transform((value) => value),
+  buttonBlur: z
+    .string()
+    .refine((value) => isButtonBlur(value), {
+      message: "Invalid blur option.",
+    })
+    .transform((value) => value)
+    .optional(),
+  pageWidth: z
+    .string()
+    .refine((value) => isPageWidth(value), {
+      message: "Invalid page width.",
+    })
+    .transform((value) => value)
+    .optional(),
+  buttonLabelStyle: z
+    .string()
+    .refine((value) => isButtonLabelStyle(value), {
+      message: "Invalid button label style.",
+    })
+    .transform((value) => value)
+    .optional(),
   watermarkText: z
     .string()
     .transform(normaliseInlineText)

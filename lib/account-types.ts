@@ -2,26 +2,35 @@ import { randomUUID } from "crypto";
 import type {
   AnimationPreset,
   BackgroundStyle,
+  ButtonBlur,
+  ButtonLabelStyle,
   ButtonStyle,
   ButtonSize,
   FontPreset,
+  PageWidth,
   ThemePreset,
 } from "./bio-shared";
 
 export type {
   AnimationPreset,
   BackgroundStyle,
+  ButtonBlur,
+  ButtonLabelStyle,
   ButtonStyle,
   ButtonSize,
   FontPreset,
+  PageWidth,
   ThemePreset,
 } from "./bio-shared";
 export {
   isAnimationPreset,
   isBackgroundStyle,
+  isButtonBlur,
+  isButtonLabelStyle,
   isButtonStyle,
   isButtonSize,
   isFontPreset,
+  isPageWidth,
   isThemePreset,
 } from "./bio-shared";
 
@@ -47,6 +56,9 @@ export interface BioProfile {
   animationPreset: AnimationPreset;
   backgroundStyle: BackgroundStyle;
   buttonSize: ButtonSize;
+  buttonBlur: ButtonBlur;
+  pageWidth: PageWidth;
+  buttonLabelStyle: ButtonLabelStyle;
   watermarkText: string;
   showThemeToggle: boolean;
   createdAt: string;

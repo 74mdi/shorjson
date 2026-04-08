@@ -44,7 +44,8 @@
 
 .pageInner {
   width: 100%;
-  max-width: 420px;
+  max-width: var(--bio-page-width, 420px);
+  margin-inline: auto;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -57,7 +58,7 @@
 }
 
 .previewMode .pageInner {
-  max-width: none;
+  max-width: min(100%, var(--bio-page-width, 420px));
 }
 
 .hero {
@@ -226,6 +227,15 @@
     letter-spacing 220ms cubic-bezier(.22,1,.36,1),
     border-color 180ms ease,
     background 180ms ease;
+}
+
+.linkLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: left;
+  text-transform: var(--bio-button-text-transform, none);
+  letter-spacing: var(--bio-button-letter-spacing, 0);
 }
 
 .linkAnchor:hover,
@@ -606,6 +616,40 @@
     radial-gradient(circle at 15% 18%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 28%),
     radial-gradient(circle at 85% 12%, color-mix(in srgb, var(--page-border) 74%, transparent), transparent 26%),
     radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 38%);
+}
+
+.backgroundConstellation {
+  background-image:
+    radial-gradient(circle at 14% 22%, color-mix(in srgb, var(--accent) 22%, transparent) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 76% 16%, color-mix(in srgb, var(--page-border) 82%, transparent) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 56% 72%, color-mix(in srgb, var(--accent) 16%, transparent) 0 2px, transparent 2.5px),
+    linear-gradient(120deg, transparent 0 28%, color-mix(in srgb, var(--accent) 7%, transparent) 28% 29%, transparent 29% 100%),
+    linear-gradient(40deg, transparent 0 62%, color-mix(in srgb, var(--page-border) 36%, transparent) 62% 63%, transparent 63% 100%);
+}
+
+.backgroundLinen {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--page-border) 34%, transparent) 0,
+      color-mix(in srgb, var(--page-border) 34%, transparent) 1px,
+      transparent 1px,
+      transparent 18px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--accent) 5%, transparent) 0,
+      color-mix(in srgb, var(--accent) 5%, transparent) 1px,
+      transparent 1px,
+      transparent 18px
+    );
+}
+
+.backgroundRadial {
+  background-image:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 28%),
+    radial-gradient(circle at 82% 22%, color-mix(in srgb, var(--page-border) 82%, transparent), transparent 24%),
+    radial-gradient(circle at 50% 78%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 36%);
 }
 
 @media (max-width: 640px) {

@@ -80,6 +80,7 @@ export default function BottomBar({
 
   return (
     <div
+      data-print-hidden="true"
       className="fixed inset-x-0 z-50 flex justify-center pointer-events-none"
       style={{
         bottom: "max(0.75rem, env(safe-area-inset-bottom))",

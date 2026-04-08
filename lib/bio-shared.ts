@@ -67,6 +67,11 @@ export const BUTTON_STYLES = [
   "cloud",
   "bevel",
   "spark",
+  "crystal",
+  "ticket",
+  "sunken",
+  "outline-pill",
+  "shimmer",
 ] as const;
 
 export type ButtonStyle = (typeof BUTTON_STYLES)[number];
@@ -92,6 +97,9 @@ export const THEME_PRESETS = [
   "aurora",
   "ink",
   "gold",
+  "pearl",
+  "spruce",
+  "coral",
 ] as const;
 
 export type ThemePreset = (typeof THEME_PRESETS)[number];
@@ -203,6 +211,9 @@ export const BACKGROUND_STYLES = [
   "waves",
   "plaid",
   "halo",
+  "constellation",
+  "linen",
+  "radial",
 ] as const;
 
 export type BackgroundStyle = (typeof BACKGROUND_STYLES)[number];
@@ -214,6 +225,30 @@ export const BUTTON_SIZES = [
 ] as const;
 
 export type ButtonSize = (typeof BUTTON_SIZES)[number];
+
+export const BUTTON_BLURS = [
+  "none",
+  "soft",
+  "strong",
+] as const;
+
+export type ButtonBlur = (typeof BUTTON_BLURS)[number];
+
+export const PAGE_WIDTHS = [
+  "narrow",
+  "standard",
+  "wide",
+] as const;
+
+export type PageWidth = (typeof PAGE_WIDTHS)[number];
+
+export const BUTTON_LABEL_STYLES = [
+  "normal",
+  "uppercase",
+  "spaced",
+] as const;
+
+export type ButtonLabelStyle = (typeof BUTTON_LABEL_STYLES)[number];
 
 const FONT_BODY_LABELS: Record<FontBodyPreset, string> = {
   manrope: "Manrope",
@@ -385,6 +420,86 @@ export function isButtonSize(value: string): value is ButtonSize {
   return includesValue(BUTTON_SIZES, value);
 }
 
+export function isButtonBlur(value: string): value is ButtonBlur {
+  return includesValue(BUTTON_BLURS, value);
+}
+
+export function isPageWidth(value: string): value is PageWidth {
+  return includesValue(PAGE_WIDTHS, value);
+}
+
+export function isButtonLabelStyle(value: string): value is ButtonLabelStyle {
+  return includesValue(BUTTON_LABEL_STYLES, value);
+}
+
+export function getAccessibleTextColorForBackground(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  const match = /^#([0-9a-f]{6})$/i.exec(normalized);
+  if (!match) return "#111111";
+
+  const hex = match[1];
+  const channels = [0, 2, 4].map((offset) =>
+    Number.parseInt(hex.slice(offset, offset + 2), 16) / 255,
+  );
+  const luminance = channels
+    .map((channel) =>
+      channel <= 0.03928
+        ? channel / 12.92
+        : ((channel + 0.055) / 1.055) ** 2.4,
+    )
+    .reduce(
+      (total, channel, index) =>
+        total + channel * [0.2126, 0.7152, 0.0722][index],
+      0,
+    );
+
+  return luminance > 0.55 ? "#111111" : "#ffffff";
+}
+
+export function getButtonBlurValue(value: ButtonBlur): string {
+  switch (value) {
+    case "none":
+      return "0px";
+    case "strong":
+      return "22px";
+    default:
+      return "14px";
+  }
+}
+
+export function getPageWidthValue(value: PageWidth): string {
+  switch (value) {
+    case "narrow":
+      return "360px";
+    case "wide":
+      return "520px";
+    default:
+      return "420px";
+  }
+}
+
+export function getButtonLabelStyleTokens(
+  value: ButtonLabelStyle,
+): { letterSpacing: string; textTransform: "none" | "uppercase" } {
+  switch (value) {
+    case "uppercase":
+      return {
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+      };
+    case "spaced":
+      return {
+        textTransform: "none",
+        letterSpacing: "0.06em",
+      };
+    default:
+      return {
+        textTransform: "none",
+        letterSpacing: "0",
+      };
+  }
+}
+
 export function getFontPresetLabel(value: FontPreset): string {
   if (includesValue(LEGACY_FONT_PRESETS, value)) {
     return LEGACY_FONT_LABELS[value].label;
@@ -433,6 +548,9 @@ export type BioPage = {
   animationPreset: AnimationPreset;
   backgroundStyle: BackgroundStyle;
   buttonSize: ButtonSize;
+  buttonBlur: ButtonBlur;
+  pageWidth: PageWidth;
+  buttonLabelStyle: ButtonLabelStyle;
   watermarkText: string;
   showThemeToggle: boolean;
   links: {
@@ -459,6 +577,9 @@ type BuildBioPageProfile = {
   animationPreset: AnimationPreset;
   backgroundStyle: BackgroundStyle;
   buttonSize: ButtonSize;
+  buttonBlur: ButtonBlur;
+  pageWidth: PageWidth;
+  buttonLabelStyle: ButtonLabelStyle;
   watermarkText: string;
   showThemeToggle: boolean;
 };
@@ -495,6 +616,9 @@ export function buildBioPageData(
     animationPreset: profile.animationPreset,
     backgroundStyle: profile.backgroundStyle,
     buttonSize: profile.buttonSize,
+    buttonBlur: profile.buttonBlur,
+    pageWidth: profile.pageWidth,
+    buttonLabelStyle: profile.buttonLabelStyle,
     watermarkText: "made with shor",
     showThemeToggle: profile.showThemeToggle,
     links: links

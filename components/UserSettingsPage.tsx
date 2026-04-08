@@ -370,6 +370,7 @@ export default function UserSettingsPage({
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
               {profile.avatar ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={profile.avatar}
                   alt="Profile avatar"
@@ -545,6 +546,7 @@ export default function UserSettingsPage({
               <div className="rounded-3xl border p-4" style={insetSurfaceStyle}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   {profile.avatar ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={profile.avatar}
                       alt="Current avatar"

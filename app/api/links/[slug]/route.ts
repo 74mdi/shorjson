@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { requireAuthenticatedRequest, jsonWithOptionalRefresh } from "@/lib/api-auth";
 import { deleteBioLink, getBioLinkById, saveBioLink } from "@/lib/account-data";
 import { getScopedResourceOwnerId } from "@/lib/account-types";

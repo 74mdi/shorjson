@@ -23,7 +23,7 @@ function getNoteMetrics(html: string): { minutes: number; words: number } {
   const words = plainText ? plainText.split(/\s+/).length : 0;
 
   return {
-    minutes: Math.max(1, Math.round(Math.max(words, 1) / 220)),
+    minutes: words > 0 ? Math.max(1, Math.round(words / 220)) : 0,
     words,
   };
 }
@@ -98,102 +98,56 @@ export default async function NotePage({
 
   const noteTitle = note.title || "Untitled Note";
   const metrics = getNoteMetrics(note.content);
+  const metaItems = [
+    `Updated ${formatSharedDate(note.updatedAt)}`,
+    `${metrics.words} ${metrics.words === 1 ? "word" : "words"}`,
+    metrics.minutes > 0 ? `${metrics.minutes} min read` : null,
+  ].filter(Boolean);
 
   return (
-    <main className="relative min-h-dvh overflow-hidden px-5 pb-16 pt-24 sm:px-8 sm:pt-28">
-      <div className="pointer-events-none absolute left-1/2 top-24 -translate-x-[88%]">
+    <main className="note-share-page min-h-dvh px-5 pb-16 pt-24 sm:px-8 sm:pt-28">
+      <section className="mx-auto max-w-3xl animate-morph-in">
         <div
-          className="h-64 w-64 rounded-full blur-3xl animate-orb-drift"
+          className="note-share-shell overflow-hidden rounded-[28px] border"
           style={{
-            background: "color-mix(in srgb, var(--accent) 10%, transparent)",
-          }}
-        />
-      </div>
-      <div className="pointer-events-none absolute bottom-10 left-1/2 -translate-x-[4%]">
-        <div
-          className="h-72 w-72 rounded-full blur-3xl animate-orb-drift-reverse"
-          style={{
-            background: "color-mix(in srgb, var(--accent) 7%, transparent)",
-          }}
-        />
-      </div>
-
-      <section className="relative mx-auto max-w-4xl animate-morph-in">
-        <div
-          className="overflow-hidden rounded-[30px] border shadow-[0_30px_90px_-54px_var(--accent-glow)]"
-          style={{
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, var(--bg)) 0%, var(--bg) 100%)",
+            background: "var(--bg)",
             borderColor: "var(--border)",
           }}
         >
           <header
-            className="border-b px-6 py-7 sm:px-8 sm:py-8"
+            className="note-share-header border-b px-5 py-6 sm:px-7 sm:py-7"
             style={{ borderColor: "var(--border)" }}
           >
-            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em]">
-              <span
-                className="rounded-full border px-3 py-1"
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Shared Note
-              </span>
-              <span style={{ color: "var(--text-faint)" }}>Public link</span>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
+                <div
+                  className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  Shared note
+                </div>
                 <h1
-                  className="text-3xl font-semibold tracking-tight sm:text-5xl"
+                  className="pt-3 text-3xl font-semibold tracking-tight sm:text-4xl"
                   style={{ color: "var(--text)" }}
                 >
                   {noteTitle}
                 </h1>
                 <p
-                  className="pt-3 text-sm leading-7 sm:text-base"
+                  className="pt-3 text-sm leading-7"
                   style={{ color: "var(--text-muted)" }}
                 >
-                  Shared securely via Shor. Read it in the browser, copy the note,
-                  or download a clean HTML export.
+                  {metaItems.join(" · ")}
                 </p>
               </div>
 
               <NoteClientActions title={noteTitle} htmlContent={note.content} />
             </div>
-
-            <div
-              className="mt-6 flex flex-wrap gap-2 text-xs"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {[
-                `Updated ${formatSharedDate(note.updatedAt)}`,
-                `${metrics.words} ${metrics.words === 1 ? "word" : "words"}`,
-                `${metrics.minutes} min read`,
-              ].map((item) => (
-                <span
-                  key={item}
-                  className="rounded-full border px-3 py-1"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--surface)",
-                  }}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
           </header>
 
-          <article className="px-6 py-7 sm:px-8 sm:py-9">
+          <article className="note-share-content px-5 py-6 sm:px-7 sm:py-7">
             <div
-              className="md-preview max-w-none rounded-[26px] border px-5 py-6 sm:px-8 sm:py-8"
+              className="md-preview max-w-none"
               style={{
-                background: "var(--surface)",
-                borderColor: "var(--border)",
                 fontSize: "1rem",
                 lineHeight: 1.85,
               }}

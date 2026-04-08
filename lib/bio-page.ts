@@ -1,4 +1,3 @@
-import type { BioLink, BioProfile } from "./account-types";
 import {
   ensureBioProfileForUser,
   getBioProfileByUsername,

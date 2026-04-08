@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable @typescript-eslint/no-require-imports */
 // ─────────────────────────────────────────────────────────────────────────────
 //  Shor Server  v1.0.0
 //  Single-file Node.js 18+ HTTP link-shortener server

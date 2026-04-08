@@ -7,6 +7,10 @@ export function getCurrentThemeIsDark(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
+export function getCurrentThemeMode(): "dark" | "light" {
+  return getCurrentThemeIsDark() ? "dark" : "light";
+}
+
 export function applyTheme(isDark: boolean): void {
   document.documentElement.classList.toggle("dark", isDark);
   localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
@@ -46,4 +50,8 @@ export function subscribeToTheme(
     );
     window.removeEventListener("storage", handleStorage);
   };
+}
+
+export function subscribeToThemeStore(listener: () => void): () => void {
+  return subscribeToTheme(() => listener());
 }

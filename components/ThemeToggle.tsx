@@ -1,11 +1,11 @@
 "use client";
 
-// components/ThemeToggle.tsx
-// Fixed top-right button that toggles between light and dark mode.
-// Reads the initial state from the <html> class (set by the inline script in layout.tsx)
-// and persists the user's choice to localStorage.
-
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+import {
+  applyTheme,
+  getCurrentThemeIsDark,
+  subscribeToThemeStore,
+} from "@/lib/theme-client";
 
 /* ─── Icons ──────────────────────────────────────────────────────────────── */
 
@@ -47,31 +47,15 @@ const MoonIcon = () => (
 /* ─── Component ──────────────────────────────────────────────────────────── */
 
 export default function ThemeToggle() {
-  // Start as undefined so we don't render until we know the real theme.
-  // This avoids a hydration mismatch between server and client.
-  const [isDark, setIsDark] = useState<boolean | undefined>(undefined);
-
-  // On mount, read the current theme from the <html> element.
-  // The inline script in layout.tsx will have already set the correct class.
-  useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
-  }, []);
+  const isDark = useSyncExternalStore(
+    subscribeToThemeStore,
+    getCurrentThemeIsDark,
+    () => false,
+  );
 
   function toggle() {
-    const next = !isDark;
-    setIsDark(next);
-
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    applyTheme(!isDark);
   }
-
-  // Don't render anything until we know the theme — prevents icon flash
-  if (isDark === undefined) return null;
 
   return (
     <button

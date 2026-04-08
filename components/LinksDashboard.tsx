@@ -27,7 +27,6 @@ interface BioLink {
 }
 
 interface LinkRowProps {
-  csrfToken: string;
   index: number;
   isRemoving: boolean;
   link: BioLink;
@@ -193,7 +192,6 @@ async function copyToClipboard(text: string) {
 }
 
 function LinkRow({
-  csrfToken,
   index,
   isRemoving,
   link,
@@ -214,11 +212,6 @@ function LinkRow({
   const [draftUrl, setDraftUrl] = useState(link.url);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setDraftTitle(link.title);
-    setDraftUrl(link.url);
-  }, [link.title, link.url]);
 
   async function handleCopy() {
     await copyToClipboard(link.url);
@@ -241,6 +234,13 @@ function LinkRow({
 
     setFieldErrors({});
     setEditing(false);
+  }
+
+  function handleStartEditing() {
+    setDraftTitle(link.title);
+    setDraftUrl(link.url);
+    setFieldErrors({});
+    setEditing(true);
   }
 
   const style = {
@@ -382,7 +382,7 @@ function LinkRow({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEditing(true)}
+                    onClick={handleStartEditing}
                     className={buttonClassName()}
                     style={{
                       borderColor: "var(--border)",
@@ -650,8 +650,9 @@ export default function LinksDashboard({
               </p>
             </div>
 
-            <a
-              href="/api/export"
+            <button
+              type="button"
+              onClick={() => window.location.assign("/api/export")}
               className="inline-flex h-10 items-center rounded-xl border px-3 text-sm font-medium transition-all duration-150"
               style={{
                 borderColor: "var(--border)",
@@ -660,7 +661,7 @@ export default function LinksDashboard({
               }}
             >
               Export
-            </a>
+            </button>
           </div>
         </header>
 
@@ -776,7 +777,6 @@ export default function LinksDashboard({
                   {links.map((link, index) => (
                     <LinkRow
                       key={link.id}
-                      csrfToken={csrfToken}
                       index={index}
                       isRemoving={removingIds.includes(link.id)}
                       link={link}

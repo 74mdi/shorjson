@@ -18,9 +18,12 @@ import type {
 import {
   isAnimationPreset,
   isBackgroundStyle,
+  isButtonBlur,
+  isButtonLabelStyle,
   isButtonStyle,
   isButtonSize,
   isFontPreset,
+  isPageWidth,
   isThemePreset,
 } from "./account-types";
 
@@ -92,6 +95,19 @@ function normaliseBioProfile(
       typeof profile.buttonSize === "string" && isButtonSize(profile.buttonSize)
         ? profile.buttonSize
         : "balanced",
+    buttonBlur:
+      typeof profile.buttonBlur === "string" && isButtonBlur(profile.buttonBlur)
+        ? profile.buttonBlur
+        : "soft",
+    pageWidth:
+      typeof profile.pageWidth === "string" && isPageWidth(profile.pageWidth)
+        ? profile.pageWidth
+        : "standard",
+    buttonLabelStyle:
+      typeof profile.buttonLabelStyle === "string" &&
+      isButtonLabelStyle(profile.buttonLabelStyle)
+        ? profile.buttonLabelStyle
+        : "normal",
     watermarkText:
       typeof profile.watermarkText === "string" && profile.watermarkText.trim()
         ? profile.watermarkText.trim()
@@ -282,6 +298,9 @@ export async function ensureBioProfileForUser(
     animationPreset: "morph",
     backgroundStyle: "plain",
     buttonSize: "balanced",
+    buttonBlur: "soft",
+    pageWidth: "standard",
+    buttonLabelStyle: "normal",
     watermarkText: "made with shor",
     showThemeToggle: false,
     createdAt: now,

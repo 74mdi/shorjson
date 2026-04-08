@@ -42,6 +42,10 @@ export async function PATCH(request: NextRequest) {
     animationPreset: parsed.data.animationPreset,
     backgroundStyle: parsed.data.backgroundStyle,
     buttonSize: parsed.data.buttonSize,
+    buttonBlur: parsed.data.buttonBlur ?? existingProfile.buttonBlur,
+    pageWidth: parsed.data.pageWidth ?? existingProfile.pageWidth,
+    buttonLabelStyle:
+      parsed.data.buttonLabelStyle ?? existingProfile.buttonLabelStyle,
     watermarkText: "made with shor",
     showThemeToggle: parsed.data.showThemeToggle,
     updatedAt: new Date().toISOString(),

@@ -12,6 +12,10 @@ import { createPageMetadata } from "@/lib/metadata";
 
 export const dynamic = "force-dynamic";
 
+function isExpiredLink(expiresAt?: string | null): boolean {
+  return Boolean(expiresAt && new Date(expiresAt).getTime() <= Date.now());
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -102,10 +106,7 @@ export default async function SlugPage({
   }
 
   // Check expiration
-  if (
-    entry.expiresAt &&
-    new Date(entry.expiresAt).getTime() <= Date.now()
-  ) {
+  if (isExpiredLink(entry.expiresAt)) {
     return (
       <main className="min-h-dvh px-5 pb-16 pt-24">
         <div

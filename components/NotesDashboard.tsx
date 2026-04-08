@@ -600,7 +600,7 @@ export default function NotesDashboard({
 
       updateToolbarState();
     });
-  }, [activeNote?.id]);
+  }, [activeNote]);
 
   useEffect(() => {
     function handleSelectionChange() {

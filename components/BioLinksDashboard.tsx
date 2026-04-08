@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import {
   closestCenter,
   DndContext,
@@ -29,6 +36,10 @@ import {
   ANIMATION_PRESETS,
   BACKGROUND_STYLES,
   buildBioPageData,
+  getAccessibleTextColorForBackground,
+  getButtonBlurValue,
+  getButtonLabelStyleTokens,
+  getPageWidthValue,
   BUTTON_STYLES,
   FONT_PRESETS,
   getPublicBioPath,
@@ -40,9 +51,12 @@ import {
   type AnimationPreset,
   type BackgroundStyle,
   type BioPage,
+  type ButtonBlur,
+  type ButtonLabelStyle,
   type ButtonSize,
   type ButtonStyle,
   type FontPreset,
+  type PageWidth,
   type ThemePreset,
 } from "@/lib/bio-shared";
 
@@ -60,6 +74,9 @@ type DashboardProfile = {
   animationPreset: AnimationPreset;
   backgroundStyle: BackgroundStyle;
   buttonSize: ButtonSize;
+  buttonBlur: ButtonBlur;
+  pageWidth: PageWidth;
+  buttonLabelStyle: ButtonLabelStyle;
   themePreset: ThemePreset;
   updatedAt: string;
   userId: string;
@@ -245,6 +262,24 @@ const THEME_OPTIONS: Array<{
     accentColor: "#d97706",
     description: "Warm golden paper palette with richer shadows.",
   },
+  {
+    id: "pearl",
+    label: "Pearl",
+    accentColor: "#6366f1",
+    description: "Soft pearl neutrals with a cleaner lilac accent.",
+  },
+  {
+    id: "spruce",
+    label: "Spruce",
+    accentColor: "#0f766e",
+    description: "Deep pine greens with calmer cool contrast.",
+  },
+  {
+    id: "coral",
+    label: "Coral",
+    accentColor: "#f97316",
+    description: "Fresh coral warmth with brighter light mode cards.",
+  },
 ];
 
 const FONT_OPTIONS = FONT_PRESETS.map((id) => ({
@@ -274,6 +309,9 @@ const BACKGROUND_OPTIONS: Array<{
   { id: "waves", label: "Waves", preview: "Repeating curved rhythm" },
   { id: "plaid", label: "Plaid", preview: "Crossed editorial lines" },
   { id: "halo", label: "Halo", preview: "Corner glows and softer depth" },
+  { id: "constellation", label: "Constellation", preview: "Tiny star points with faint joins" },
+  { id: "linen", label: "Linen", preview: "Layered fabric-like cross texture" },
+  { id: "radial", label: "Radial", preview: "Big soft color wells across the canvas" },
 ];
 
 const BUTTON_SIZE_OPTIONS: Array<{
@@ -284,6 +322,36 @@ const BUTTON_SIZE_OPTIONS: Array<{
   { id: "compact", label: "Compact", preview: "Tighter links for dense stacks" },
   { id: "balanced", label: "Balanced", preview: "The default all-round size" },
   { id: "roomy", label: "Roomy", preview: "More breathing room and weight" },
+];
+
+const BUTTON_BLUR_OPTIONS: Array<{
+  id: ButtonBlur;
+  label: string;
+  preview: string;
+}> = [
+  { id: "none", label: "No blur", preview: "Keeps glass styles crisp and flat." },
+  { id: "soft", label: "Soft blur", preview: "Balanced depth for blur, frost, and cloud buttons." },
+  { id: "strong", label: "Strong blur", preview: "A glassier surface with heavier diffusion." },
+];
+
+const PAGE_WIDTH_OPTIONS: Array<{
+  id: PageWidth;
+  label: string;
+  preview: string;
+}> = [
+  { id: "narrow", label: "Narrow", preview: "Tighter reading column with smaller reach." },
+  { id: "standard", label: "Standard", preview: "Balanced width for most bio pages." },
+  { id: "wide", label: "Wide", preview: "Broader cards with more breathing room." },
+];
+
+const BUTTON_LABEL_STYLE_OPTIONS: Array<{
+  id: ButtonLabelStyle;
+  label: string;
+  preview: string;
+}> = [
+  { id: "normal", label: "Normal", preview: "Natural button labels with default casing." },
+  { id: "uppercase", label: "Uppercase", preview: "Sharper editorial buttons with stronger presence." },
+  { id: "spaced", label: "Spaced", preview: "More tracking without forcing all-caps." },
 ];
 
 const COMMON_EMOJIS = [
@@ -366,32 +434,6 @@ function formatStyleLabel(value: string): string {
     .join(" ");
 }
 
-function Spinner() {
-  return (
-    <svg
-      className="h-4 w-4 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-      />
-    </svg>
-  );
-}
-
 async function copyToClipboard(text: string) {
   try {
     await navigator.clipboard.writeText(text);
@@ -403,6 +445,24 @@ async function copyToClipboard(text: string) {
     document.execCommand("copy");
     document.body.removeChild(textarea);
   }
+}
+
+function clearTimerRef(
+  ref: MutableRefObject<ReturnType<typeof setTimeout> | null>,
+) {
+  if (!ref.current) return;
+  clearTimeout(ref.current);
+  ref.current = null;
+}
+
+function clearOptionalTimerRef(ref: MutableRefObject<number | null>) {
+  if (ref.current === null) return;
+  clearTimeout(ref.current);
+  ref.current = null;
+}
+
+function clearTimerMap(timers: Record<string, ReturnType<typeof setTimeout>>) {
+  Object.values(timers).forEach((timer) => clearTimeout(timer));
 }
 
 function EyeIcon({ open }: { open: boolean }) {
@@ -615,16 +675,13 @@ export default function BioLinksDashboard({
 
   useEffect(() => {
     return () => {
-      if (profileSaveTimerRef.current) clearTimeout(profileSaveTimerRef.current);
-      if (profileStatusTimerRef.current)
-        clearTimeout(profileStatusTimerRef.current);
-      if (styleSaveTimerRef.current) clearTimeout(styleSaveTimerRef.current);
-      if (styleStatusTimerRef.current) clearTimeout(styleStatusTimerRef.current);
-
-      Object.values(linkTimersRef.current).forEach((timer) => clearTimeout(timer));
-      if (copiedPublicLinkTimeoutRef.current) {
-        clearTimeout(copiedPublicLinkTimeoutRef.current);
-      }
+      clearTimerRef(profileSaveTimerRef);
+      clearTimerRef(profileStatusTimerRef);
+      clearTimerRef(styleSaveTimerRef);
+      clearTimerRef(styleStatusTimerRef);
+      clearTimerMap(linkTimersRef.current);
+      linkTimersRef.current = {};
+      clearOptionalTimerRef(copiedPublicLinkTimeoutRef);
     };
   }, []);
 
@@ -633,6 +690,35 @@ export default function BioLinksDashboard({
   const previewPage = useMemo<BioPage>(() => {
     return buildBioPageData(deferredProfile, deferredLinks);
   }, [deferredLinks, deferredProfile]);
+  const stylePreviewVariables = useMemo(() => {
+    const accentColor = getSafeHexColor(profile.accentColor, "#d97b4a");
+    const labelTokens = getButtonLabelStyleTokens(profile.buttonLabelStyle);
+
+    return {
+      ["--accent" as string]: accentColor,
+      ["--accent-contrast" as string]:
+        getAccessibleTextColorForBackground(accentColor),
+      ["--accent-hover" as string]:
+        "color-mix(in srgb, var(--accent) 82%, var(--text) 18%)",
+      ["--accent-soft" as string]:
+        "color-mix(in srgb, var(--accent) 10%, transparent)",
+      ["--accent-soft-border" as string]:
+        "color-mix(in srgb, var(--accent) 26%, var(--border))",
+      ["--bio-button-blur" as string]:
+        getButtonBlurValue(profile.buttonBlur),
+      ["--bio-button-text-transform" as string]:
+        labelTokens.textTransform,
+      ["--bio-button-letter-spacing" as string]:
+        labelTokens.letterSpacing,
+      ["--bio-page-width" as string]:
+        getPageWidthValue(profile.pageWidth),
+    } as React.CSSProperties;
+  }, [
+    profile.buttonBlur,
+    profile.buttonLabelStyle,
+    profile.pageWidth,
+    profile.accentColor,
+  ]);
   const publicPath = getPublicBioPath(profile.username || "username");
   const publicUrl = siteOrigin ? `${siteOrigin}${publicPath}` : publicPath;
 
@@ -716,6 +802,9 @@ export default function BioLinksDashboard({
       backgroundStyle: nextProfile.backgroundStyle,
       buttonStyle: nextProfile.buttonStyle,
       buttonSize: nextProfile.buttonSize,
+      buttonBlur: nextProfile.buttonBlur,
+      pageWidth: nextProfile.pageWidth,
+      buttonLabelStyle: nextProfile.buttonLabelStyle,
       fontPreset: nextProfile.fontPreset,
       themePreset: nextProfile.themePreset,
       watermarkText: "made with shor",
@@ -1126,6 +1215,7 @@ export default function BioLinksDashboard({
                   <span className={styles.label}>Avatar</span>
                   <div className={styles.avatarRow}>
                     {profile.avatar ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={profile.avatar}
                         alt="Current avatar"
@@ -1573,6 +1663,7 @@ export default function BioLinksDashboard({
                         className={`btn-base btn-size-${profile.buttonSize} btn-${style} preview-btn`}
                         type="button"
                         tabIndex={-1}
+                        style={stylePreviewVariables}
                       >
                         Sample Link
                       </button>
@@ -1606,6 +1697,90 @@ export default function BioLinksDashboard({
                       >
                         <div className={styles.optionCardTitle}>{buttonSize.label}</div>
                         <div className={styles.optionCardText}>{buttonSize.preview}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Page width</span>
+                  <div className={styles.optionGrid}>
+                    {PAGE_WIDTH_OPTIONS.map((pageWidth) => (
+                      <button
+                        key={pageWidth.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.pageWidth === pageWidth.id
+                            ? styles.optionCardActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            pageWidth: pageWidth.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{pageWidth.label}</div>
+                        <div className={styles.optionCardText}>{pageWidth.preview}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Button labels</span>
+                  <div className={styles.optionGrid}>
+                    {BUTTON_LABEL_STYLE_OPTIONS.map((labelStyle) => (
+                      <button
+                        key={labelStyle.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.buttonLabelStyle === labelStyle.id
+                            ? styles.optionCardActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            buttonLabelStyle: labelStyle.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{labelStyle.label}</div>
+                        <div className={styles.optionCardText}>{labelStyle.preview}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.fieldGroup}>
+                  <span className={styles.label}>Glass blur</span>
+                  <div className={styles.optionGrid}>
+                    {BUTTON_BLUR_OPTIONS.map((buttonBlur) => (
+                      <button
+                        key={buttonBlur.id}
+                        type="button"
+                        className={`${styles.optionCard} ${
+                          profile.buttonBlur === buttonBlur.id
+                            ? styles.optionCardActive
+                            : ""
+                        }`}
+                        onClick={() => {
+                          const nextProfile = {
+                            ...profile,
+                            buttonBlur: buttonBlur.id,
+                          };
+                          setProfile(nextProfile);
+                          queueStyleSave(buildStylePayload(nextProfile));
+                        }}
+                      >
+                        <div className={styles.optionCardTitle}>{buttonBlur.label}</div>
+                        <div className={styles.optionCardText}>{buttonBlur.preview}</div>
                       </button>
                     ))}
                   </div>

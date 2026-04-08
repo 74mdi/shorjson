@@ -106,54 +106,21 @@ export default function UnlockNotePage({ slug }: { slug: string }) {
   const isError = status === "error";
 
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden px-5 py-10">
-      <div className="pointer-events-none absolute left-1/2 top-24 -translate-x-[80%]">
-        <div
-          className="h-56 w-56 rounded-full blur-3xl animate-orb-drift"
-          style={{
-            background: "color-mix(in srgb, var(--accent) 10%, transparent)",
-          }}
-        />
-      </div>
-      <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-[10%]">
-        <div
-          className="h-64 w-64 rounded-full blur-3xl animate-orb-drift-reverse"
-          style={{
-            background: "color-mix(in srgb, var(--accent) 7%, transparent)",
-          }}
-        />
-      </div>
-
-      <div className="relative w-full max-w-md animate-morph-in">
-        <div
-          className="absolute inset-x-8 top-5 h-28 rounded-full blur-3xl animate-soft-pulse"
-          style={{ background: "color-mix(in srgb, var(--accent) 9%, transparent)" }}
-          aria-hidden="true"
-        />
-
+    <main className="flex min-h-dvh items-center justify-center px-5 py-10">
+      <div className="w-full max-w-sm animate-morph-in">
         <section
-          className="relative overflow-hidden rounded-[28px] border px-6 py-7 shadow-[0_24px_80px_-48px_var(--accent-glow)] sm:px-7"
+          className="rounded-[24px] border px-5 py-6 sm:px-6"
           style={{
-            background:
-              "linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--bg)) 0%, var(--bg) 100%)",
+            background: "var(--bg)",
             borderColor: "var(--border)",
           }}
         >
-          <div
-            className="absolute inset-x-6 top-0 h-px opacity-80"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 32%, transparent), transparent)",
-            }}
-          />
-
           <div className="flex flex-col items-start gap-5">
             <div className="flex items-center gap-3">
               <div
-                className="flex h-12 w-12 items-center justify-center rounded-2xl border animate-soft-pulse"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border"
                 style={{
-                  background:
-                    "linear-gradient(135deg, color-mix(in srgb, var(--surface-raised) 82%, var(--bg)), color-mix(in srgb, var(--accent) 5%, var(--surface)))",
+                  background: "var(--surface)",
                   borderColor: "var(--border)",
                   color: "var(--text)",
                 }}
@@ -163,13 +130,13 @@ export default function UnlockNotePage({ slug }: { slug: string }) {
 
               <div className="min-w-0">
                 <p
-                  className="text-[11px] font-semibold uppercase tracking-[0.28em]"
+                  className="text-[11px] font-semibold uppercase tracking-[0.18em]"
                   style={{ color: "var(--text-faint)" }}
                 >
-                  Protected Note
+                  Password Required
                 </p>
                 <h1
-                  className="mt-1 text-2xl font-semibold tracking-tight"
+                  className="mt-1 text-xl font-semibold tracking-tight"
                   style={{ color: "var(--text)" }}
                 >
                   /n/{slug}
@@ -177,14 +144,9 @@ export default function UnlockNotePage({ slug }: { slug: string }) {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm leading-6" style={{ color: "var(--text-muted)" }}>
-                Enter the password to continue to this shared note.
-              </p>
-              <p className="text-xs" style={{ color: "var(--text-faint)" }}>
-                This browser stays unlocked for 12 hours after a successful entry.
-              </p>
-            </div>
+            <p className="text-sm leading-6" style={{ color: "var(--text-muted)" }}>
+              Enter the note password to continue.
+            </p>
 
             <form onSubmit={handleSubmit} noValidate className="w-full space-y-4">
               <div key={errorKey} className={isError ? "animate-shake" : ""}>
@@ -215,7 +177,7 @@ export default function UnlockNotePage({ slug }: { slug: string }) {
                     placeholder="Enter password"
                     autoComplete="current-password"
                     disabled={isLoading || isSuccess}
-                    className="flex-1 bg-transparent px-4 py-4 text-sm outline-none placeholder:text-[var(--text-faint)]"
+                    className="flex-1 bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-[var(--text-faint)]"
                     style={{ color: "var(--text)" }}
                   />
                   <button
@@ -235,7 +197,6 @@ export default function UnlockNotePage({ slug }: { slug: string }) {
                 disabled={isLoading || isSuccess || !password.trim()}
                 className={[
                   "relative flex w-full items-center justify-center overflow-hidden rounded-2xl py-3.5 text-sm font-semibold transition-all duration-200",
-                  "shadow-[0_12px_30px_-18px_var(--accent-glow)]",
                   "disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none",
                 ].join(" ")}
                 style={{
@@ -288,8 +249,6 @@ export default function UnlockNotePage({ slug }: { slug: string }) {
               >
                 ← Back home
               </Link>
-              <span aria-hidden="true">•</span>
-              <span>Password required by the note owner</span>
             </div>
           </div>
         </section>

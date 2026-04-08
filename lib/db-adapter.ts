@@ -352,6 +352,9 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         animationPreset: String(profile.animationPreset ?? "morph") as BioProfile["animationPreset"],
         backgroundStyle: String(profile.backgroundStyle ?? "plain") as BioProfile["backgroundStyle"],
         buttonSize: String(profile.buttonSize ?? "balanced") as BioProfile["buttonSize"],
+        buttonBlur: String(profile.buttonBlur ?? "soft") as BioProfile["buttonBlur"],
+        pageWidth: String(profile.pageWidth ?? "standard") as BioProfile["pageWidth"],
+        buttonLabelStyle: String(profile.buttonLabelStyle ?? "normal") as BioProfile["buttonLabelStyle"],
         watermarkText: String(profile.watermarkText ?? "made with shor"),
         showThemeToggle: Boolean(profile.showThemeToggle ?? false),
         createdAt: String(profile.createdAt),
@@ -380,6 +383,9 @@ async function mongoAdapter(connectionString: string): Promise<DataAdapter> {
         animationPreset: String(profile.animationPreset ?? "morph") as BioProfile["animationPreset"],
         backgroundStyle: String(profile.backgroundStyle ?? "plain") as BioProfile["backgroundStyle"],
         buttonSize: String(profile.buttonSize ?? "balanced") as BioProfile["buttonSize"],
+        buttonBlur: String(profile.buttonBlur ?? "soft") as BioProfile["buttonBlur"],
+        pageWidth: String(profile.pageWidth ?? "standard") as BioProfile["pageWidth"],
+        buttonLabelStyle: String(profile.buttonLabelStyle ?? "normal") as BioProfile["buttonLabelStyle"],
         watermarkText: String(profile.watermarkText ?? "made with shor"),
         showThemeToggle: Boolean(profile.showThemeToggle ?? false),
         createdAt: String(profile.createdAt),
@@ -586,6 +592,9 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       font_preset  TEXT        NOT NULL DEFAULT 'sans',
       animation_preset TEXT    NOT NULL DEFAULT 'morph',
       background_style TEXT    NOT NULL DEFAULT 'plain',
+      button_blur TEXT         NOT NULL DEFAULT 'soft',
+      page_width TEXT          NOT NULL DEFAULT 'standard',
+      button_label_style TEXT  NOT NULL DEFAULT 'normal',
       watermark_text TEXT      NOT NULL DEFAULT 'made with shor',
       show_theme_toggle BOOLEAN NOT NULL DEFAULT false,
       created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -650,6 +659,12 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
       ADD COLUMN IF NOT EXISTS animation_preset TEXT NOT NULL DEFAULT 'morph';
     ALTER TABLE shor_bio_profiles
       ADD COLUMN IF NOT EXISTS background_style TEXT NOT NULL DEFAULT 'plain';
+    ALTER TABLE shor_bio_profiles
+      ADD COLUMN IF NOT EXISTS button_blur TEXT NOT NULL DEFAULT 'soft';
+    ALTER TABLE shor_bio_profiles
+      ADD COLUMN IF NOT EXISTS page_width TEXT NOT NULL DEFAULT 'standard';
+    ALTER TABLE shor_bio_profiles
+      ADD COLUMN IF NOT EXISTS button_label_style TEXT NOT NULL DEFAULT 'normal';
     ALTER TABLE shor_bio_profiles
       ADD COLUMN IF NOT EXISTS watermark_text TEXT NOT NULL DEFAULT 'made with shor';
     ALTER TABLE shor_bio_profiles
@@ -814,7 +829,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async getBioProfileByUserId(userId) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, username, display_name, bio, avatar, button_style, button_size, accent_color, theme_preset, font_preset, animation_preset, background_style, watermark_text, show_theme_toggle, created_at, updated_at
+        `SELECT id, user_id, username, display_name, bio, avatar, button_style, button_size, accent_color, theme_preset, font_preset, animation_preset, background_style, button_blur, page_width, button_label_style, watermark_text, show_theme_toggle, created_at, updated_at
          FROM shor_bio_profiles
          WHERE user_id=$1`,
         [userId],
@@ -836,6 +851,9 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         fontPreset: row.font_preset,
         animationPreset: row.animation_preset,
         backgroundStyle: row.background_style ?? "plain",
+        buttonBlur: row.button_blur ?? "soft",
+        pageWidth: row.page_width ?? "standard",
+        buttonLabelStyle: row.button_label_style ?? "normal",
         watermarkText: row.watermark_text,
         showThemeToggle: row.show_theme_toggle ?? false,
         createdAt: toIso(row.created_at),
@@ -845,7 +863,7 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
 
     async getBioProfileByUsername(username) {
       const { rows } = await pool.query(
-        `SELECT id, user_id, username, display_name, bio, avatar, button_style, button_size, accent_color, theme_preset, font_preset, animation_preset, background_style, watermark_text, show_theme_toggle, created_at, updated_at
+        `SELECT id, user_id, username, display_name, bio, avatar, button_style, button_size, accent_color, theme_preset, font_preset, animation_preset, background_style, button_blur, page_width, button_label_style, watermark_text, show_theme_toggle, created_at, updated_at
          FROM shor_bio_profiles
          WHERE username=$1`,
         [username.toLowerCase()],
@@ -867,6 +885,9 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
         fontPreset: row.font_preset,
         animationPreset: row.animation_preset,
         backgroundStyle: row.background_style ?? "plain",
+        buttonBlur: row.button_blur ?? "soft",
+        pageWidth: row.page_width ?? "standard",
+        buttonLabelStyle: row.button_label_style ?? "normal",
         watermarkText: row.watermark_text,
         showThemeToggle: row.show_theme_toggle ?? false,
         createdAt: toIso(row.created_at),
@@ -877,11 +898,11 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
     async writeBioProfile(profile) {
       await pool.query(
         `INSERT INTO shor_bio_profiles (
-           id, user_id, username, display_name, bio, avatar, button_style, button_size, accent_color, theme_preset, font_preset, animation_preset, background_style, watermark_text, show_theme_toggle, created_at, updated_at
+           id, user_id, username, display_name, bio, avatar, button_style, button_size, accent_color, theme_preset, font_preset, animation_preset, background_style, button_blur, page_width, button_label_style, watermark_text, show_theme_toggle, created_at, updated_at
          )
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
          ON CONFLICT (id) DO UPDATE
-           SET user_id=$2, username=$3, display_name=$4, bio=$5, avatar=$6, button_style=$7, button_size=$8, accent_color=$9, theme_preset=$10, font_preset=$11, animation_preset=$12, background_style=$13, watermark_text=$14, show_theme_toggle=$15, created_at=$16, updated_at=$17`,
+           SET user_id=$2, username=$3, display_name=$4, bio=$5, avatar=$6, button_style=$7, button_size=$8, accent_color=$9, theme_preset=$10, font_preset=$11, animation_preset=$12, background_style=$13, button_blur=$14, page_width=$15, button_label_style=$16, watermark_text=$17, show_theme_toggle=$18, created_at=$19, updated_at=$20`,
         [
           profile.id,
           profile.userId,
@@ -896,6 +917,9 @@ async function pgAdapter(connectionString: string): Promise<DataAdapter> {
           profile.fontPreset,
           profile.animationPreset,
           profile.backgroundStyle,
+          profile.buttonBlur,
+          profile.pageWidth,
+          profile.buttonLabelStyle,
           profile.watermarkText,
           profile.showThemeToggle,
           profile.createdAt,
