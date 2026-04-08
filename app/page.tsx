@@ -3,6 +3,8 @@ import ShortenerHome from "@/components/ShortenerHome";
 import { getOptionalSession } from "@/lib/auth";
 import { createPageMetadata } from "@/lib/metadata";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = createPageMetadata({
   title: "Shor",
   description: "A minimal workspace for short links, bio pages, and private notes.",

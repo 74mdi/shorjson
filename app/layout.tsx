@@ -106,6 +106,7 @@ export default async function RootLayout({
           auth={
             session
               ? {
+                  csrfToken: session.csrfToken,
                   username: session.username,
                 }
               : null

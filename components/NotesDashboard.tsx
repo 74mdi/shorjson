@@ -226,6 +226,8 @@ export default function NotesDashboard({
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [saveShareState, setSaveShareState] = useState<SaveState>("idle");
   const [shareError, setShareError] = useState("");
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [siteOrigin, setSiteOrigin] = useState("");
 
   const deferredSearch = useDeferredValue(search);
   const activeNote = useMemo(
@@ -242,6 +244,7 @@ export default function NotesDashboard({
     });
   }, [deferredSearch, notes]);
   const stats = useMemo(() => getTextStats(draftContent), [draftContent]);
+  const shareUrl = draftSlug && siteOrigin ? `${siteOrigin}/n/${draftSlug}` : "";
 
   function setDraftTitleValue(value: string) {
     latestDraftTitleRef.current = value;
@@ -491,6 +494,18 @@ export default function NotesDashboard({
     }, 800);
   }
 
+  async function handleCopyShareLink() {
+    if (!shareUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareLinkCopied(true);
+      window.setTimeout(() => setShareLinkCopied(false), 1600);
+    } catch {
+      setShareLinkCopied(false);
+    }
+  }
+
   async function flushPendingSave() {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -528,6 +543,7 @@ export default function NotesDashboard({
   }
 
   useEffect(() => {
+    setSiteOrigin(window.location.origin);
     void loadNotes();
 
     return () => {
@@ -569,6 +585,7 @@ export default function NotesDashboard({
     setSaveShareState("idle");
     setError("");
     setShareError("");
+    setShareLinkCopied(false);
 
     requestAnimationFrame(() => {
       if (editorRef.current) {
@@ -1033,82 +1050,116 @@ export default function NotesDashboard({
                   </div>
                   
                   {showSharePanel && (
-                    <div className="mt-4 rounded-xl border p-5 shadow-sm transition-all animate-in fade-in slide-in-from-top-2" style={{ borderColor: 'var(--border)', background: 'var(--subtle)' }}>
-                      <h3 className="mb-4 text-sm font-semibold" style={{ color: "var(--text)" }}>Share Settings</h3>
-                      <div className="flex flex-col gap-4">
-                        <label className="flex items-center gap-3">
-                          <input 
-                            type="checkbox" 
-                            checked={draftIsPublic}
-                            onChange={(e) => {
-                              setDraftIsPublic(e.target.checked);
-                              handleShareStateChange(e.target.checked, draftSlug, draftPassword);
-                            }}
-                            className="h-4 w-4 rounded border-gray-300"
-                          />
-                          <span className="text-sm font-medium" style={{ color: "var(--text)" }}>Enable Public Link</span>
-                        </label>
-                        
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>CUSTOM SLUG (OPTIONAL)</label>
-                            <input 
-                              type="text" 
-                              value={draftSlug}
-                              onChange={(e) => {
-                                setDraftSlug(e.target.value);
-                                handleShareStateChange(draftIsPublic, e.target.value, draftPassword);
-                              }}
-                              placeholder="e.g. my-note"
-                              disabled={!draftIsPublic}
-                              className="rounded-lg border px-3 py-2 text-sm outline-none transition-all disabled:opacity-50"
-                              style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text)" }}
-                            />
-                          </div>
-
-                          <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>PASSWORD (OPTIONAL)</label>
-                            <input 
-                              type="password" 
-                              value={draftPassword}
-                              onChange={(e) => {
-                                setDraftPassword(e.target.value);
-                                handleShareStateChange(draftIsPublic, draftSlug, e.target.value);
-                              }}
-                              placeholder={activeNote.passwordHash ? "••••••••" : "Leave empty for none"}
-                              disabled={!draftIsPublic}
-                              className="rounded-lg border px-3 py-2 text-sm outline-none transition-all disabled:opacity-50"
-                              style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text)" }}
-                            />
-                          </div>
-                        </div>
-
-                        {draftIsPublic && (
-                          <div className="mt-2 flex items-center justify-between rounded-lg px-3 py-2" style={{ background: "var(--bg)" }}>
-                            <div className="text-xs font-mono truncate mr-2" style={{ color: "var(--text-muted)" }}>
-                              {draftSlug ? `${window.location.origin}/n/${draftSlug}` : "Slug required to view"}
-                            </div>
-                            <button
-                              type="button"
-                              disabled={!draftSlug}
-                              className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50"
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/n/${draftSlug}`);
-                                alert("Link copied!");
-                              }}
-                            >
-                              Copy Link
-                            </button>
-                          </div>
-                        )}
-
-                        <div className="mt-1 flex items-center text-xs font-medium" style={{ color: "var(--text-muted)" }}>
-                          {saveShareState === "saving" && "Saving sharing settings..."}
-                          {saveShareState === "saved" && <span className="text-emerald-500">Share settings saved</span>}
-                          {saveShareState === "error" && <span className="text-red-500">{shareError || "Failed to save share settings (slug may be taken)"}</span>}
+                    <section className={styles.sharePanel}>
+                      <div className={styles.sharePanelHeader}>
+                        <div className={styles.sharePanelMeta}>
+                          <div className={styles.sharePanelEyebrow}>Public sharing</div>
+                          <h3 className={styles.sharePanelTitle}>Share this note with a clean link</h3>
+                          <p className={styles.sharePanelText}>
+                            Publish a note at `/n/your-slug`, keep it private again whenever
+                            you want, and add an optional password for extra control.
+                          </p>
                         </div>
                       </div>
-                    </div>
+
+                      <div className={styles.shareToggleCard}>
+                        <div className={styles.shareToggleCopy}>
+                          <div className={styles.shareToggleTitle}>Enable public note link</div>
+                          <div className={styles.shareToggleText}>
+                            Visitors can open this note from the shared URL while it stays
+                            editable only in your workspace.
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          aria-pressed={draftIsPublic}
+                          className={[
+                            styles.shareSwitch,
+                            draftIsPublic ? styles.shareSwitchActive : "",
+                          ].join(" ")}
+                          onClick={() => {
+                            const next = !draftIsPublic;
+                            setDraftIsPublic(next);
+                            handleShareStateChange(next, draftSlug, draftPassword);
+                          }}
+                        >
+                          <span className={styles.shareSwitchThumb} aria-hidden="true" />
+                        </button>
+                      </div>
+
+                      <div className={styles.shareFields}>
+                        <label className={styles.shareField}>
+                          <span className={styles.shareFieldLabel}>Custom slug</span>
+                          <input
+                            type="text"
+                            value={draftSlug}
+                            onChange={(event) => {
+                              setDraftSlug(event.target.value);
+                              setShareLinkCopied(false);
+                              handleShareStateChange(
+                                draftIsPublic,
+                                event.target.value,
+                                draftPassword,
+                              );
+                            }}
+                            placeholder="e.g. release-notes"
+                            disabled={!draftIsPublic}
+                            className={styles.shareFieldInput}
+                          />
+                        </label>
+
+                        <label className={styles.shareField}>
+                          <span className={styles.shareFieldLabel}>Password</span>
+                          <input
+                            type="password"
+                            value={draftPassword}
+                            onChange={(event) => {
+                              setDraftPassword(event.target.value);
+                              handleShareStateChange(
+                                draftIsPublic,
+                                draftSlug,
+                                event.target.value,
+                              );
+                            }}
+                            placeholder={
+                              activeNote.passwordHash
+                                ? "Leave blank to keep existing"
+                                : "Optional"
+                            }
+                            disabled={!draftIsPublic}
+                            className={styles.shareFieldInput}
+                          />
+                        </label>
+                      </div>
+
+                      <div className={styles.sharePreview}>
+                        <div className={styles.sharePreviewUrl}>
+                          {draftIsPublic
+                            ? shareUrl || "Add a slug to generate the public link."
+                            : "Turn on public sharing to generate a note link."}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={!draftIsPublic || !shareUrl}
+                          className={styles.shareCopyButton}
+                          onClick={() => void handleCopyShareLink()}
+                        >
+                          {shareLinkCopied ? "Copied" : "Copy Link"}
+                        </button>
+                      </div>
+
+                      <div className={styles.shareStatus}>
+                        {saveShareState === "saving" && "Saving share settings..."}
+                        {saveShareState === "saved" && (
+                          <span style={{ color: "#10b981" }}>Share settings saved.</span>
+                        )}
+                        {saveShareState === "error" && (
+                          <span style={{ color: "#ef4444" }}>
+                            {shareError || "Failed to save share settings. That slug may already be taken."}
+                          </span>
+                        )}
+                      </div>
+                    </section>
                   )}
                 </>
               ) : (

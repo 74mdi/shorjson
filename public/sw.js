@@ -1,10 +1,5 @@
-const CACHE = "shor-v1";
-
-// Assets to cache immediately on install
-const PRECACHE = [
-  "/",
-  "/notes",
-];
+const CACHE = "shor-v2";
+const PRECACHE = [];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -26,6 +21,10 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  if (request.method !== "GET") {
+    return;
+  }
+
   // Always fetch API calls from network (never serve stale data)
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
@@ -43,13 +42,22 @@ self.addEventListener("fetch", (event) => {
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(request, clone));
-          return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/")))
+        .then((res) => res)
+        .catch(() =>
+          caches.match(request).then(
+            (cached) =>
+              cached ||
+              new Response("Offline", {
+                status: 503,
+                headers: { "Content-Type": "text/plain; charset=utf-8" },
+              }),
+          )
+        )
     );
+    return;
+  }
+
+  if (url.origin !== self.location.origin) {
     return;
   }
 

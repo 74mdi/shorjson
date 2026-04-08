@@ -66,8 +66,6 @@ const NAV_TABS = [
   },
 ] as const;
 
-const TAB_W = 72; // px — each tab, indicator matches
-
 /* ── BottomBar ───────────────────────────────────────────────────────────── */
 
 export default function BottomBar({
@@ -82,11 +80,15 @@ export default function BottomBar({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none"
-      style={{ paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+      className="fixed inset-x-0 z-50 flex justify-center pointer-events-none"
+      style={{
+        bottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        paddingLeft: "max(12px, env(safe-area-inset-left))",
+        paddingRight: "max(12px, env(safe-area-inset-right))",
+      }}
     >
       <div
-        className="pointer-events-auto"
+        className="pointer-events-auto w-full max-w-[380px]"
         style={{
           background: "var(--surface)",
           border: "1px solid var(--border)",
@@ -104,11 +106,11 @@ export default function BottomBar({
                 position: "absolute",
                 top: 0,
                 left: 0,
-                width: TAB_W,
+                width: `calc(100% / ${NAV_TABS.length})`,
                 height: "100%",
                 borderRadius: 18,
                 background: "var(--accent)",
-                transform: `translateX(${activeIdx * TAB_W}px)`,
+                transform: `translateX(${activeIdx * 100}%)`,
                 transition: "transform 0.42s cubic-bezier(0.34, 1.42, 0.64, 1)",
                 pointerEvents: "none",
                 zIndex: 0,
@@ -126,8 +128,9 @@ export default function BottomBar({
                 style={{
                   position: "relative",
                   zIndex: 1,
-                  width: TAB_W,
                   display: "flex",
+                  flex: 1,
+                  minWidth: 0,
                   flexDirection: "column",
                   alignItems: "center",
                   justifyContent: "center",
