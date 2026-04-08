@@ -6,26 +6,22 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type CSSProperties,
   type FormEvent,
 } from "react";
 import { useRouter } from "next/navigation";
 import type { BioProfile } from "@/lib/account-types";
-import {
-  ANIMATION_PRESETS,
-  BACKGROUND_STYLES,
-  BUTTON_STYLES,
-  FONT_PRESETS,
-  getPublicBioPath,
-  THEME_PRESETS,
-} from "@/lib/bio-shared";
+import { getPublicBioPath } from "@/lib/bio-shared";
 import {
   bioProfileSchema,
   MAX_AVATAR_FILE_BYTES,
   passwordChangeSchema,
   USERNAME_PATTERN,
 } from "@/lib/schemas";
-import { applyTheme, getCurrentThemeIsDark, subscribeToTheme } from "@/lib/theme-client";
+import {
+  applyTheme,
+  getCurrentThemeIsDark,
+  subscribeToTheme,
+} from "@/lib/theme-client";
 
 type ProfileFieldErrors = Partial<
   Record<"avatar" | "bio" | "displayName" | "username", string[]>
@@ -326,221 +322,182 @@ export default function UserSettingsPage({
           ? "Save failed"
           : "Ready";
 
-  const cardClassName = "rounded-[24px] border p-5 sm:p-6";
-  const surfaceStyle: CSSProperties = {
-    borderColor: "var(--border)",
-    background: "var(--surface)",
-  };
-  const insetSurfaceStyle: CSSProperties = {
-    borderColor: "var(--border)",
-    background: "var(--bg)",
-  };
-  const actionButtonClassName =
-    "rounded-[20px] border px-4 py-4 text-left transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
+  const cardClassName =
+    "rounded-[28px] border bg-[var(--surface)] p-6 shadow-[0_1px_0_var(--accent-glow)] sm:p-8";
+  const fieldClassName =
+    "w-full rounded-2xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]";
+  const secondaryButtonClassName =
+    "inline-flex items-center justify-center rounded-full border px-4 py-2.5 text-sm transition-all duration-200 hover:border-[var(--border2)] hover:bg-[var(--bg)]";
   const primaryButtonClassName =
-    "rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60";
-  const pillButtonClassName =
-    "rounded-full border px-4 py-2 text-sm transition-all duration-200 hover:-translate-y-px hover:border-[var(--border2)] hover:bg-[var(--surface-raised)]";
+    "inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60";
+  const workspaceLinks = [
+    {
+      href: "/",
+      label: "Link shortener",
+      text: "Create and manage short links.",
+    },
+    {
+      href: "/dashboard/links",
+      label: "Bio links",
+      text: "Edit your public links page.",
+    },
+    {
+      href: "/notes",
+      label: "Notes",
+      text: "Open your private notes workspace.",
+    },
+    {
+      href: publicPath,
+      label: "Public profile",
+      text: "See the live page visitors get.",
+    },
+  ];
 
   return (
-    <main className="min-h-dvh px-5 pb-28 pt-10 sm:pt-14">
-      <div className="mx-auto w-full max-w-5xl animate-morph-in">
+    <main className="min-h-dvh px-4 py-10 sm:px-6 sm:py-14">
+      <div className="mx-auto w-full max-w-3xl animate-morph-in">
         <header
-          className="rounded-[30px] border px-5 py-6 sm:px-7 sm:py-7"
-          style={surfaceStyle}
+          className={`${cardClassName} flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between`}
+          style={{ borderColor: "var(--border)" }}
         >
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-start gap-4">
-              {profile.avatar ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={profile.avatar}
-                  alt="Profile avatar"
-                  className="h-20 w-20 rounded-[24px] border object-cover"
-                  style={{ borderColor: "var(--border)" }}
-                />
-              ) : (
-                <div
-                  className="flex h-20 w-20 items-center justify-center rounded-[24px] border text-2xl font-semibold"
+          <div className="flex items-start gap-4 sm:gap-5">
+            {profile.avatar ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={profile.avatar}
+                alt="Profile avatar"
+                className="h-16 w-16 rounded-2xl border object-cover sm:h-20 sm:w-20"
+                style={{ borderColor: "var(--border)" }}
+              />
+            ) : (
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-2xl border text-xl font-semibold sm:h-20 sm:w-20 sm:text-2xl"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                  color: "var(--text)",
+                }}
+              >
+                {getAvatarInitial(profile)}
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <div
+                className="inline-flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: "var(--text-faint)" }}
+              >
+                <span>Account</span>
+                <span>@{activeUsername}</span>
+                <span>Joined {formatAccountDate(initialProfile.createdAt)}</span>
+              </div>
+
+              <h1
+                className="pt-3 text-3xl font-semibold tracking-tight sm:text-[2.25rem]"
+                style={{
+                  color: "var(--text)",
+                  fontFamily: "var(--font-grotesk-ui)",
+                }}
+              >
+                {profile.displayName || `@${activeUsername}`}
+              </h1>
+
+              <p
+                className="max-w-xl pt-2 text-sm leading-7 sm:text-base"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Manage your public details, password, and the few account
+                controls that matter most.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-4 text-xs">
+                <span
+                  className="rounded-full border px-3 py-1"
                   style={{
                     borderColor: "var(--border)",
                     background: "var(--bg)",
-                    color: "var(--text)",
+                    color:
+                      profileSaveState === "error"
+                        ? "#c0392b"
+                        : "var(--text-muted)",
                   }}
                 >
-                  {getAvatarInitial(profile)}
-                </div>
-              )}
-
-              <div>
-                <div
-                  className="inline-flex flex-wrap items-center gap-2 rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em]"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  <span>Account</span>
-                  <span>@{activeUsername}</span>
-                  <span>Joined {formatAccountDate(initialProfile.createdAt)}</span>
-                </div>
-
-                <h1
-                  className="pt-4 text-3xl font-semibold tracking-tight sm:text-4xl"
-                  style={{
-                    color: "var(--text)",
-                    fontFamily: "var(--font-grotesk-ui)",
-                  }}
-                >
-                  {profile.displayName || `@${activeUsername}`}
-                </h1>
-                <p
-                  className="max-w-2xl pt-2 text-sm leading-7 sm:text-base"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Your profile, account settings, and workspace controls all live
-                  here now.
-                </p>
-                <div className="flex flex-wrap items-center gap-3 pt-4 text-xs">
-                  <span style={{ color: "var(--text-faint)" }}>Public page:</span>
-                  <span style={{ color: "var(--text-muted)" }}>{publicUrl}</span>
-                  <span
-                    className="rounded-full border px-3 py-1"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: "var(--bg)",
-                      color:
-                        profileSaveState === "error"
-                          ? "#c0392b"
-                          : "var(--text-muted)",
-                    }}
-                  >
-                    {profileSaveLabel}
-                  </span>
-                </div>
+                  {profileSaveLabel}
+                </span>
+                <span style={{ color: "var(--text-faint)" }}>{publicUrl}</span>
               </div>
             </div>
+          </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link
-                href={publicPath}
-                className={actionButtonClassName}
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                }}
-              >
-                <div className="text-sm font-medium">Open public page</div>
-                <div
-                  className="pt-1 text-xs leading-6"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Check how your `@username` page looks live.
-                </div>
-              </Link>
-
-              <Link
-                href="/dashboard/links"
-                className={actionButtonClassName}
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg)",
-                  color: "var(--text)",
-                }}
-              >
-                <div className="text-sm font-medium">Bio links editor</div>
-                <div
-                  className="pt-1 text-xs leading-6"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Update your public links, page style, and live preview.
-                </div>
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => void handleCopyPublicUrl()}
-                className={actionButtonClassName}
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--surface)",
-                  color: "var(--text)",
-                }}
-              >
-                <div className="text-sm font-medium">
-                  {copiedPublicLink ? "Public URL copied" : "Copy public URL"}
-                </div>
-                <div
-                  className="pt-1 text-xs leading-6"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Share your live `@username` page faster.
-                </div>
-              </button>
-
-              <Link
-                href="/notes"
-                className={actionButtonClassName}
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg)",
-                  color: "var(--text)",
-                }}
-              >
-                <div className="text-sm font-medium">Open notes</div>
-                <div
-                  className="pt-1 text-xs leading-6"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  Jump straight back into your private notes workspace.
-                </div>
-              </Link>
-            </div>
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            <Link
+              href={publicPath}
+              className={secondaryButtonClassName}
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text)",
+              }}
+            >
+              View profile
+            </Link>
+            <button
+              type="button"
+              onClick={() => void handleCopyPublicUrl()}
+              className={secondaryButtonClassName}
+              style={{
+                borderColor: "var(--border)",
+                color: "var(--text)",
+              }}
+            >
+              {copiedPublicLink ? "Copied" : "Copy link"}
+            </button>
           </div>
         </header>
 
-        <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
+        <div className="mt-4 grid gap-4">
           <form
             onSubmit={handleProfileSubmit}
             className={cardClassName}
-            style={surfaceStyle}
+            style={{ borderColor: "var(--border)" }}
           >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p
-                  className="text-[11px] uppercase tracking-[0.18em]"
-                  style={{ color: "var(--text-faint)" }}
-                >
-                  Profile
-                </p>
-                <h2
-                  className="pt-2 text-xl font-semibold"
-                  style={{ color: "var(--text)" }}
-                >
-                  Public identity
-                </h2>
-              </div>
+            <div className="flex flex-col gap-2 border-b pb-5" style={{ borderColor: "var(--border)" }}>
+              <p
+                className="text-[11px] uppercase tracking-[0.18em]"
+                style={{ color: "var(--text-faint)" }}
+              >
+                Profile
+              </p>
+              <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
+                Public details
+              </h2>
+              <p className="text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+                Keep your public page simple and up to date.
+              </p>
             </div>
 
-            <div className="mt-6 grid gap-5">
-              <div className="rounded-3xl border p-4" style={insetSurfaceStyle}>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="mt-6 space-y-6">
+              <div
+                className="flex flex-col gap-4 rounded-3xl border p-4 sm:flex-row sm:items-center sm:justify-between"
+                style={{
+                  borderColor: "var(--border)",
+                  background: "var(--bg)",
+                }}
+              >
+                <div className="flex items-center gap-4">
                   {profile.avatar ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={profile.avatar}
                       alt="Current avatar"
-                      className="h-20 w-20 rounded-[22px] border object-cover"
+                      className="h-14 w-14 rounded-2xl border object-cover"
                       style={{ borderColor: "var(--border)" }}
                     />
                   ) : (
                     <div
-                      className="flex h-20 w-20 items-center justify-center rounded-[22px] border text-2xl font-semibold"
+                      className="flex h-14 w-14 items-center justify-center rounded-2xl border text-lg font-semibold"
                       style={{
                         borderColor: "var(--border)",
-                        background: "var(--bg)",
+                        background: "var(--surface)",
                         color: "var(--text)",
                       }}
                     >
@@ -548,67 +505,59 @@ export default function UserSettingsPage({
                     </div>
                   )}
 
-                  <div className="flex-1">
-                    <div
-                      className="text-sm font-medium"
-                      style={{ color: "var(--text)" }}
-                    >
-                      Profile photo
+                  <div>
+                    <div className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                      Avatar
                     </div>
-                    <p
-                      className="pt-1 text-xs leading-6"
-                      style={{ color: "var(--text-muted)" }}
-                    >
+                    <p className="pt-1 text-xs leading-6" style={{ color: "var(--text-muted)" }}>
                       Upload a square image or keep the generated initial.
                     </p>
                   </div>
+                </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <label
-                      className={`cursor-pointer ${pillButtonClassName}`}
+                <div className="flex flex-wrap gap-2">
+                  <label
+                    className={`cursor-pointer ${secondaryButtonClassName}`}
+                    style={{
+                      borderColor: "var(--border)",
+                      color: "var(--text)",
+                    }}
+                  >
+                    Upload
+                    <input
+                      hidden
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                    />
+                  </label>
+
+                  {profile.avatar ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setProfile((current) => ({
+                          ...current,
+                          avatar: null,
+                        }))
+                      }
+                      className={secondaryButtonClassName}
                       style={{
                         borderColor: "var(--border)",
-                        background: "var(--surface)",
                         color: "var(--text)",
                       }}
                     >
-                      Upload
-                      <input
-                        hidden
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                      />
-                    </label>
-
-                    {profile.avatar ? (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setProfile((current) => ({
-                            ...current,
-                            avatar: null,
-                          }))
-                        }
-                        className={pillButtonClassName}
-                        style={{
-                          borderColor: "var(--border)",
-                          background: "var(--surface)",
-                          color: "var(--text)",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                  </div>
+                      Remove
+                    </button>
+                  ) : null}
                 </div>
-
-                {profileErrors.avatar?.[0] ? (
-                  <p className="pt-3 text-xs" style={{ color: "#c0392b" }}>
-                    {profileErrors.avatar[0]}
-                  </p>
-                ) : null}
               </div>
+
+              {profileErrors.avatar?.[0] ? (
+                <p className="text-xs" style={{ color: "#c0392b" }}>
+                  {profileErrors.avatar[0]}
+                </p>
+              ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
@@ -628,7 +577,7 @@ export default function UserSettingsPage({
                         displayName: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                    className={fieldClassName}
                     style={{ borderColor: "var(--border)" }}
                     placeholder="Your display name"
                   />
@@ -654,13 +603,19 @@ export default function UserSettingsPage({
                         username: event.target.value.toLowerCase(),
                       }))
                     }
-                    className="w-full rounded-2xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                    className={fieldClassName}
                     style={{ borderColor: "var(--border)" }}
                     placeholder="lowercase_username"
                     spellCheck={false}
                   />
                   <div className="flex items-center justify-between gap-3 text-[11px]">
-                    <span style={{ color: "var(--text-muted)" }}>{publicUrl}</span>
+                    <span
+                      className="truncate"
+                      style={{ color: "var(--text-muted)" }}
+                      title={publicUrl}
+                    >
+                      {publicUrl}
+                    </span>
                     <span style={{ color: "var(--text-faint)" }}>
                       {checkingUsername
                         ? "checking..."
@@ -692,7 +647,7 @@ export default function UserSettingsPage({
                       bio: event.target.value,
                     }))
                   }
-                  className="min-h-[136px] w-full rounded-3xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                  className={`min-h-[140px] ${fieldClassName}`}
                   style={{ borderColor: "var(--border)" }}
                   placeholder="A short intro for your public page."
                 />
@@ -706,180 +661,80 @@ export default function UserSettingsPage({
                 </div>
               </label>
 
-              <div
-                className="rounded-3xl border p-4"
-                style={insetSurfaceStyle}
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div
-                      className="text-sm font-medium"
-                      style={{ color: "var(--text)" }}
-                    >
-                      Public URL
-                    </div>
-                    <p
-                      className="pt-1 text-xs leading-6"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      Your bio page always stays in the `/@username` format.
-                    </p>
-                  </div>
-
-                  <div
-                    className="rounded-2xl border px-4 py-3 text-sm"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: "var(--surface)",
-                      color: "var(--text)",
-                    }}
+              <div className="flex flex-col gap-4 border-t pt-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium" style={{ color: "var(--text)" }}>
+                    Public URL
+                  </p>
+                  <p
+                    className="break-all pt-1 text-xs leading-6"
+                    style={{ color: "var(--text-muted)" }}
                   >
                     {publicUrl}
-                  </div>
+                  </p>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between gap-3">
-                <span
-                  className="text-xs"
-                  style={{
-                    color:
-                      profileSaveState === "error"
-                        ? "#c0392b"
-                        : "var(--text-muted)",
-                  }}
-                >
-                  {profileSaveLabel}
-                </span>
                 <button
                   type="submit"
                   disabled={profileSaveState === "saving"}
-                  className="rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:-translate-y-px hover:opacity-95 disabled:opacity-60"
+                  className={primaryButtonClassName}
                   style={{
                     background: "var(--accent)",
                     color: "var(--bg)",
                   }}
                 >
-                  {profileSaveState === "saving" ? "Saving..." : "Save account"}
+                  {profileSaveState === "saving" ? "Saving..." : "Save changes"}
                 </button>
               </div>
             </div>
           </form>
 
-          <div className="grid gap-5">
-            <section className={cardClassName} style={surfaceStyle}>
-              <p
-                className="text-[11px] uppercase tracking-[0.18em]"
-                style={{ color: "var(--text-faint)" }}
-              >
-                Features
-              </p>
-              <h2
-                className="pt-2 text-xl font-semibold"
-                style={{ color: "var(--text)" }}
-              >
-                Customization library
-              </h2>
-              <p
-                className="pt-2 text-sm leading-7"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Your public bio page now has a much larger styling system with
-                more motion, fonts, themes, and hover treatments.
-              </p>
-
-              <div className="grid grid-cols-2 gap-3 pt-5">
-                {[
-                  { label: "Button styles", value: BUTTON_STYLES.length },
-                  { label: "Themes", value: THEME_PRESETS.length },
-                  { label: "Font presets", value: FONT_PRESETS.length },
-                  { label: "Motion presets", value: ANIMATION_PRESETS.length },
-                  { label: "Backgrounds", value: BACKGROUND_STYLES.length },
-                  { label: "Accent swatches", value: 32 },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-2xl border px-4 py-4"
-                    style={{
-                      borderColor: "var(--border)",
-                      background: "var(--bg)",
-                    }}
-                  >
-                    <div
-                      className="text-2xl font-semibold"
-                      style={{ color: "var(--text)" }}
-                    >
-                      {item.value}
-                    </div>
-                    <div
-                      className="pt-1 text-xs uppercase tracking-[0.16em]"
-                      style={{ color: "var(--text-faint)" }}
-                    >
-                      {item.label}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div
-                className="mt-4 rounded-2xl border px-4 py-4 text-sm leading-7"
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg)",
-                  color: "var(--text-muted)",
-                }}
-              >
-                Hover motion now changes with the selected animation preset, the
-                public page can switch between light and dark palettes, and the
-                koki watermark always stays visible.
-              </div>
-            </section>
-
-            <section className={cardClassName} style={surfaceStyle}>
+          <form
+            onSubmit={handlePasswordSubmit}
+            className={cardClassName}
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div className="flex flex-col gap-2 border-b pb-5" style={{ borderColor: "var(--border)" }}>
               <p
                 className="text-[11px] uppercase tracking-[0.18em]"
                 style={{ color: "var(--text-faint)" }}
               >
                 Security
               </p>
-              <h2
-                className="pt-2 text-xl font-semibold"
-                style={{ color: "var(--text)" }}
-              >
+              <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
                 Password
               </h2>
-              <p
-                className="pt-2 text-sm leading-7"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Change your password without leaving the page.
+              <p className="text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+                Update your password without leaving this page.
               </p>
+            </div>
 
-              <form onSubmit={handlePasswordSubmit} className="grid gap-3 pt-5">
-                <label className="flex flex-col gap-1.5">
-                  <span
-                    className="text-[11px] font-medium uppercase tracking-[0.18em]"
-                    style={{ color: "var(--text-faint)" }}
-                  >
-                    Current password
-                  </span>
-                  <input
-                    type="password"
-                    value={passwordForm.currentPassword}
-                    onChange={(event) =>
-                      setPasswordForm((current) => ({
-                        ...current,
-                        currentPassword: event.target.value,
-                      }))
-                    }
-                    className="w-full rounded-2xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]"
-                    style={{ borderColor: "var(--border)" }}
-                  />
-                  <span className="min-h-[16px] text-[11px]" style={{ color: "#c0392b" }}>
-                    {passwordErrors.currentPassword?.[0] ?? ""}
-                  </span>
-                </label>
+            <div className="mt-6 grid gap-4">
+              <label className="flex flex-col gap-1.5">
+                <span
+                  className="text-[11px] font-medium uppercase tracking-[0.18em]"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  Current password
+                </span>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(event) =>
+                    setPasswordForm((current) => ({
+                      ...current,
+                      currentPassword: event.target.value,
+                    }))
+                  }
+                  className={fieldClassName}
+                  style={{ borderColor: "var(--border)" }}
+                />
+                <span className="min-h-[16px] text-[11px]" style={{ color: "#c0392b" }}>
+                  {passwordErrors.currentPassword?.[0] ?? ""}
+                </span>
+              </label>
 
+              <div className="grid gap-4 sm:grid-cols-2">
                 <label className="flex flex-col gap-1.5">
                   <span
                     className="text-[11px] font-medium uppercase tracking-[0.18em]"
@@ -896,7 +751,7 @@ export default function UserSettingsPage({
                         newPassword: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                    className={fieldClassName}
                     style={{ borderColor: "var(--border)" }}
                   />
                   <span className="min-h-[16px] text-[11px]" style={{ color: "#c0392b" }}>
@@ -920,31 +775,34 @@ export default function UserSettingsPage({
                         confirmPassword: event.target.value,
                       }))
                     }
-                    className="w-full rounded-2xl border bg-[var(--bg)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-all duration-200 focus:border-[var(--accent)] focus:shadow-[0_0_0_3px_var(--accent-glow)]"
+                    className={fieldClassName}
                     style={{ borderColor: "var(--border)" }}
                   />
                   <span className="min-h-[16px] text-[11px]" style={{ color: "#c0392b" }}>
                     {passwordErrors.confirmPassword?.[0] ?? ""}
                   </span>
                 </label>
+              </div>
 
-                {passwordMessage ? (
-                  <p
-                    className="text-sm"
-                    style={{
-                      color: passwordMessage === "Password updated."
+              <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+                <p
+                  className="text-sm"
+                  style={{
+                    color:
+                      passwordMessage === "Password updated."
                         ? "var(--text-muted)"
-                        : "#c0392b",
-                    }}
-                  >
-                    {passwordMessage}
-                  </p>
-                ) : null}
+                        : passwordMessage
+                          ? "#c0392b"
+                          : "var(--text-faint)",
+                  }}
+                >
+                  {passwordMessage || "Choose a strong password you do not reuse elsewhere."}
+                </p>
 
                 <button
                   type="submit"
                   disabled={passwordSubmitting}
-                  className={`mt-1 ${primaryButtonClassName}`}
+                  className={primaryButtonClassName}
                   style={{
                     background: "var(--accent)",
                     color: "var(--bg)",
@@ -952,148 +810,78 @@ export default function UserSettingsPage({
                 >
                   {passwordSubmitting ? "Updating..." : "Update password"}
                 </button>
-              </form>
-            </section>
+              </div>
+            </div>
+          </form>
 
-            <section className={cardClassName} style={surfaceStyle}>
+          <section
+            className={cardClassName}
+            style={{ borderColor: "var(--border)" }}
+          >
+            <div className="flex flex-col gap-2 border-b pb-5" style={{ borderColor: "var(--border)" }}>
               <p
                 className="text-[11px] uppercase tracking-[0.18em]"
                 style={{ color: "var(--text-faint)" }}
               >
-                Navigate
+                Utilities
               </p>
-              <h2
-                className="pt-2 text-xl font-semibold"
-                style={{ color: "var(--text)" }}
-              >
+              <h2 className="text-xl font-semibold" style={{ color: "var(--text)" }}>
                 Workspace
               </h2>
-              <div className="grid gap-3 pt-5">
-                {[
-                  {
-                    href: "/",
-                    label: "Link shortener",
-                    text: "Create and manage your short links.",
-                  },
-                  {
-                    href: "/dashboard/links",
-                    label: "Bio links",
-                    text: "Design your public page and link stack.",
-                  },
-                  {
-                    href: "/notes",
-                    label: "Notes",
-                    text: "Jump back into your private writing space.",
-                  },
-                  {
-                    href: publicPath,
-                    label: "Public page",
-                    text: "Open the live `@username` profile visitors will see.",
-                  },
-                ].map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={actionButtonClassName}
-                    style={{
-                      borderColor: "var(--border)",
-                      background: "var(--surface)",
-                      color: "var(--text)",
-                    }}
-                  >
-                    <div className="text-sm font-medium">{item.label}</div>
-                    <div
-                      className="pt-1 text-xs leading-6"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {item.text}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            <section className={cardClassName} style={surfaceStyle}>
-              <p
-                className="text-[11px] uppercase tracking-[0.18em]"
-                style={{ color: "var(--text-faint)" }}
-              >
-                Preferences
+              <p className="text-sm leading-7" style={{ color: "var(--text-muted)" }}>
+                Quick links and a couple of account actions.
               </p>
-              <div className="grid gap-3 pt-5">
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className={actionButtonClassName}
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {workspaceLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-2xl border px-4 py-4 transition-all duration-200 hover:border-[var(--border2)] hover:bg-[var(--bg)]"
                   style={{
                     borderColor: "var(--border)",
-                    background: "var(--surface)",
                     color: "var(--text)",
                   }}
                 >
-                  <div className="text-sm font-medium">
-                    {mounted ? (isDark ? "Light mode" : "Dark mode") : "Theme"}
-                  </div>
-                  <div
-                    className="pt-1 text-xs leading-6"
-                    style={{ color: "var(--text-muted)" }}
-                >
-                  Toggle the app theme for this device.
-                </div>
-                </button>
-
-                <div
-                  className="rounded-2xl border px-4 py-3 text-sm"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Your profile, notes, links, and public page settings now save
-                  directly to your Neon-backed workspace.
-                </div>
-              </div>
-            </section>
-
-            <section className={cardClassName} style={surfaceStyle}>
-              <p
-                className="text-[11px] uppercase tracking-[0.18em]"
-                style={{ color: "var(--text-faint)" }}
-              >
-                Session
-              </p>
-              <h2
-                className="pt-2 text-xl font-semibold"
-                style={{ color: "var(--text)" }}
-              >
-                Sign out
-              </h2>
-              <div className="grid gap-3 pt-5">
-                <button
-                  type="button"
-                  onClick={() => void handleSignOut()}
-                  disabled={signingOut}
-                  className="rounded-[20px] border px-4 py-4 text-left transition-all duration-200 hover:-translate-y-px hover:border-[#c0392b55] hover:bg-[color-mix(in_srgb,#c0392b_10%,transparent)] disabled:opacity-60"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg)",
-                    color: "var(--text)",
-                  }}
-                >
-                  <div className="text-sm font-medium">
-                    {signingOut ? "Signing out..." : "Sign out"}
-                  </div>
+                  <div className="text-sm font-medium">{item.label}</div>
                   <div
                     className="pt-1 text-xs leading-6"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    End this session and return to the sign-in page.
+                    {item.text}
                   </div>
-                </button>
-              </div>
-            </section>
-          </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: "var(--border)" }}>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={secondaryButtonClassName}
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text)",
+                }}
+              >
+                {mounted ? (isDark ? "Switch to light mode" : "Switch to dark mode") : "Toggle theme"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleSignOut()}
+                disabled={signingOut}
+                className="inline-flex items-center justify-center rounded-full border px-4 py-2.5 text-sm transition-all duration-200 hover:border-[#c0392b55] hover:bg-[color-mix(in_srgb,#c0392b_8%,transparent)] disabled:opacity-60"
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text)",
+                }}
+              >
+                {signingOut ? "Signing out..." : "Sign out"}
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     </main>
