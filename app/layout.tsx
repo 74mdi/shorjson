@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import BottomBar from "@/components/BottomBar";
-import TopControls from "@/components/TopControls";
+import AppChrome from "@/components/AppChrome";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import {
   fraunces,
@@ -102,8 +101,8 @@ export default async function RootLayout({
         ].join(" ")}
       >
         <ServiceWorkerRegister />
-        <TopControls
-          auth={
+        <AppChrome
+          initialAuth={
             session
               ? {
                   csrfToken: session.csrfToken,
@@ -112,7 +111,6 @@ export default async function RootLayout({
               : null
           }
         />
-        <BottomBar authenticated={Boolean(session)} />
         <div className="min-h-screen animate-page-fade">{children}</div>
       </body>
     </html>

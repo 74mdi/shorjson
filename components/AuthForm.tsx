@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { getPublicBioPath } from "@/lib/bio-shared";
 import { signInSchema, signUpSchema } from "@/lib/schemas";
@@ -37,7 +36,6 @@ function Spinner() {
 }
 
 export default function AuthForm({ mode }: { mode: Mode }) {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -141,8 +139,7 @@ export default function AuthForm({ mode }: { mode: Mode }) {
         return;
       }
 
-      router.replace("/");
-      router.refresh();
+      window.location.assign("/");
     } catch {
       setError("Network error. Please try again.");
       setSubmitting(false);
